@@ -10,6 +10,8 @@ export function AdminNav({
     | "pianificazione"
     | "preventivi"
     | "consuntivi"
+    | "permessi"
+    | "presenze"
     | "dipendenti"
     | "clienti";
 }) {
@@ -40,6 +42,12 @@ export function AdminNav({
         </Link>
         <Link href="/admin/consuntivi" className={linkClass("consuntivi")}>
           Consuntivi
+        </Link>
+        <Link href="/admin/permessi" className={linkClass("permessi")}>
+          Permessi
+        </Link>
+        <Link href="/admin/presenze" className={linkClass("presenze")}>
+          Presenze
         </Link>
         <Link href="/admin/dipendenti" className={linkClass("dipendenti")}>
           Dipendenti

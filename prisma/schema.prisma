@@ -40,6 +40,24 @@ enum ClientTipo {
   PERSONA_FISICA
 }
 
+enum TipoAssenza {
+  INFORTUNIO
+  MALATTIA
+  PERMESSO
+  PERMESSO_RETRIBUITO
+  LEGGE_104
+  FERIE_RICHIESTE
+  FERIE_AZIENDALI
+  MATERNITA_ANTICIPATA
+  MATERNITA_FACOLTATIVA
+}
+
+enum StatoRichiesta {
+  IN_ATTESA
+  APPROVATO
+  RIFIUTATO
+}
+
 model User {
   id           String      @id @default(cuid())
   email        String      @unique
@@ -52,6 +70,22 @@ model User {
   createdAt    DateTime    @default(now())
   timeEntries  TimeEntry[]
   shifts       Shift[]
+  leaveRequests LeaveRequest[]
+}
+
+model LeaveRequest {
+  id         String         @id @default(cuid())
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  tipo       TipoAssenza
+  dataInizio DateTime
+  dataFine   DateTime
+  note       String?
+  stato      StatoRichiesta @default(IN_ATTESA)
+  createdAt  DateTime       @default(now())
+  decisoAt   DateTime?
+
+  @@index([userId, dataInizio])
 }
 
 model Client {
