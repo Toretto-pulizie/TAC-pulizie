@@ -1,0 +1,137 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum EntryType {
+  TRAVEL_START
+  WORK_START
+  WORK_END
+}
+
+enum ServiceType {
+  ONE_SHOT
+  PASS_SETTIMANALE
+  PASS_MENSILE
+}
+
+enum QuoteStatus {
+  IN_TRATTATIVA
+  ACCETTATO
+  RIFIUTATO
+}
+
+enum ClientTipo {
+  AZIENDA
+  PERSONA_FISICA
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  name         String
+  cognome      String?
+  telefono     String?
+  role         Role        @default(EMPLOYEE)
+  active       Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  timeEntries  TimeEntry[]
+  shifts       Shift[]
+}
+
+model Client {
+  id            String     @id @default(cuid())
+  tipo          ClientTipo @default(AZIENDA)
+  name          String
+  ragioneSociale String?
+  nome          String?
+  cognome       String?
+  indirizzo     String?
+  citta         String?
+  cap           String?
+  provincia     String?
+  notes         String?
+  createdAt     DateTime   @default(now())
+  sites         Site[]
+}
+
+model Site {
+  id          String      @id @default(cuid())
+  client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId    String
+  name        String
+  address     String?
+  notes       String?
+  capienza    Int?
+  createdAt   DateTime    @default(now())
+  timeEntries TimeEntry[]
+  shifts      Shift[]
+  quotes      Quote[]
+}
+
+model Quote {
+  id                String      @id @default(cuid())
+  site              Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId            String
+  serviceType       ServiceType
+  ore               Float
+  spostamento       Float       @default(0)
+  oneShotCount      Float       @default(1)
+  passSettimanale   Float?
+  passMensile       Float?
+  oreVetri          Float       @default(0)
+  passVetriAnno     Float       @default(0)
+  tariffaOraria     Float       @default(25)
+  tariffaVetri      Float       @default(30)
+  tariffaConsuntivo Float       @default(25)
+  prezzoVenduto     Float?
+  status            QuoteStatus @default(IN_TRATTATIVA)
+  note              String?
+  createdAt         DateTime    @default(now())
+  closedAt          DateTime?
+
+  @@index([siteId, status])
+}
+
+model Shift {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId    String
+  start     DateTime
+  end       DateTime
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, start])
+  @@index([siteId, start])
+}
+
+model TimeEntry {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  site      Site?     @relation(fields: [siteId], references: [id])
+  siteId    String?
+  type      EntryType
+  timestamp DateTime  @default(now())
+  lat       Float?
+  lng       Float?
+  note      String?
+}

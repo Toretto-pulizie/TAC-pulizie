@@ -4,23 +4,43 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma migrate deploy && tsx prisma/seed-prod.ts && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "prisma generate",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:seed:prod": "tsx prisma/seed-prod.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.3",
     "next": "16.2.10",
+    "prisma": "^6.19.3",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
+    "tsx": "^4.23.0",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "@prisma/engines@7.8.0": true,
+    "prisma@7.8.0": true,
+    "sharp@0.34.5": true,
+    "unrs-resolver@1.12.2": true
   }
 }
