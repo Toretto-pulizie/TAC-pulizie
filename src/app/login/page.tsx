@@ -10,7 +10,7 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-8 bg-white px-4 py-16">
+    <div className="flex flex-1 flex-col items-center justify-center gap-8 bg-zinc-50 px-4 py-16">
       <div className="flex flex-col items-center gap-2 text-center">
         <Image src="/logo.png" alt="Toretto" width={280} height={81} priority />
         <p className="text-sm text-zinc-500">Accedi con le tue credenziali</p>

@@ -86,30 +86,30 @@ export default async function DipendentePage() {
       <div className="grid grid-cols-2 gap-3">
         <Link
           href="/dipendente/timbratura"
-          className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm active:bg-zinc-50"
+          className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-green-800 bg-green-700 p-4 text-center shadow-sm active:bg-green-800"
         >
-          <span className="text-zinc-700">
+          <span className="text-yellow-300">
             <ClockIcon />
           </span>
-          <span className="text-base font-semibold text-zinc-900">
+          <span className="text-base font-semibold text-yellow-300">
             Timbratura
           </span>
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-yellow-200">
             {STATUS_LABELS[status.status]}
           </span>
         </Link>
 
         <Link
           href="/dipendente/permessi"
-          className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm active:bg-zinc-50"
+          className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-green-800 bg-green-700 p-4 text-center shadow-sm active:bg-green-800"
         >
-          <span className="text-zinc-700">
+          <span className="text-yellow-300">
             <PermessoIcon />
           </span>
-          <span className="text-base font-semibold text-zinc-900">
+          <span className="text-base font-semibold text-yellow-300">
             Richiedi permesso
           </span>
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-yellow-200">
             {pendingRequests > 0
               ? `${pendingRequests} in attesa`
               : "Nessuna in attesa"}
