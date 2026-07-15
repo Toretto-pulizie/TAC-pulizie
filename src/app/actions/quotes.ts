@@ -4,29 +4,41 @@ import * as z from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/dal";
+import { geocodeAddress } from "@/lib/geocode";
 
-const QuoteSchema = z.object({
-  siteId: z.string().min(1, "Seleziona un cliente/cantiere"),
-  serviceType: z.enum(["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE"]),
-  ore: z.coerce.number().min(0, "Ore non valide"),
-  spostamento: z.coerce.number().min(0).default(0),
-  oneShotCount: z.coerce.number().min(0).default(1),
-  passSettimanale: z.coerce.number().min(0).optional(),
-  passMensile: z.coerce.number().min(0).optional(),
-  oreVetri: z.coerce.number().min(0).default(0),
-  passVetriAnno: z.coerce.number().min(0).default(0),
-  tariffaOraria: z.coerce.number().min(0),
-  tariffaVetri: z.coerce.number().min(0),
-  tariffaConsuntivo: z.coerce.number().min(0),
-  prezzoVenduto: z.coerce.number().min(0).optional(),
-  note: z.string().trim().optional(),
-});
+const QuoteSchema = z
+  .object({
+    serviceType: z.enum(["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE"]),
+    ore: z.coerce.number().min(0, "Ore non valide"),
+    spostamento: z.coerce.number().min(0).default(0),
+    oneShotCount: z.coerce.number().min(0).default(1),
+    passSettimanale: z.coerce.number().min(0).optional(),
+    passMensile: z.coerce.number().min(0).optional(),
+    oreVetri: z.coerce.number().min(0).default(0),
+    passVetriAnno: z.coerce.number().min(0).default(0),
+    tariffaOraria: z.coerce.number().min(0),
+    tariffaVetri: z.coerce.number().min(0),
+    tariffaConsuntivo: z.coerce.number().min(0),
+    prezzoVenduto: z.coerce.number().min(0).optional(),
+    condizioniPagamento: z.string().trim().optional(),
+    tipoPrestazione: z.string().trim().min(1, "Seleziona il tipo di prestazione"),
+    note: z.string().trim().optional(),
+  })
+  .refine(
+    (data) =>
+      data.serviceType !== "PASS_SETTIMANALE" ||
+      (data.passSettimanale != null && data.passSettimanale > 0),
+    { message: "Indica gli interventi/settimana" }
+  )
+  .refine(
+    (data) =>
+      data.serviceType !== "PASS_MENSILE" ||
+      (data.passMensile != null && data.passMensile > 0),
+    { message: "Indica gli interventi/mese" }
+  );
 
-export async function createQuote(_prevState: unknown, formData: FormData) {
-  await requireAdmin();
-
-  const parsed = QuoteSchema.safeParse({
-    siteId: formData.get("siteId"),
+function parseQuoteFormData(formData: FormData) {
+  return QuoteSchema.safeParse({
     serviceType: formData.get("serviceType"),
     ore: formData.get("ore"),
     spostamento: formData.get("spostamento") || 0,
@@ -39,20 +51,95 @@ export async function createQuote(_prevState: unknown, formData: FormData) {
     tariffaVetri: formData.get("tariffaVetri"),
     tariffaConsuntivo: formData.get("tariffaConsuntivo"),
     prezzoVenduto: formData.get("prezzoVenduto") || undefined,
+    condizioniPagamento: formData.get("condizioniPagamento") || undefined,
+    tipoPrestazione: formData.get("tipoPrestazione"),
     note: formData.get("note") || undefined,
   });
+}
+
+async function resolveSiteId(formData: FormData): Promise<string> {
+  const clientId = formData.get("clientId");
+  const siteSelection = formData.get("siteSelection");
+
+  if (typeof clientId !== "string" || !clientId) {
+    throw new Error("Seleziona un cliente");
+  }
+  if (typeof siteSelection !== "string" || !siteSelection) {
+    throw new Error("Seleziona una sede");
+  }
+
+  if (siteSelection !== "__base__" && siteSelection !== "__custom__") {
+    return siteSelection;
+  }
+
+  let address: string;
+  if (siteSelection === "__custom__") {
+    const custom = formData.get("nuovoIndirizzo");
+    if (typeof custom !== "string" || !custom.trim()) {
+      throw new Error("Indica il nuovo indirizzo");
+    }
+    address = custom.trim();
+  } else {
+    const client = await prisma.client.findUnique({ where: { id: clientId } });
+    if (!client) throw new Error("Cliente non trovato");
+    address = [client.indirizzo, client.cap, client.citta, client.provincia]
+      .filter(Boolean)
+      .join(", ");
+    if (!address) {
+      throw new Error('Il cliente non ha un indirizzo di base: usa "Altro"');
+    }
+  }
+
+  const coords = await geocodeAddress(address);
+  const site = await prisma.site.create({
+    data: {
+      clientId,
+      name: siteSelection === "__base__" ? "Sede" : "Nuova sede",
+      address,
+      lat: coords?.lat ?? null,
+      lng: coords?.lng ?? null,
+    },
+  });
+
+  return site.id;
+}
+
+export async function saveQuote(_prevState: unknown, formData: FormData) {
+  await requireAdmin();
+
+  const id = formData.get("id");
+
+  const parsed = parseQuoteFormData(formData);
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  const { note, ...data } = parsed.data;
+  let siteId: string;
+  try {
+    siteId = await resolveSiteId(formData);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Errore nella sede" };
+  }
 
-  await prisma.quote.create({ data: { ...data, note: note || null } });
+  const { note, condizioniPagamento, ...data } = parsed.data;
+  const quoteData = {
+    ...data,
+    siteId,
+    note: note || null,
+    condizioniPagamento: condizioniPagamento || null,
+  };
+
+  if (typeof id === "string" && id) {
+    await prisma.quote.update({ where: { id }, data: quoteData });
+  } else {
+    await prisma.quote.create({ data: quoteData });
+  }
 
   revalidatePath("/admin/preventivi");
   revalidatePath("/admin/consuntivi");
-  return { success: true };
+  revalidatePath("/admin/clienti");
+  return { success: true, id: typeof id === "string" ? id : undefined };
 }
 
 export async function setQuoteStatus(

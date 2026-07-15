@@ -4,10 +4,28 @@ import { requireAdmin } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeDiscountPct } from "@/lib/quotes";
 import { buildDescriptionLines, buildLineItem } from "@/lib/quotePrint";
+import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
 import { PrintButton } from "./PrintButton";
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
+}
+
+// TODO: sostituire con i dati bancari reali dell'azienda
+const BANCA_APPOGGIO = "[Nome banca] - IBAN: [IBAN]";
+const CONDIZIONI_PAGAMENTO_DEFAULT = "A ricevimento fattura";
+
+function InfoCol({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex-1 border-r border-zinc-300 last:border-r-0">
+      <p className="border-b border-zinc-300 bg-zinc-50 px-1.5 py-0.5 text-[8px] uppercase leading-none tracking-wide text-zinc-500">
+        {label}
+      </p>
+      <p className="truncate px-1.5 py-0.5 text-[11px] leading-tight text-zinc-900">
+        {value || "—"}
+      </p>
+    </div>
+  );
 }
 
 export default async function StampaPreventivoPage({
@@ -18,10 +36,13 @@ export default async function StampaPreventivoPage({
   await requireAdmin();
   const { id } = await params;
 
-  const quote = await prisma.quote.findUnique({
-    where: { id },
-    include: { site: { include: { client: true } } },
-  });
+  const [quote, serviceLabels] = await Promise.all([
+    prisma.quote.findUnique({
+      where: { id },
+      include: { site: { include: { client: true } } },
+    }),
+    getServiceTypeLabels(),
+  ]);
   if (!quote) notFound();
 
   const client = quote.site.client;
@@ -31,7 +52,7 @@ export default async function StampaPreventivoPage({
       : client.ragioneSociale ?? client.name;
 
   const descriptionLines = buildDescriptionLines(quote);
-  const lineItem = buildLineItem(quote);
+  const lineItem = buildLineItem(quote, serviceLabels[quote.serviceType]);
   const prezzoNetto = quote.prezzoVenduto ?? lineItem.listPrice;
   const discountPct =
     quote.prezzoVenduto != null
@@ -48,7 +69,19 @@ export default async function StampaPreventivoPage({
 
       <div className="flex flex-col gap-6 rounded-xl border border-zinc-200 bg-white p-8 text-zinc-900 print:border-0 print:p-0">
         <header className="flex items-start justify-between gap-6">
-          <Image src="/logo.png" alt="Toretto" width={180} height={52} />
+          <div className="flex flex-col gap-2">
+            <Image src="/logo.png" alt="Toretto" width={180} height={52} />
+            <div className="w-44 rounded-lg border border-zinc-300">
+              <p className="border-b border-zinc-300 bg-zinc-50 px-1.5 py-0.5 text-center text-[9px] font-semibold uppercase leading-none tracking-wide text-zinc-700">
+                Offerta
+              </p>
+              <div className="flex">
+                <InfoCol label="N. Doc." value={String(quote.numeroOfferta)} />
+                <InfoCol label="Data" value={dataDocumento} />
+                <InfoCol label="Pag." value="1/1" />
+              </div>
+            </div>
+          </div>
           <div className="text-right text-sm">
             <p className="font-semibold">SPETT.LE</p>
             <p>{clientName}</p>
@@ -62,21 +95,27 @@ export default async function StampaPreventivoPage({
           </div>
         </header>
 
-        <div className="flex items-center justify-between border-y border-zinc-200 py-2 text-sm">
-          <p className="font-semibold uppercase tracking-wide">Offerta</p>
-          <p className="text-zinc-500">Data: {dataDocumento}</p>
+        <div className="rounded-lg border border-zinc-300">
+          <div className="flex border-b border-zinc-300">
+            <InfoCol
+              label="Cod. cliente"
+              value={String(client.codiceCliente).padStart(6, "0")}
+            />
+            <InfoCol label="P. IVA" value={client.partitaIva ?? ""} />
+            <InfoCol label="Codice fiscale" value={client.codiceFiscale ?? ""} />
+            <InfoCol
+              label="Persona di riferimento"
+              value={client.personaRiferimento ?? ""}
+            />
+          </div>
+          <div className="flex">
+            <InfoCol label="Banca d'appoggio" value={BANCA_APPOGGIO} />
+            <InfoCol
+              label="Condizioni di pagamento"
+              value={quote.condizioniPagamento ?? CONDIZIONI_PAGAMENTO_DEFAULT}
+            />
+          </div>
         </div>
-
-        <section className="text-sm">
-          <p className="mb-2 font-medium">
-            {client.name} — {quote.site.name}
-          </p>
-          {descriptionLines.map((line, i) => (
-            <p key={i} className="mb-1 text-zinc-700">
-              {line}
-            </p>
-          ))}
-        </section>
 
         <table className="w-full border border-zinc-300 text-xs">
           <thead>
@@ -95,22 +134,35 @@ export default async function StampaPreventivoPage({
           </thead>
           <tbody>
             <tr>
-              <td className="border-r border-t border-zinc-300 px-2 py-2">
-                {lineItem.descrizione}
+              <td className="border-r border-t border-zinc-300 px-2 py-2 align-top">
+                {quote.tipoPrestazione && (
+                  <p className="font-semibold uppercase">
+                    {quote.tipoPrestazione}
+                  </p>
+                )}
+                <p className="mt-1 font-medium">{lineItem.descrizione}</p>
+                <p className="mt-1 text-zinc-600">
+                  Sede dell&apos;intervento: {quote.site.address}
+                </p>
+                {descriptionLines.map((line, i) => (
+                  <p key={i} className="mt-1 text-zinc-700">
+                    {line}
+                  </p>
+                ))}
               </td>
-              <td className="border-r border-t border-zinc-300 px-2 py-2 text-center">
+              <td className="border-r border-t border-zinc-300 px-2 py-2 text-center align-top">
                 {lineItem.um}
               </td>
-              <td className="border-r border-t border-zinc-300 px-2 py-2 text-center">
+              <td className="border-r border-t border-zinc-300 px-2 py-2 text-center align-top">
                 {lineItem.quantita.toFixed(2)}
               </td>
-              <td className="border-r border-t border-zinc-300 px-2 py-2 text-right">
+              <td className="border-r border-t border-zinc-300 px-2 py-2 text-right align-top">
                 {formatEuro(lineItem.prezzoUnitario)}
               </td>
-              <td className="border-r border-t border-zinc-300 px-2 py-2 text-center">
+              <td className="border-r border-t border-zinc-300 px-2 py-2 text-center align-top">
                 {discountPct != null ? `${(discountPct * 100).toFixed(0)}%` : ""}
               </td>
-              <td className="border-t border-zinc-300 px-2 py-2 text-right">
+              <td className="border-t border-zinc-300 px-2 py-2 text-right align-top">
                 {formatEuro(prezzoNetto)}
               </td>
             </tr>

@@ -69,6 +69,12 @@ export function QuoteRow({
           >
             Stampa
           </Link>
+          <Link
+            href={`/admin/preventivi?edit=${id}#quote-form`}
+            className="text-zinc-600 underline"
+          >
+            Modifica
+          </Link>
           {status !== "ACCETTATO" && (
             <button
               disabled={isPending}

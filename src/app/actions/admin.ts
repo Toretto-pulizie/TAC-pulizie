@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/dal";
+import { geocodeAddress } from "@/lib/geocode";
 
 const EmployeeSchema = z.object({
   name: z.string().trim().min(2, "Nome troppo corto"),
@@ -113,33 +114,33 @@ export async function setEmployeeActive(userId: string, active: boolean) {
   revalidatePath("/admin/dipendenti");
 }
 
-const ClientSchema = z
-  .object({
-    tipo: z.enum(["AZIENDA", "PERSONA_FISICA"]),
-    ragioneSociale: z.string().trim().optional(),
-    nome: z.string().trim().optional(),
-    cognome: z.string().trim().optional(),
-    indirizzo: z.string().trim().optional(),
-    citta: z.string().trim().optional(),
-    cap: z.string().trim().optional(),
-    provincia: z.string().trim().optional(),
-    notes: z.string().trim().optional(),
-  })
-  .refine(
-    (data) =>
-      data.tipo === "AZIENDA"
-        ? !!data.ragioneSociale
-        : !!data.nome && !!data.cognome,
-    {
-      message:
-        "Compila ragione sociale (azienda) oppure nome e cognome (persona fisica).",
-    }
-  );
+const ClientBaseSchema = {
+  tipo: z.enum(["AZIENDA", "PERSONA_FISICA"]),
+  ragioneSociale: z.string().trim().optional(),
+  nome: z.string().trim().optional(),
+  cognome: z.string().trim().optional(),
+  indirizzo: z.string().trim().optional(),
+  citta: z.string().trim().optional(),
+  cap: z.string().trim().optional(),
+  provincia: z.string().trim().optional(),
+  partitaIva: z.string().trim().optional(),
+  codiceFiscale: z.string().trim().optional(),
+  personaRiferimento: z.string().trim().optional(),
+  notes: z.string().trim().optional(),
+};
 
-export async function createClient(_prevState: unknown, formData: FormData) {
-  await requireAdmin();
+const clientRefine = (data: { tipo: string; ragioneSociale?: string; nome?: string; cognome?: string }) =>
+  data.tipo === "AZIENDA" ? !!data.ragioneSociale : !!data.nome && !!data.cognome;
 
-  const parsed = ClientSchema.safeParse({
+const clientRefineMessage = {
+  message:
+    "Compila ragione sociale (azienda) oppure nome e cognome (persona fisica).",
+};
+
+const ClientSchema = z.object(ClientBaseSchema).refine(clientRefine, clientRefineMessage);
+
+function clientFormFields(formData: FormData) {
+  return {
     tipo: formData.get("tipo"),
     ragioneSociale: formData.get("ragioneSociale") || undefined,
     nome: formData.get("nome") || undefined,
@@ -148,15 +149,36 @@ export async function createClient(_prevState: unknown, formData: FormData) {
     citta: formData.get("citta") || undefined,
     cap: formData.get("cap") || undefined,
     provincia: formData.get("provincia") || undefined,
+    partitaIva: formData.get("partitaIva") || undefined,
+    codiceFiscale: formData.get("codiceFiscale") || undefined,
+    personaRiferimento: formData.get("personaRiferimento") || undefined,
     notes: formData.get("notes") || undefined,
-  });
+  };
+}
+
+export async function createClient(_prevState: unknown, formData: FormData) {
+  await requireAdmin();
+
+  const parsed = ClientSchema.safeParse(clientFormFields(formData));
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  const { tipo, ragioneSociale, nome, cognome, indirizzo, citta, cap, provincia, notes } =
-    parsed.data;
+  const {
+    tipo,
+    ragioneSociale,
+    nome,
+    cognome,
+    indirizzo,
+    citta,
+    cap,
+    provincia,
+    partitaIva,
+    codiceFiscale,
+    personaRiferimento,
+    notes,
+  } = parsed.data;
 
   const name =
     tipo === "AZIENDA" ? ragioneSociale! : `${nome} ${cognome}`;
@@ -172,6 +194,9 @@ export async function createClient(_prevState: unknown, formData: FormData) {
       citta: citta || null,
       cap: cap || null,
       provincia: provincia || null,
+      partitaIva: partitaIva || null,
+      codiceFiscale: codiceFiscale || null,
+      personaRiferimento: personaRiferimento || null,
       notes: notes || null,
     },
   });
@@ -179,10 +204,67 @@ export async function createClient(_prevState: unknown, formData: FormData) {
   return { success: true };
 }
 
+const UpdateClientSchema = z
+  .object({ id: z.string().min(1), ...ClientBaseSchema })
+  .refine(clientRefine, clientRefineMessage);
+
+export async function updateClient(_prevState: unknown, formData: FormData) {
+  await requireAdmin();
+
+  const parsed = UpdateClientSchema.safeParse({
+    id: formData.get("id"),
+    ...clientFormFields(formData),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
+  }
+
+  const {
+    id,
+    tipo,
+    ragioneSociale,
+    nome,
+    cognome,
+    indirizzo,
+    citta,
+    cap,
+    provincia,
+    partitaIva,
+    codiceFiscale,
+    personaRiferimento,
+    notes,
+  } = parsed.data;
+
+  const name = tipo === "AZIENDA" ? ragioneSociale! : `${nome} ${cognome}`;
+
+  await prisma.client.update({
+    where: { id },
+    data: {
+      tipo,
+      name,
+      ragioneSociale: tipo === "AZIENDA" ? ragioneSociale : null,
+      nome: tipo === "PERSONA_FISICA" ? nome : null,
+      cognome: tipo === "PERSONA_FISICA" ? cognome : null,
+      indirizzo: indirizzo || null,
+      citta: citta || null,
+      cap: cap || null,
+      provincia: provincia || null,
+      partitaIva: partitaIva || null,
+      codiceFiscale: codiceFiscale || null,
+      personaRiferimento: personaRiferimento || null,
+      notes: notes || null,
+    },
+  });
+
+  revalidatePath("/admin/clienti");
+  redirect("/admin/clienti");
+}
+
 const SiteSchema = z.object({
   clientId: z.string().min(1, "Seleziona un cliente"),
   name: z.string().trim().min(1, "Nome sede richiesto"),
-  address: z.string().trim().optional(),
+  address: z.string().trim().min(1, "Indirizzo richiesto (serve per il cantiere)"),
   capienza: z.coerce.number().int().min(1).optional(),
 });
 
@@ -192,7 +274,7 @@ export async function createSite(_prevState: unknown, formData: FormData) {
   const parsed = SiteSchema.safeParse({
     clientId: formData.get("clientId"),
     name: formData.get("name"),
-    address: formData.get("address") || undefined,
+    address: formData.get("address"),
     capienza: formData.get("capienza") || undefined,
   });
 
@@ -200,7 +282,11 @@ export async function createSite(_prevState: unknown, formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  await prisma.site.create({ data: parsed.data });
+  const coords = await geocodeAddress(parsed.data.address);
+
+  await prisma.site.create({
+    data: { ...parsed.data, lat: coords?.lat ?? null, lng: coords?.lng ?? null },
+  });
   revalidatePath("/admin/clienti");
   revalidatePath("/admin/pianificazione");
   return { success: true };
@@ -211,4 +297,70 @@ export async function updateSiteCapienza(siteId: string, capienza: number | null
   await prisma.site.update({ where: { id: siteId }, data: { capienza } });
   revalidatePath("/admin/clienti");
   revalidatePath("/admin/pianificazione");
+}
+
+const UpdateSiteSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1, "Nome sede richiesto"),
+  address: z.string().trim().min(1, "Indirizzo richiesto (serve per il cantiere)"),
+  capienza: z.coerce.number().int().min(1).optional(),
+});
+
+export async function updateSite(_prevState: unknown, formData: FormData) {
+  await requireAdmin();
+
+  const parsed = UpdateSiteSchema.safeParse({
+    id: formData.get("id"),
+    name: formData.get("name"),
+    address: formData.get("address"),
+    capienza: formData.get("capienza") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
+  }
+
+  const { id, name, address, capienza } = parsed.data;
+
+  const existing = await prisma.site.findUnique({ where: { id } });
+  const coords =
+    existing && existing.address === address
+      ? { lat: existing.lat, lng: existing.lng }
+      : await geocodeAddress(address);
+
+  await prisma.site.update({
+    where: { id },
+    data: {
+      name,
+      address,
+      capienza: capienza ?? null,
+      lat: coords?.lat ?? null,
+      lng: coords?.lng ?? null,
+    },
+  });
+
+  revalidatePath("/admin/clienti");
+  revalidatePath("/admin/pianificazione");
+  redirect("/admin/clienti");
+}
+
+export async function deleteSite(siteId: string) {
+  await requireAdmin();
+
+  const [quoteCount, shiftCount, timeEntryCount] = await Promise.all([
+    prisma.quote.count({ where: { siteId } }),
+    prisma.shift.count({ where: { siteId } }),
+    prisma.timeEntry.count({ where: { siteId } }),
+  ]);
+
+  if (quoteCount > 0 || shiftCount > 0 || timeEntryCount > 0) {
+    return {
+      error: `Impossibile eliminare: ci sono ${quoteCount} preventivi, ${shiftCount} turni e ${timeEntryCount} timbrature collegati a questo cantiere.`,
+    };
+  }
+
+  await prisma.site.delete({ where: { id: siteId } });
+  revalidatePath("/admin/clienti");
+  revalidatePath("/admin/pianificazione");
+  return { success: true };
 }

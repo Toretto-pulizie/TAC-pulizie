@@ -40,22 +40,32 @@ async function main() {
     },
   });
 
+  const clientAData = {
+    name: "Famiglia Rossi",
+    ragioneSociale: "Famiglia Rossi",
+    indirizzo: "Via Roma 1",
+    citta: "Milano",
+    cap: "20100",
+    provincia: "MI",
+  };
   const clientA = await prisma.client.upsert({
     where: { id: "seed-client-rossi" },
-    update: {},
-    create: {
-      id: "seed-client-rossi",
-      name: "Famiglia Rossi",
-    },
+    update: clientAData,
+    create: { id: "seed-client-rossi", ...clientAData },
   });
 
+  const clientBData = {
+    name: "Studio Legale Bianchi",
+    ragioneSociale: "Studio Legale Bianchi",
+    indirizzo: "Corso Italia 10",
+    citta: "Milano",
+    cap: "20100",
+    provincia: "MI",
+  };
   const clientB = await prisma.client.upsert({
     where: { id: "seed-client-ufficio" },
-    update: {},
-    create: {
-      id: "seed-client-ufficio",
-      name: "Studio Legale Bianchi",
-    },
+    update: clientBData,
+    create: { id: "seed-client-ufficio", ...clientBData },
   });
 
   await prisma.site.upsert({
@@ -79,6 +89,31 @@ async function main() {
       address: "Corso Italia 10, Milano",
     },
   });
+
+  const defaultLabels: { tipo: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE"; etichetta: string }[] = [
+    { tipo: "ONE_SHOT", etichetta: "Una tantum" },
+    { tipo: "PASS_SETTIMANALE", etichetta: "Abbonamento settimanale" },
+    { tipo: "PASS_MENSILE", etichetta: "Abbonamento mensile" },
+  ];
+  for (const { tipo, etichetta } of defaultLabels) {
+    await prisma.serviceTypeLabel.upsert({
+      where: { tipo },
+      update: {},
+      create: { tipo, etichetta },
+    });
+  }
+
+  const tipiPrestazioneCount = await prisma.tipoPrestazione.count();
+  if (tipiPrestazioneCount === 0) {
+    await prisma.tipoPrestazione.createMany({
+      data: [
+        { etichetta: "PRESTAZIONE ORDINARIA DI PULIZIA UFFICI", ordine: 1 },
+        { etichetta: "PRESTAZIONE ORDINARIA DI PULIZIA APPARTAMENTI", ordine: 2 },
+        { etichetta: "PRESTAZIONE STRAORDINARIA", ordine: 3 },
+        { etichetta: "PULIZIA DI FINE CANTIERE", ordine: 4 },
+      ],
+    });
+  }
 
   console.log("Seed completato.");
   console.log("Admin: admin@toret-to.it / admin1234");

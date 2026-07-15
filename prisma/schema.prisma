@@ -89,19 +89,23 @@ model LeaveRequest {
 }
 
 model Client {
-  id            String     @id @default(cuid())
-  tipo          ClientTipo @default(AZIENDA)
-  name          String
-  ragioneSociale String?
-  nome          String?
-  cognome       String?
-  indirizzo     String?
-  citta         String?
-  cap           String?
-  provincia     String?
-  notes         String?
-  createdAt     DateTime   @default(now())
-  sites         Site[]
+  id                 String     @id @default(cuid())
+  tipo               ClientTipo @default(AZIENDA)
+  name               String
+  ragioneSociale     String?
+  nome               String?
+  cognome            String?
+  indirizzo          String?
+  citta              String?
+  cap                String?
+  provincia          String?
+  codiceCliente      Int        @unique @default(autoincrement())
+  partitaIva         String?
+  codiceFiscale      String?
+  personaRiferimento String?
+  notes              String?
+  createdAt          DateTime   @default(now())
+  sites              Site[]
 }
 
 model Site {
@@ -109,7 +113,9 @@ model Site {
   client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId    String
   name        String
-  address     String?
+  address     String
+  lat         Float?
+  lng         Float?
   notes       String?
   capienza    Int?
   createdAt   DateTime    @default(now())
@@ -119,27 +125,53 @@ model Site {
 }
 
 model Quote {
-  id                String      @id @default(cuid())
-  site              Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  siteId            String
-  serviceType       ServiceType
-  ore               Float
-  spostamento       Float       @default(0)
-  oneShotCount      Float       @default(1)
-  passSettimanale   Float?
-  passMensile       Float?
-  oreVetri          Float       @default(0)
-  passVetriAnno     Float       @default(0)
-  tariffaOraria     Float       @default(25)
-  tariffaVetri      Float       @default(30)
-  tariffaConsuntivo Float       @default(25)
-  prezzoVenduto     Float?
-  status            QuoteStatus @default(IN_TRATTATIVA)
-  note              String?
-  createdAt         DateTime    @default(now())
-  closedAt          DateTime?
+  id                  String      @id @default(cuid())
+  numeroOfferta       Int         @default(autoincrement())
+  site                Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId              String
+  serviceType         ServiceType
+  ore                 Float
+  spostamento         Float       @default(0)
+  oneShotCount        Float       @default(1)
+  passSettimanale     Float?
+  passMensile         Float?
+  oreVetri            Float       @default(0)
+  passVetriAnno       Float       @default(0)
+  tariffaOraria       Float       @default(25)
+  tariffaVetri        Float       @default(30)
+  tariffaConsuntivo   Float       @default(25)
+  prezzoVenduto       Float?
+  condizioniPagamento String?
+  tipoPrestazione     String      @default("")
+  status              QuoteStatus @default(IN_TRATTATIVA)
+  note                String?
+  createdAt           DateTime    @default(now())
+  closedAt            DateTime?
 
   @@index([siteId, status])
+}
+
+model TipoPrestazione {
+  id        String   @id @default(cuid())
+  etichetta String
+  ordine    Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model QuotePhrase {
+  id        String   @id @default(cuid())
+  categoria String
+  titolo    String
+  testo     String
+  ordine    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([categoria])
+}
+
+model ServiceTypeLabel {
+  tipo      ServiceType @id
+  etichetta String
 }
 
 model Shift {

@@ -107,6 +107,27 @@ export function ClientForm() {
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
+          P. IVA
+          <input
+            name="partitaIva"
+            className="w-36 rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Codice fiscale
+          <input
+            name="codiceFiscale"
+            className="w-36 rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Persona di riferimento
+          <input
+            name="personaRiferimento"
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
           Note
           <input
             name="notes"

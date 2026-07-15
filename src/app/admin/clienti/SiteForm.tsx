@@ -50,6 +50,8 @@ export function SiteForm({
         Indirizzo
         <input
           name="address"
+          required
+          placeholder="Via, numero civico, città"
           className="rounded-lg border border-zinc-300 px-3 py-2"
         />
       </label>
