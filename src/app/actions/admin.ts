@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/dal";
 import { geocodeAddress } from "@/lib/geocode";
+import { lookupPartitaIva } from "@/lib/viesLookup";
 
 const EmployeeSchema = z.object({
   name: z.string().trim().min(2, "Nome troppo corto"),
@@ -259,6 +260,15 @@ export async function updateClient(_prevState: unknown, formData: FormData) {
 
   revalidatePath("/admin/clienti");
   redirect("/admin/clienti");
+}
+
+export async function checkPartitaIva(piva: string) {
+  await requireAdmin();
+  const result = await lookupPartitaIva(piva);
+  if (!result) {
+    return { error: "Partita IVA non trovata o non attiva (verifica VIES)" };
+  }
+  return { success: true as const, data: result };
 }
 
 const SiteSchema = z.object({

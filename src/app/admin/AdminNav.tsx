@@ -14,7 +14,8 @@ export function AdminNav({
     | "presenze"
     | "dipendenti"
     | "clienti"
-    | "impostazioni";
+    | "impostazioni"
+    | "statistiche";
 }) {
   const linkClass = (key: typeof active) =>
     `rounded-lg px-3 py-2 text-sm font-medium ${
@@ -61,6 +62,9 @@ export function AdminNav({
           className={linkClass("impostazioni")}
         >
           Impostazioni
+        </Link>
+        <Link href="/admin/statistiche" className={linkClass("statistiche")}>
+          Statistiche
         </Link>
       </nav>
       <form action={logout}>

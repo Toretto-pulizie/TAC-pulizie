@@ -14,6 +14,11 @@ function formatEuro(n: number) {
 // TODO: sostituire con i dati bancari reali dell'azienda
 const BANCA_APPOGGIO = "[Nome banca] - IBAN: [IBAN]";
 const CONDIZIONI_PAGAMENTO_DEFAULT = "A ricevimento fattura";
+const ALIQUOTA_IVA = 0.22;
+const NOTA_REVERSE_CHARGE =
+  'Operazione soggetta al meccanismo dell’inversione contabile ("reverse charge") ai sensi dell’art. 17, comma 6, lett. a-ter), D.P.R. 26 ottobre 1972, n. 633 — IVA assolta dal committente, non addebitata in fattura.';
+const NOTA_IVA_PRIVATI =
+  "IVA esposta in fattura con applicazione dell'aliquota ordinaria (22%) ai sensi del D.P.R. 26 ottobre 1972, n. 633, non trattandosi di operazione tra soggetti passivi d'imposta.";
 
 function InfoCol({ label, value }: { label: string; value: string }) {
   return (
@@ -60,6 +65,9 @@ export default async function StampaPreventivoPage({
       : null;
 
   const dataDocumento = new Date().toLocaleDateString("it-IT");
+  const isPersonaFisica = client.tipo === "PERSONA_FISICA";
+  const totaleIva = isPersonaFisica ? prezzoNetto * ALIQUOTA_IVA : 0;
+  const totaleConIva = prezzoNetto + totaleIva;
 
   return (
     <div className="mx-auto max-w-3xl p-6 print:p-0">
@@ -173,8 +181,22 @@ export default async function StampaPreventivoPage({
           <div className="rounded-lg border border-zinc-300 px-4 py-2 text-right">
             <p className="text-xs text-zinc-500">Totale IVA esclusa</p>
             <p className="text-lg font-semibold">{formatEuro(prezzoNetto)}</p>
+            {isPersonaFisica && (
+              <>
+                <p className="mt-1 text-xs text-zinc-500">
+                  IVA 22%: {formatEuro(totaleIva)}
+                </p>
+                <p className="text-sm font-semibold">
+                  Totale IVA inclusa: {formatEuro(totaleConIva)}
+                </p>
+              </>
+            )}
           </div>
         </div>
+
+        <p className="text-xs font-medium text-zinc-700">
+          {isPersonaFisica ? NOTA_IVA_PRIVATI : NOTA_REVERSE_CHARGE}
+        </p>
 
         <p className="text-xs text-zinc-500">
           I rifiuti prodotti dalle attività restano a carico del committente.

@@ -40,56 +40,6 @@ async function main() {
     },
   });
 
-  const clientAData = {
-    name: "Famiglia Rossi",
-    ragioneSociale: "Famiglia Rossi",
-    indirizzo: "Via Roma 1",
-    citta: "Milano",
-    cap: "20100",
-    provincia: "MI",
-  };
-  const clientA = await prisma.client.upsert({
-    where: { id: "seed-client-rossi" },
-    update: clientAData,
-    create: { id: "seed-client-rossi", ...clientAData },
-  });
-
-  const clientBData = {
-    name: "Studio Legale Bianchi",
-    ragioneSociale: "Studio Legale Bianchi",
-    indirizzo: "Corso Italia 10",
-    citta: "Milano",
-    cap: "20100",
-    provincia: "MI",
-  };
-  const clientB = await prisma.client.upsert({
-    where: { id: "seed-client-ufficio" },
-    update: clientBData,
-    create: { id: "seed-client-ufficio", ...clientBData },
-  });
-
-  await prisma.site.upsert({
-    where: { id: "seed-site-rossi-casa" },
-    update: {},
-    create: {
-      id: "seed-site-rossi-casa",
-      clientId: clientA.id,
-      name: "Casa",
-      address: "Via Roma 1, Milano",
-    },
-  });
-
-  await prisma.site.upsert({
-    where: { id: "seed-site-ufficio-sede" },
-    update: {},
-    create: {
-      id: "seed-site-ufficio-sede",
-      clientId: clientB.id,
-      name: "Sede centrale",
-      address: "Corso Italia 10, Milano",
-    },
-  });
-
   const defaultLabels: { tipo: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE"; etichetta: string }[] = [
     { tipo: "ONE_SHOT", etichetta: "Una tantum" },
     { tipo: "PASS_SETTIMANALE", etichetta: "Abbonamento settimanale" },
