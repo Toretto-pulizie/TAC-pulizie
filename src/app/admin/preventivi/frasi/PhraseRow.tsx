@@ -6,10 +6,12 @@ import { deletePhrase } from "@/app/actions/quotePhrases";
 
 export function PhraseRow({
   id,
+  codice,
   titolo,
   testo,
 }: {
   id: string;
+  codice: number;
   titolo: string;
   testo: string;
 }) {
@@ -18,7 +20,12 @@ export function PhraseRow({
   return (
     <li className="flex flex-col gap-1 rounded-lg border border-zinc-200 px-4 py-3">
       <div className="flex items-start justify-between gap-3">
-        <p className="font-medium text-zinc-900">{titolo}</p>
+        <p className="font-medium text-zinc-900">
+          <span className="mr-2 font-mono text-xs text-zinc-400">
+            #{String(codice).padStart(3, "0")}
+          </span>
+          {titolo}
+        </p>
         <div className="flex shrink-0 gap-3">
           <Link
             href={`/admin/preventivi/frasi/${id}`}

@@ -24,6 +24,7 @@ export default async function EditPhrasePage({
         </h1>
         <EditPhraseForm
           id={phrase.id}
+          codice={phrase.codice}
           categoria={phrase.categoria}
           titolo={phrase.titolo}
           testo={phrase.testo}

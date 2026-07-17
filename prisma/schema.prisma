@@ -160,6 +160,7 @@ model TipoPrestazione {
 
 model QuotePhrase {
   id        String   @id @default(cuid())
+  codice    Int      @unique @default(autoincrement())
   categoria String
   titolo    String
   testo     String

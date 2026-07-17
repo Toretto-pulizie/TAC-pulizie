@@ -47,7 +47,13 @@ export default async function FrasiPreimpostatePage() {
               </h2>
               <ul className="flex flex-col gap-2">
                 {list.map((p) => (
-                  <PhraseRow key={p.id} id={p.id} titolo={p.titolo} testo={p.testo} />
+                  <PhraseRow
+                    key={p.id}
+                    id={p.id}
+                    codice={p.codice}
+                    titolo={p.titolo}
+                    testo={p.testo}
+                  />
                 ))}
               </ul>
             </section>

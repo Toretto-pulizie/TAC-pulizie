@@ -31,7 +31,7 @@ export default async function PreventiviPage({
         orderBy: { createdAt: "desc" },
       }),
       prisma.quotePhrase.findMany({
-        orderBy: [{ categoria: "asc" }, { ordine: "asc" }, { titolo: "asc" }],
+        orderBy: { codice: "asc" },
       }),
       edit
         ? prisma.quote.findUnique({ where: { id: edit }, include: { site: true } })
@@ -113,6 +113,7 @@ export default async function PreventiviPage({
             clients={clients}
             phrases={phrases.map((p) => ({
               id: p.id,
+              codice: p.codice,
               categoria: p.categoria,
               titolo: p.titolo,
               testo: p.testo,

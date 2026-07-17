@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { saveQuote } from "@/app/actions/quotes";
 
 type ServiceType = "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
-type Phrase = { id: string; categoria: string; titolo: string; testo: string };
+type Phrase = {
+  id: string;
+  codice: number;
+  categoria: string;
+  titolo: string;
+  testo: string;
+};
 type ClientOption = {
   id: string;
   name: string;
@@ -78,13 +84,6 @@ export function QuoteForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
-  const phrasesByCategoria = new Map<string, Phrase[]>();
-  for (const p of phrases) {
-    const list = phrasesByCategoria.get(p.categoria) ?? [];
-    list.push(p);
-    phrasesByCategoria.set(p.categoria, list);
-  }
-
   function togglePhrase(id: string) {
     setSelectedPhraseIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -117,52 +116,52 @@ export function QuoteForm({
         </>
       )}
 
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-1 min-w-[16rem] flex-col gap-1 text-sm">
-          Tipo di prestazione
-          <select
-            name="tipoPrestazione"
-            required
-            defaultValue={editingQuote?.tipoPrestazione ?? ""}
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          >
-            <option value="">Seleziona...</option>
-            {editingQuote?.tipoPrestazione &&
-              !tipiPrestazione.includes(editingQuote.tipoPrestazione) && (
-                <option value={editingQuote.tipoPrestazione}>
-                  {editingQuote.tipoPrestazione}
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1 text-sm">
+            Cliente
+            <select
+              name="clientId"
+              required
+              value={selectedClientId}
+              onChange={(e) => {
+                setSelectedClientId(e.target.value);
+                setSiteSelection("");
+              }}
+              className="rounded-lg border border-zinc-300 px-3 py-2"
+            >
+              <option value="">Seleziona...</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
-              )}
-            {tipiPrestazione.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+              ))}
+            </select>
+          </label>
 
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          Cliente
-          <select
-            name="clientId"
-            required
-            value={selectedClientId}
-            onChange={(e) => {
-              setSelectedClientId(e.target.value);
-              setSiteSelection("");
-            }}
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          >
-            <option value="">Seleziona...</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label className="flex min-w-[16rem] flex-col gap-1 text-sm">
+            Tipo di prestazione
+            <select
+              name="tipoPrestazione"
+              required
+              defaultValue={editingQuote?.tipoPrestazione ?? ""}
+              className="rounded-lg border border-zinc-300 px-3 py-2"
+            >
+              <option value="">Seleziona...</option>
+              {editingQuote?.tipoPrestazione &&
+                !tipiPrestazione.includes(editingQuote.tipoPrestazione) && (
+                  <option value={editingQuote.tipoPrestazione}>
+                    {editingQuote.tipoPrestazione}
+                  </option>
+                )}
+              {tipiPrestazione.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
         {selectedClient && (
           <label className="flex flex-col gap-1 text-sm">
@@ -410,34 +409,28 @@ export function QuoteForm({
                 </button>
               </div>
 
-              <div className="flex flex-col gap-4 overflow-y-auto px-4 py-3">
-                {[...phrasesByCategoria.entries()].map(([categoria, list]) => (
-                  <div key={categoria} className="flex flex-col gap-2">
-                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                      {categoria}
-                    </p>
-                    {list.map((p) => (
-                      <label
-                        key={p.id}
-                        className="flex items-start gap-2 rounded-lg border border-zinc-200 p-2 text-sm"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedPhraseIds.includes(p.id)}
-                          onChange={() => togglePhrase(p.id)}
-                          className="mt-1"
-                        />
-                        <span className="flex flex-col gap-0.5">
-                          <span className="font-medium text-zinc-900">
-                            {p.titolo}
-                          </span>
-                          <span className="whitespace-pre-wrap text-xs text-zinc-500">
-                            {p.testo}
-                          </span>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
+              <div className="flex flex-col gap-2 overflow-y-auto px-4 py-3">
+                {phrases.map((p) => (
+                  <label
+                    key={p.id}
+                    className="flex items-start gap-2 rounded-lg border border-zinc-200 p-2 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedPhraseIds.includes(p.id)}
+                      onChange={() => togglePhrase(p.id)}
+                      className="mt-1"
+                    />
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="font-mono text-xs text-zinc-400">
+                        #{String(p.codice).padStart(3, "0")}
+                      </span>
+                      <span className="text-xs uppercase tracking-wide text-zinc-400">
+                        {p.categoria}
+                      </span>
+                      <span className="font-medium text-zinc-900">{p.titolo}</span>
+                    </span>
+                  </label>
                 ))}
               </div>
 
