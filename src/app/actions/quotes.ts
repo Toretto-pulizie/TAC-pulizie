@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/dal";
 import { geocodeAddress } from "@/lib/geocode";
+import { computeListPrice } from "@/lib/quotes";
 
 const QuoteSchema = z
   .object({
@@ -20,6 +21,7 @@ const QuoteSchema = z
     tariffaVetri: z.coerce.number().min(0),
     tariffaConsuntivo: z.coerce.number().min(0),
     prezzoVenduto: z.coerce.number().min(0).optional(),
+    scontoPct: z.coerce.number().min(0).max(100).optional(),
     condizioniPagamento: z.string().trim().optional(),
     tipoPrestazione: z.string().trim().min(1, "Seleziona il tipo di prestazione"),
     note: z.string().trim().optional(),
@@ -51,6 +53,7 @@ function parseQuoteFormData(formData: FormData) {
     tariffaVetri: formData.get("tariffaVetri"),
     tariffaConsuntivo: formData.get("tariffaConsuntivo"),
     prezzoVenduto: formData.get("prezzoVenduto") || undefined,
+    scontoPct: formData.get("scontoPct") || undefined,
     condizioniPagamento: formData.get("condizioniPagamento") || undefined,
     tipoPrestazione: formData.get("tipoPrestazione"),
     note: formData.get("note") || undefined,
@@ -122,9 +125,28 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
     return { error: e instanceof Error ? e.message : "Errore nella sede" };
   }
 
-  const { note, condizioniPagamento, ...data } = parsed.data;
+  const { note, condizioniPagamento, scontoPct, ...data } = parsed.data;
+
+  let prezzoVenduto = data.prezzoVenduto;
+  if (scontoPct != null) {
+    const listPrice = computeListPrice({
+      serviceType: data.serviceType,
+      ore: data.ore,
+      spostamento: data.spostamento,
+      oneShotCount: data.oneShotCount,
+      passSettimanale: data.passSettimanale ?? null,
+      passMensile: data.passMensile ?? null,
+      oreVetri: data.oreVetri,
+      passVetriAnno: data.passVetriAnno,
+      tariffaOraria: data.tariffaOraria,
+      tariffaVetri: data.tariffaVetri,
+    });
+    prezzoVenduto = Math.round(listPrice * (1 - scontoPct / 100) * 100) / 100;
+  }
+
   const quoteData = {
     ...data,
+    prezzoVenduto,
     siteId,
     note: note || null,
     condizioniPagamento: condizioniPagamento || null,

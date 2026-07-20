@@ -135,7 +135,7 @@ export default async function StampaPreventivoPage({
               <th className="border-r border-zinc-300 px-2 py-2">
                 Prezzo unitario
               </th>
-              <th className="border-r border-zinc-300 px-2 py-2">Sc.%</th>
+              <th className="border-r border-zinc-300 px-2 py-2">Sconto</th>
               <th className="px-2 py-2">Prezzo netto</th>
             </tr>
           </thead>
@@ -178,7 +178,7 @@ export default async function StampaPreventivoPage({
         <div className="flex justify-end">
           <div className="w-72 rounded-lg border border-zinc-300 px-4 py-2">
             <div className="flex items-baseline justify-between gap-4">
-              <p className="text-xs text-zinc-500">Valore del servizio</p>
+              <p className="text-xs text-zinc-500">Totale</p>
               <p className="text-lg font-semibold">{formatEuro(prezzoNetto)}</p>
             </div>
             {isPersonaFisica && (

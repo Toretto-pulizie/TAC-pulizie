@@ -40,6 +40,6 @@ export function computeDiscountPct(
   listPrice: number,
   prezzoVenduto: number
 ): number | null {
-  if (prezzoVenduto === 0) return null;
-  return (prezzoVenduto - listPrice) / prezzoVenduto;
+  if (listPrice === 0) return null;
+  return (listPrice - prezzoVenduto) / listPrice;
 }

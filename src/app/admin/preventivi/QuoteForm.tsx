@@ -345,6 +345,19 @@ export function QuoteForm({
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
+          Sconto % (opzionale)
+          <input
+            type="number"
+            step="0.5"
+            min="0"
+            max="100"
+            name="scontoPct"
+            placeholder="Es. 10"
+            className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm">
           Prezzo venduto (se noto)
           <input
             type="number"
