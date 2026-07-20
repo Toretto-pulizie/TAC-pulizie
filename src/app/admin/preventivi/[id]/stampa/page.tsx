@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeDiscountPct } from "@/lib/quotes";
-import { buildDescriptionLines, buildLineItem } from "@/lib/quotePrint";
+import { buildDescriptionLines, buildLineItem, buildNoteParagraphs } from "@/lib/quotePrint";
 import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
 import { PrintButton } from "./PrintButton";
 
@@ -57,6 +57,7 @@ export default async function StampaPreventivoPage({
       : client.ragioneSociale ?? client.name;
 
   const descriptionLines = buildDescriptionLines(quote);
+  const noteParagraphs = buildNoteParagraphs(quote.note);
   const lineItem = buildLineItem(quote, serviceLabels[quote.serviceType]);
   const prezzoNetto = quote.prezzoVenduto ?? lineItem.listPrice;
   const discountPct =
@@ -131,8 +132,6 @@ export default async function StampaPreventivoPage({
               <th className="border-r border-zinc-300 px-2 py-2 text-left">
                 Descrizione
               </th>
-              <th className="border-r border-zinc-300 px-2 py-2">UM</th>
-              <th className="border-r border-zinc-300 px-2 py-2">Quantità</th>
               <th className="border-r border-zinc-300 px-2 py-2">
                 Prezzo unitario
               </th>
@@ -157,12 +156,11 @@ export default async function StampaPreventivoPage({
                     {line}
                   </p>
                 ))}
-              </td>
-              <td className="border-r border-t border-zinc-300 px-2 py-2 text-center align-top">
-                {lineItem.um}
-              </td>
-              <td className="border-r border-t border-zinc-300 px-2 py-2 text-center align-top">
-                {lineItem.quantita.toFixed(2)}
+                {noteParagraphs.map((paragraph, i) => (
+                  <p key={i} className="mt-3 text-zinc-700">
+                    {paragraph}
+                  </p>
+                ))}
               </td>
               <td className="border-r border-t border-zinc-300 px-2 py-2 text-right align-top">
                 {formatEuro(lineItem.prezzoUnitario)}

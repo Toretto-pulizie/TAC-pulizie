@@ -18,7 +18,7 @@ export function labelWithFrequency(
   return label;
 }
 
-export function buildDescriptionLines(q: QuotePricingInput & { note?: string | null }) {
+export function buildDescriptionLines(q: QuotePricingInput) {
   const lines: string[] = [];
 
   if (q.serviceType === "ONE_SHOT") {
@@ -51,14 +51,15 @@ export function buildDescriptionLines(q: QuotePricingInput & { note?: string | n
     );
   }
 
-  if (q.note) {
-    for (const paragraph of q.note.split(/\n+/)) {
-      const trimmed = paragraph.trim();
-      if (trimmed) lines.push(trimmed);
-    }
-  }
-
   return lines;
+}
+
+export function buildNoteParagraphs(note?: string | null) {
+  if (!note) return [];
+  return note
+    .split(/\n\s*\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
 }
 
 export function buildLineItem(q: QuotePricingInput, serviceLabel: string) {
