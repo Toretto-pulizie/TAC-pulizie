@@ -176,17 +176,21 @@ export default async function StampaPreventivoPage({
         </table>
 
         <div className="flex justify-end">
-          <div className="rounded-lg border border-zinc-300 px-4 py-2 text-right">
-            <p className="text-xs text-zinc-500">Totale IVA esclusa</p>
-            <p className="text-lg font-semibold">{formatEuro(prezzoNetto)}</p>
+          <div className="w-72 rounded-lg border border-zinc-300 px-4 py-2">
+            <div className="flex items-baseline justify-between gap-4">
+              <p className="text-xs text-zinc-500">Valore del servizio</p>
+              <p className="text-lg font-semibold">{formatEuro(prezzoNetto)}</p>
+            </div>
             {isPersonaFisica && (
               <>
-                <p className="mt-1 text-xs text-zinc-500">
-                  IVA 22%: {formatEuro(totaleIva)}
-                </p>
-                <p className="text-sm font-semibold">
-                  Totale IVA inclusa: {formatEuro(totaleConIva)}
-                </p>
+                <div className="mt-1 flex items-baseline justify-between gap-4 text-xs text-zinc-500">
+                  <p>IVA 22%</p>
+                  <p>{formatEuro(totaleIva)}</p>
+                </div>
+                <div className="flex items-baseline justify-between gap-4 text-sm font-semibold">
+                  <p>Totale IVA inclusa</p>
+                  <p>{formatEuro(totaleConIva)}</p>
+                </div>
               </>
             )}
           </div>
