@@ -27,20 +27,6 @@ export function buildDescriptionLines(q: QuotePricingInput) {
         q.oneShotCount > 1 ? "i" : ""
       }), ${q.ore} ore per intervento più ${q.spostamento} ore di spostamento.`
     );
-  } else if (q.serviceType === "PASS_SETTIMANALE") {
-    const n = q.passSettimanale ?? 0;
-    lines.push(
-      `Abbonamento di pulizia con cadenza settimanale: ${n} intervent${
-        n === 1 ? "o" : "i"
-      }/settimana da ${q.ore} ore, più ${q.spostamento} ore di spostamento per intervento.`
-    );
-  } else {
-    const n = q.passMensile ?? 0;
-    lines.push(
-      `Abbonamento di pulizia con cadenza mensile: ${n} intervent${
-        n === 1 ? "o" : "i"
-      }/mese da ${q.ore} ore, più ${q.spostamento} ore di spostamento per intervento.`
-    );
   }
 
   if (q.oreVetri > 0 && q.passVetriAnno > 0) {
@@ -52,6 +38,24 @@ export function buildDescriptionLines(q: QuotePricingInput) {
   }
 
   return lines;
+}
+
+export function buildCadenzaLine(q: QuotePricingInput): string | null {
+  if (q.serviceType === "PASS_SETTIMANALE") {
+    const n = q.passSettimanale ?? 0;
+    const passaggio = n === 1 ? "passaggio" : "passaggi";
+    const settimanale = n === 1 ? "settimanale" : "settimanali";
+    const distribuito = n === 1 ? "distribuito" : "distribuiti";
+    return `Cadenza: n° ${n} ${passaggio} ${settimanale} così ${distribuito}`;
+  }
+  if (q.serviceType === "PASS_MENSILE") {
+    const n = q.passMensile ?? 0;
+    const passaggio = n === 1 ? "passaggio" : "passaggi";
+    const mensile = n === 1 ? "mensile" : "mensili";
+    const distribuito = n === 1 ? "distribuito" : "distribuiti";
+    return `Cadenza: n° ${n} ${passaggio} ${mensile} così ${distribuito}`;
+  }
+  return null;
 }
 
 export function buildNoteParagraphs(note?: string | null) {

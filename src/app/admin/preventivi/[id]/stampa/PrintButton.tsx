@@ -1,6 +1,6 @@
 "use client";
 
-export function PrintButton() {
+export function PrintButton({ quoteId }: { quoteId: string }) {
   return (
     <div className="flex gap-3 print:hidden">
       <button
@@ -9,6 +9,14 @@ export function PrintButton() {
       >
         Stampa
       </button>
+      <a
+        href={`/admin/preventivi/${quoteId}/pdf`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600"
+      >
+        Scarica PDF
+      </a>
       <a
         href="/admin/preventivi"
         className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600"
