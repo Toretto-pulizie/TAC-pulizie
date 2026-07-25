@@ -66,6 +66,37 @@ export function buildNoteParagraphs(note?: string | null) {
     .filter(Boolean);
 }
 
+export type DescriptionBlock =
+  | { type: "tipo"; text: string }
+  | { type: "address"; text: string }
+  | { type: "cadenza"; text: string }
+  | { type: "line"; text: string }
+  | { type: "note"; text: string };
+
+// The description table cell's content, flattened into an ordered list of
+// paginatable units (one per <p>). Shared between the on-screen preview and
+// the PDF route so both measure and render the exact same blocks in the
+// exact same order — the PDF route splits these across per-page tables
+// using heights measured from this same markup.
+export function buildDescriptionBlocks(
+  q: QuotePricingInput & { tipoPrestazione?: string | null; site: { address: string } },
+  descriptionLines: string[],
+  cadenzaLine: string | null,
+  noteParagraphs: string[]
+): DescriptionBlock[] {
+  const blocks: DescriptionBlock[] = [];
+  if (q.tipoPrestazione) blocks.push({ type: "tipo", text: q.tipoPrestazione });
+  blocks.push({
+    type: "address",
+    text: `Sede dell'intervento: ${q.site.address}`,
+  });
+  if (cadenzaLine) blocks.push({ type: "cadenza", text: cadenzaLine });
+  for (const line of descriptionLines) blocks.push({ type: "line", text: line });
+  for (const paragraph of noteParagraphs)
+    blocks.push({ type: "note", text: paragraph });
+  return blocks;
+}
+
 export function buildLineItem(q: QuotePricingInput, serviceLabel: string) {
   const listPrice = computeListPrice(q);
   const isOneShot = q.serviceType === "ONE_SHOT";

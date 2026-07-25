@@ -4,9 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { computeDiscountPct } from "@/lib/quotes";
 import {
   buildCadenzaLine,
+  buildDescriptionBlocks,
   buildDescriptionLines,
   buildLineItem,
   buildNoteParagraphs,
+  type DescriptionBlock,
 } from "@/lib/quotePrint";
 import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
 import {
@@ -50,11 +52,11 @@ export default async function StampaPreventivoPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ pdf?: string; totale?: string }>;
+  searchParams: Promise<{ pdf?: string; totale?: string; groups?: string }>;
 }) {
   await requireAdmin();
   const { id } = await params;
-  const { pdf, totale } = await searchParams;
+  const { pdf, totale, groups } = await searchParams;
   const isPdfMode = pdf === "1";
 
   const [quote, serviceLabels] = await Promise.all([
@@ -151,71 +153,118 @@ export default async function StampaPreventivoPage({
     </>
   );
 
-  const tableSection = (
-    <table className="w-full table-fixed border border-zinc-300 text-xs">
-      <colgroup>
-        <col className="w-[62%]" />
-        <col className="w-[16%]" />
-        <col className="w-[8%]" />
-        <col className="w-[14%]" />
-      </colgroup>
-      <thead>
-        <tr className="border-b border-zinc-300 bg-zinc-50">
-          <th className="border-r border-zinc-300 px-2 py-2 text-left">
-            Descrizione
-          </th>
-          <th className="border-r border-zinc-300 whitespace-nowrap px-1 py-2">
-            Prezzo unitario
-          </th>
-          <th className="border-r border-zinc-300 whitespace-nowrap px-1 py-2">
-            Sconto
-          </th>
-          <th className="whitespace-nowrap px-1 py-2">Prezzo netto</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td className="border-r border-t border-zinc-300 px-2 py-2 align-top">
-            {quote.tipoPrestazione && (
-              <p className="uppercase">{quote.tipoPrestazione}</p>
-            )}
-            <p className="mt-1 text-zinc-600">
-              Sede dell&apos;intervento: {quote.site.address}
-            </p>
-            {cadenzaLine && (
-              <p className="mt-1 text-zinc-700">{cadenzaLine}</p>
-            )}
-            {descriptionLines.map((line, i) => (
-              <p key={i} className="mt-1 text-zinc-700">
-                {line}
-              </p>
-            ))}
-            {noteParagraphs.map((paragraph, i) => (
-              <p key={i} className="mt-3 text-zinc-700">
-                {paragraph}
-              </p>
-            ))}
-          </td>
-          <td className="border-r border-t border-zinc-300 px-2 py-2"></td>
-          <td className="border-r border-t border-zinc-300 px-2 py-2"></td>
-          <td className="border-t border-zinc-300 px-2 py-2"></td>
-        </tr>
-        <tr>
-          <td className="border-r border-t border-b border-zinc-300 px-2 py-2 font-semibold text-zinc-900">
-            Valore del servizio
-          </td>
-          <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right">
-            {formatEuro(lineItem.prezzoUnitario)}
-          </td>
-          <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-center">
-            {discountPct != null ? `${(discountPct * 100).toFixed(0)}%` : ""}
-          </td>
-          <td className="border-t border-b border-zinc-300 px-2 py-2 text-right">
-            {formatEuro(prezzoNetto)}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  const blocks = buildDescriptionBlocks(
+    quote,
+    descriptionLines,
+    cadenzaLine,
+    noteParagraphs
+  );
+
+  function blockClassName(type: DescriptionBlock["type"]) {
+    if (type === "tipo") return "break-inside-avoid uppercase";
+    if (type === "address") return "mt-1 break-inside-avoid text-zinc-600";
+    if (type === "note") return "mt-3 break-inside-avoid text-zinc-700";
+    return "mt-1 break-inside-avoid text-zinc-700";
+  }
+
+  const colgroupEl = (
+    <colgroup>
+      <col className="w-[62%]" />
+      <col className="w-[16%]" />
+      <col className="w-[8%]" />
+      <col className="w-[14%]" />
+    </colgroup>
+  );
+
+  const theadEl = (
+    <thead>
+      <tr data-block="thead" className="border-b border-zinc-300 bg-zinc-50">
+        <th className="border-r border-zinc-300 px-2 py-2 text-left">
+          Descrizione
+        </th>
+        <th className="border-r border-zinc-300 whitespace-nowrap px-1 py-2">
+          Prezzo unitario
+        </th>
+        <th className="border-r border-zinc-300 whitespace-nowrap px-1 py-2">
+          Sconto
+        </th>
+        <th className="whitespace-nowrap px-1 py-2">Prezzo netto</th>
+      </tr>
+    </thead>
+  );
+
+  const summaryRowEl = (
+    <tr data-block="summary">
+      <td className="border-r border-t border-b border-zinc-300 px-2 py-2 font-semibold text-zinc-900">
+        Valore del servizio
+      </td>
+      <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right">
+        {formatEuro(lineItem.prezzoUnitario)}
+      </td>
+      <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-center">
+        {discountPct != null ? `${(discountPct * 100).toFixed(0)}%` : ""}
+      </td>
+      <td className="border-t border-b border-zinc-300 px-2 py-2 text-right">
+        {formatEuro(prezzoNetto)}
+      </td>
+    </tr>
+  );
+
+  function renderGroupTable(indices: number[], isLast: boolean, key: number) {
+    return (
+      <div
+        key={key}
+        className="overflow-hidden rounded-lg border border-zinc-300"
+        style={{ breakAfter: isLast ? undefined : "page" }}
+      >
+        <table className="w-full table-fixed text-xs">
+          {colgroupEl}
+          {theadEl}
+          <tbody>
+            <tr>
+              <td
+                data-block="body-cell"
+                className="border-r border-t border-zinc-300 px-2 py-2 align-top"
+              >
+                {indices.map((idx) => (
+                  <p
+                    key={idx}
+                    data-block-index={idx}
+                    className={blockClassName(blocks[idx].type)}
+                  >
+                    {blocks[idx].text}
+                  </p>
+                ))}
+              </td>
+              <td className="border-r border-t border-zinc-300 px-2 py-2"></td>
+              <td className="border-r border-t border-zinc-300 px-2 py-2"></td>
+              <td className="border-t border-zinc-300 px-2 py-2"></td>
+            </tr>
+            {isLast && summaryRowEl}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  const parsedGroups: number[][] | null = groups
+    ? groups
+        .split("|")
+        .map((g) => (g.length ? g.split(",").map(Number) : []))
+    : null;
+
+  const tableSection = parsedGroups ? (
+    <>
+      {parsedGroups.map((indices, i) =>
+        renderGroupTable(indices, i === parsedGroups.length - 1, i)
+      )}
+    </>
+  ) : (
+    renderGroupTable(
+      blocks.map((_, i) => i),
+      true,
+      0
+    )
   );
 
   const mainContent = (
@@ -287,14 +336,8 @@ export default async function StampaPreventivoPage({
   if (isPdfMode) {
     return (
       <div className="bg-white p-0 text-zinc-900">
-        <div className="fixed top-0 right-0 left-0 z-10 bg-white pt-[6mm] pr-[19mm] pb-[4mm] pl-[12mm]">
-          {headerSection}
-        </div>
-        <div className="fixed right-0 bottom-0 left-0 z-10 bg-white pt-[4mm] pr-[19mm] pb-[6mm] pl-[12mm]">
-          {footerSection}
-        </div>
         <div
-          className="fixed top-0 right-[3mm] bottom-0 z-10 flex items-center justify-center"
+          className="fixed top-0 right-[1.5mm] bottom-0 z-10 flex items-center justify-center"
           style={{ width: "16px" }}
         >
           <p
@@ -307,9 +350,7 @@ export default async function StampaPreventivoPage({
             {legalNote}
           </p>
         </div>
-        <div className="pt-[68mm] pr-[19mm] pb-[52mm] pl-[12mm]">
-          {tableSection}
-        </div>
+        <div className="pr-[9.5mm] pl-[6mm]">{tableSection}</div>
       </div>
     );
   }
