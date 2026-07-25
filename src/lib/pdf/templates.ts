@@ -1,5 +1,3 @@
-import fs from "fs";
-import path from "path";
 import {
   BANCA_APPOGGIO,
   CONDIZIONI_PAGAMENTO_DEFAULT,
@@ -32,10 +30,16 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+// Fetched over HTTP (not fs.readFileSync) because a serverless function's
+// bundle only includes files it can statically trace — a dynamically built
+// fs path to public/ isn't guaranteed to be bundled and 404s in production
+// even though it works locally. Fetching the same URL Next.js already
+// serves for the on-screen preview sidesteps that entirely.
 let logoDataUriCache: string | null = null;
-export function getLogoDataUri(): string {
+export async function getLogoDataUri(origin: string): Promise<string> {
   if (logoDataUriCache) return logoDataUriCache;
-  const buf = fs.readFileSync(path.join(process.cwd(), "public", "logo.png"));
+  const res = await fetch(`${origin}/logo.png`);
+  const buf = Buffer.from(await res.arrayBuffer());
   logoDataUriCache = `data:image/png;base64,${buf.toString("base64")}`;
   return logoDataUriCache;
 }
@@ -64,15 +68,19 @@ export type HeaderTemplateData = {
   condizioniPagamento?: string | null;
 };
 
-export function buildHeaderTemplate(data: HeaderTemplateData): string {
+export async function buildHeaderTemplate(
+  data: HeaderTemplateData,
+  origin: string
+): Promise<string> {
   const cittaLine = [data.cap, data.citta].filter(Boolean).join(" ");
   const cittaProvincia = data.provincia ? `${cittaLine} (${data.provincia})` : cittaLine;
+  const logoDataUri = await getLogoDataUri(origin);
 
   return `
     <div style="width:100%; box-sizing:border-box; font-family:sans-serif; font-size:11px; color:${ZINC_900}; padding:6mm ${CONTENT_PADDING_RIGHT_MM}mm 4mm ${CONTENT_PADDING_LEFT_MM}mm;">
       <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:24px;">
         <div style="display:flex; flex-direction:column; gap:8px;">
-          <img src="${getLogoDataUri()}" alt="Toretto" style="width:260px; height:75px;" />
+          <img src="${logoDataUri}" alt="Toretto" style="width:260px; height:75px;" />
           <div style="margin-top:30px; width:176px; border-radius:8px; border:1px solid ${ZINC_300};">
             <p style="margin:0; border-bottom:1px solid ${ZINC_300}; background:${ZINC_50}; padding:2px 6px; text-align:center; font-size:9px; font-weight:600; text-transform:uppercase; line-height:1; letter-spacing:0.025em; color:${ZINC_700};">Offerta</p>
             <div style="display:flex;">

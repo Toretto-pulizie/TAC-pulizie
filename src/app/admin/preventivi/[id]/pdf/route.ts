@@ -132,21 +132,26 @@ export async function GET(
   scadenza.setDate(scadenza.getDate() + VALIDITA_GIORNI);
   const dataScadenza = scadenza.toLocaleDateString("it-IT");
 
-  const headerTemplate = buildHeaderTemplate({
-    numeroOfferta: quote.numeroOfferta,
-    dataDocumento,
-    clientName,
-    indirizzo: client.indirizzo,
-    cap: client.cap,
-    citta: client.citta,
-    provincia: client.provincia,
-    codiceCliente: String(client.codiceCliente).padStart(6, "0"),
-    partitaIva: client.partitaIva,
-    codiceFiscale: client.codiceFiscale,
-    personaRiferimento: client.personaRiferimento,
-    condizioniPagamento:
-      quote.condizioniPagamento ?? CONDIZIONI_PAGAMENTO_DEFAULT,
-  });
+  const origin = req.nextUrl.origin;
+
+  const headerTemplate = await buildHeaderTemplate(
+    {
+      numeroOfferta: quote.numeroOfferta,
+      dataDocumento,
+      clientName,
+      indirizzo: client.indirizzo,
+      cap: client.cap,
+      citta: client.citta,
+      provincia: client.provincia,
+      codiceCliente: String(client.codiceCliente).padStart(6, "0"),
+      partitaIva: client.partitaIva,
+      codiceFiscale: client.codiceFiscale,
+      personaRiferimento: client.personaRiferimento,
+      condizioniPagamento:
+        quote.condizioniPagamento ?? CONDIZIONI_PAGAMENTO_DEFAULT,
+    },
+    origin
+  );
 
   const buildFooter = (totaleLabel: string) =>
     buildFooterTemplate({
@@ -158,7 +163,6 @@ export async function GET(
     });
 
   const sessionCookie = req.cookies.get("session");
-  const origin = req.nextUrl.origin;
   const baseUrl = `${origin}/admin/preventivi/${id}/stampa?pdf=1`;
 
   const browser = await launchBrowser();
