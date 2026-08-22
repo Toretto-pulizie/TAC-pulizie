@@ -14,4 +14,4 @@ WHERE t.id = sub.id;
 
 CREATE UNIQUE INDEX "QuotePhrase_codice_key" ON "QuotePhrase"("codice");
 
-SELECT setval(pg_get_serial_sequence('"QuotePhrase"', 'codice'), (SELECT COALESCE(MAX(codice), 0) FROM "QuotePhrase"));
+SELECT setval(pg_get_serial_sequence('"QuotePhrase"', 'codice'), (SELECT COALESCE(MAX(codice), 1) FROM "QuotePhrase"));
