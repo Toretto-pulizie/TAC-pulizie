@@ -46,3 +46,9 @@ next-env.d.ts
 /dev.cmd
 
 .claude/
+
+.vercel
+.env*
+
+# note personali (credenziali, non da versionare)
+CREDENZIALI.txt
