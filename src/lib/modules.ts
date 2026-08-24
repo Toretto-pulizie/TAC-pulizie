@@ -23,9 +23,13 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
 };
 
 export const MODULE_GROUPS: { label: string; keys: ModuleKey[] }[] = [
-  { label: "Dipendenti", keys: ["timbrature", "pianificazione", "presenze", "permessi"] },
-  { label: "Clienti", keys: ["preventivi", "consuntivi", "clienti", "statistiche"] },
+  { label: "Dipendenti", keys: ["timbrature", "presenze", "permessi"] },
+  { label: "Clienti", keys: ["pianificazione", "preventivi", "consuntivi", "clienti"] },
 ];
+
+// Not part of either group visually — shown in the sidebar's bottom section,
+// near Utenti/Impostazioni, instead of inside the two grouped clusters.
+export const STANDALONE_MODULE_KEYS: ModuleKey[] = ["statistiche"];
 
 export const MODULE_HREFS: Record<ModuleKey, string> = {
   timbrature: "/admin",

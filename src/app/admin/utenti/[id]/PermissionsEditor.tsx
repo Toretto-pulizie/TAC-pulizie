@@ -2,7 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { updateAllowedModules } from "@/app/actions/admin";
-import { MODULE_GROUPS, MODULE_LABELS, type ModuleKey } from "@/lib/modules";
+import {
+  MODULE_GROUPS,
+  MODULE_LABELS,
+  STANDALONE_MODULE_KEYS,
+  type ModuleKey,
+} from "@/lib/modules";
 
 export function PermissionsEditor({
   userId,
@@ -70,6 +75,27 @@ export function PermissionsEditor({
             </div>
           </div>
         ))}
+        <div className="rounded-lg border border-zinc-200 p-3">
+          <p className="mb-2 text-xs font-medium tracking-wide text-zinc-500 uppercase">
+            Altro
+          </p>
+          <div className="flex flex-col gap-2">
+            {STANDALONE_MODULE_KEYS.map((key) => (
+              <label
+                key={key}
+                className="flex items-center gap-2 text-sm text-zinc-700"
+              >
+                <input
+                  type="checkbox"
+                  checked={allowed.has(key)}
+                  onChange={() => toggle(key)}
+                  className="h-4 w-4 rounded border-zinc-300"
+                />
+                {MODULE_LABELS[key]}
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
 
       <p className="text-xs text-zinc-400">

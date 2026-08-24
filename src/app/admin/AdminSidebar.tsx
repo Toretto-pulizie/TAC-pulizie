@@ -10,11 +10,13 @@ type NavGroup = { label: string; keys: ModuleKey[] };
 
 export function AdminSidebar({
   groups,
+  standaloneKeys,
   showUtenti,
   showImpostazioni,
   isAdmin,
 }: {
   groups: NavGroup[];
+  standaloneKeys: ModuleKey[];
   showUtenti: boolean;
   showImpostazioni: boolean;
   isAdmin: boolean;
@@ -61,6 +63,15 @@ export function AdminSidebar({
             La mia area
           </Link>
         )}
+        {standaloneKeys.map((key) => (
+          <Link
+            key={key}
+            href={MODULE_HREFS[key]}
+            className={linkClass(MODULE_HREFS[key])}
+          >
+            {MODULE_LABELS[key]}
+          </Link>
+        ))}
         {showUtenti && (
           <Link href="/admin/utenti" className={linkClass("/admin/utenti")}>
             Utenti
