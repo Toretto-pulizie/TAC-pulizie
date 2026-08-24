@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { AdminNav } from "../../AdminNav";
 import { EditEmployeeForm } from "./EditEmployeeForm";
+import { PermissionsEditor } from "./PermissionsEditor";
 
 export default async function EditEmployeePage({
   params,
@@ -16,12 +16,11 @@ export default async function EditEmployeePage({
   if (!employee) notFound();
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AdminNav active="dipendenti" />
-      <div className="flex flex-col gap-6 p-4 sm:max-w-md sm:p-8">
-        <h1 className="text-lg font-semibold text-zinc-900">
-          Modifica dipendente
-        </h1>
+    <div className="flex flex-col gap-6 p-4 sm:p-8">
+      <h1 className="text-lg font-semibold text-zinc-900">
+        Modifica utente
+      </h1>
+      <div className="sm:max-w-md">
         <EditEmployeeForm
           id={employee.id}
           name={employee.name}
@@ -31,6 +30,14 @@ export default async function EditEmployeePage({
           role={employee.role}
         />
       </div>
+      {employee.role === "EMPLOYEE" && (
+        <div className="sm:max-w-2xl">
+          <PermissionsEditor
+            userId={employee.id}
+            initialAllowed={employee.allowedModules}
+          />
+        </div>
+      )}
     </div>
   );
 }

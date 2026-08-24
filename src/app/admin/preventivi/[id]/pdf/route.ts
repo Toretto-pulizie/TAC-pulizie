@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument } from "pdf-lib";
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import {
   buildCadenzaLine,
@@ -88,7 +88,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  await requireAdmin();
+  await requireModule("preventivi");
   const { id } = await params;
 
   const [quote, serviceLabels] = await Promise.all([

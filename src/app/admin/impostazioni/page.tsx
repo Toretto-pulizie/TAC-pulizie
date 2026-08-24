@@ -1,7 +1,6 @@
 import { requireAdmin } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
-import { AdminNav } from "../AdminNav";
 import { ServiceTypeLabelRow } from "./ServiceTypeLabelRow";
 import { TipoPrestazioneForm } from "./TipoPrestazioneForm";
 import { TipoPrestazioneRow } from "./TipoPrestazioneRow";
@@ -16,9 +15,7 @@ export default async function ImpostazioniPage() {
   ]);
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AdminNav active="impostazioni" />
-      <div className="flex flex-col gap-6 p-4 sm:p-8">
+    <div className="flex flex-col gap-6 p-4 sm:p-8">
         <section className="flex flex-col gap-3">
           <div>
             <h1 className="text-lg font-semibold text-zinc-900">
@@ -59,7 +56,6 @@ export default async function ImpostazioniPage() {
             )}
           </div>
         </section>
-      </div>
     </div>
   );
 }

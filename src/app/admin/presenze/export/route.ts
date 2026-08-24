@@ -1,10 +1,10 @@
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { MONTH_LABELS, monthRange } from "@/lib/dates";
 import { buildAttendance, buildPresenzeWorkbook } from "@/lib/presenzeExcel";
 
 export async function GET(request: Request) {
-  await requireAdmin();
+  await requireModule("presenze");
 
   const { searchParams } = new URL(request.url);
   const now = new Date();

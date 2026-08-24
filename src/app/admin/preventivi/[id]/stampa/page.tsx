@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeDiscountPct } from "@/lib/quotes";
 import {
@@ -54,7 +54,7 @@ export default async function StampaPreventivoPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ pdf?: string; totale?: string; groups?: string }>;
 }) {
-  await requireAdmin();
+  await requireModule("preventivi");
   const { id } = await params;
   const { pdf, totale, groups } = await searchParams;
   const isPdfMode = pdf === "1";

@@ -3,7 +3,7 @@
 import * as z from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { verifySession, requireAdmin } from "@/lib/dal";
+import { verifySession, requireModule } from "@/lib/dal";
 
 const LeaveRequestSchema = z
   .object({
@@ -61,7 +61,7 @@ export async function setLeaveRequestStatus(
   id: string,
   stato: "APPROVATO" | "RIFIUTATO" | "IN_ATTESA"
 ) {
-  await requireAdmin();
+  await requireModule("permessi");
 
   await prisma.leaveRequest.update({
     where: { id },

@@ -1,23 +1,20 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { AdminNav } from "../AdminNav";
 import { ClientForm } from "./ClientForm";
 import { SiteForm } from "./SiteForm";
 import { SiteCapacityEdit } from "./SiteCapacityEdit";
 import { SiteActions } from "./SiteActions";
 
 export default async function ClientiPage() {
-  await requireAdmin();
+  await requireModule("clienti");
   const clients = await prisma.client.findMany({
     include: { sites: true },
     orderBy: { name: "asc" },
   });
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AdminNav active="clienti" />
-      <div className="flex flex-col gap-6 p-4 sm:p-8">
+    <div className="flex flex-col gap-6 p-4 sm:p-8">
         <ClientForm />
         <SiteForm clients={clients.map((c) => ({ id: c.id, name: c.name }))} />
 
@@ -95,7 +92,6 @@ export default async function ClientiPage() {
             <p className="text-sm text-zinc-400">Nessun cliente ancora.</p>
           )}
         </section>
-      </div>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import * as z from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 
 const PhraseSchema = z.object({
   categoria: z.string().trim().min(1, "Categoria richiesta"),
@@ -13,7 +13,7 @@ const PhraseSchema = z.object({
 });
 
 export async function createPhrase(_prevState: unknown, formData: FormData) {
-  await requireAdmin();
+  await requireModule("preventivi");
 
   const parsed = PhraseSchema.safeParse({
     categoria: formData.get("categoria"),
@@ -36,7 +36,7 @@ const UpdatePhraseSchema = PhraseSchema.extend({
 });
 
 export async function updatePhrase(_prevState: unknown, formData: FormData) {
-  await requireAdmin();
+  await requireModule("preventivi");
 
   const parsed = UpdatePhraseSchema.safeParse({
     id: formData.get("id"),
@@ -58,7 +58,7 @@ export async function updatePhrase(_prevState: unknown, formData: FormData) {
 }
 
 export async function deletePhrase(id: string) {
-  await requireAdmin();
+  await requireModule("preventivi");
   await prisma.quotePhrase.delete({ where: { id } });
   revalidatePath("/admin/preventivi/frasi");
   revalidatePath("/admin/preventivi");

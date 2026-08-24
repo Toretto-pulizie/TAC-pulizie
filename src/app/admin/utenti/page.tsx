@@ -1,17 +1,14 @@
 import { requireAdmin } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { AdminNav } from "../AdminNav";
 import { EmployeeForm } from "./EmployeeForm";
 import { EmployeeRow } from "./EmployeeRow";
 
-export default async function DipendentiPage() {
+export default async function UtentiPage() {
   await requireAdmin();
   const employees = await prisma.user.findMany({ orderBy: { name: "asc" } });
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AdminNav active="dipendenti" />
-      <div className="flex flex-col gap-6 p-4 sm:p-8">
+    <div className="flex flex-col gap-6 p-4 sm:p-8">
         <EmployeeForm />
 
         <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
@@ -43,7 +40,6 @@ export default async function DipendentiPage() {
             </tbody>
           </table>
         </section>
-      </div>
     </div>
   );
 }

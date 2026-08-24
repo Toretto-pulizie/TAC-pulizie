@@ -3,7 +3,7 @@
 import * as z from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 
 const ShiftSchema = z.object({
   userId: z.string().min(1, "Seleziona un dipendente"),
@@ -15,7 +15,7 @@ const ShiftSchema = z.object({
 });
 
 export async function createShift(_prevState: unknown, formData: FormData) {
-  await requireAdmin();
+  await requireModule("pianificazione");
 
   const parsed = ShiftSchema.safeParse({
     userId: formData.get("userId"),
@@ -52,7 +52,7 @@ export async function createShift(_prevState: unknown, formData: FormData) {
 }
 
 export async function deleteShift(id: string) {
-  await requireAdmin();
+  await requireModule("pianificazione");
   await prisma.shift.delete({ where: { id } });
   revalidatePath("/admin/pianificazione");
   revalidatePath("/dipendente");

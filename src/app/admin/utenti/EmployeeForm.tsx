@@ -77,7 +77,7 @@ export function EmployeeForm() {
         disabled={pending}
         className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
-        {pending ? "Creazione..." : "Aggiungi dipendente"}
+        {pending ? "Creazione..." : "Aggiungi utente"}
       </button>
       {state && "error" in state && (
         <p className="w-full text-sm text-red-600">{state.error}</p>

@@ -1,8 +1,7 @@
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeSiteTotals } from "@/lib/timeCalc";
 import { MONTH_LABELS, monthRange } from "@/lib/dates";
-import { AdminNav } from "../AdminNav";
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
@@ -13,7 +12,7 @@ export default async function ConsuntiviPage({
 }: {
   searchParams: Promise<{ month?: string; year?: string }>;
 }) {
-  await requireAdmin();
+  await requireModule("consuntivi");
   const params = await searchParams;
 
   const now = new Date();
@@ -64,9 +63,7 @@ export default async function ConsuntiviPage({
   const years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AdminNav active="consuntivi" />
-      <div className="flex flex-col gap-6 p-4 sm:p-8">
+    <div className="flex flex-col gap-6 p-4 sm:p-8">
         <form className="flex flex-wrap items-end gap-3" method="get">
           <label className="flex flex-col gap-1 text-sm">
             Mese
@@ -175,7 +172,6 @@ export default async function ConsuntiviPage({
             </tbody>
           </table>
         </section>
-      </div>
     </div>
   );
 }

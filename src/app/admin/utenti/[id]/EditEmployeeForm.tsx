@@ -102,7 +102,7 @@ export function EditEmployeeForm({
           {pending ? "Salvataggio..." : "Salva modifiche"}
         </button>
         <a
-          href="/admin/dipendenti"
+          href="/admin/utenti"
           className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600"
         >
           Annulla

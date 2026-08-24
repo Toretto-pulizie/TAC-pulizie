@@ -1,15 +1,14 @@
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeTotals, formatMinutes, pairSessions } from "@/lib/timeCalc";
 import { toDateInputValue } from "@/lib/dates";
-import { AdminNav } from "./AdminNav";
 
 export default async function AdminDashboardPage({
   searchParams,
 }: {
   searchParams: Promise<{ from?: string; to?: string; userId?: string }>;
 }) {
-  await requireAdmin();
+  await requireModule("timbrature");
   const params = await searchParams;
 
   const today = new Date();
@@ -37,9 +36,7 @@ export default async function AdminDashboardPage({
   const sessions = pairSessions(entries);
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AdminNav active="dashboard" />
-      <div className="flex flex-col gap-6 p-4 sm:p-8">
+    <div className="flex flex-col gap-6 p-4 sm:p-8">
         <form className="flex flex-wrap items-end gap-3" method="get">
           <label className="flex flex-col gap-1 text-sm">
             Da
@@ -151,7 +148,6 @@ export default async function AdminDashboardPage({
             </tbody>
           </table>
         </section>
-      </div>
     </div>
   );
 }

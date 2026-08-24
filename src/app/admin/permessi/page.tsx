@@ -1,14 +1,13 @@
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { TIPO_LABELS } from "@/lib/leaveRequests";
 import { formatDateLabel } from "@/lib/dates";
-import { AdminNav } from "../AdminNav";
 import { LeaveRequestRow } from "./LeaveRequestRow";
 
 const STATO_ORDER = { IN_ATTESA: 0, APPROVATO: 1, RIFIUTATO: 2 };
 
 export default async function AdminPermessiPage() {
-  await requireAdmin();
+  await requireModule("permessi");
 
   const requests = await prisma.leaveRequest.findMany({
     include: { user: true },
@@ -20,9 +19,7 @@ export default async function AdminPermessiPage() {
   );
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AdminNav active="permessi" />
-      <div className="flex flex-col gap-6 p-4 sm:p-8">
+    <div className="flex flex-col gap-6 p-4 sm:p-8">
         <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
@@ -60,7 +57,6 @@ export default async function AdminPermessiPage() {
             </tbody>
           </table>
         </section>
-      </div>
     </div>
   );
 }

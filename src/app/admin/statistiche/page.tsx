@@ -1,6 +1,5 @@
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { AdminNav } from "../AdminNav";
 import { computeListPrice, computeDiscountPct } from "@/lib/quotes";
 import { computeSiteTotals, computeTotals } from "@/lib/timeCalc";
 import { monthRange, MONTH_LABELS } from "@/lib/dates";
@@ -14,7 +13,7 @@ function formatPct(n: number) {
 }
 
 export default async function StatistichePage() {
-  await requireAdmin();
+  await requireModule("statistiche");
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -127,9 +126,7 @@ export default async function StatistichePage() {
     .sort((a, b) => b.oreLavorate - a.oreLavorate);
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AdminNav active="statistiche" />
-      <div className="flex flex-col gap-8 p-4 sm:p-8">
+    <div className="flex flex-col gap-8 p-4 sm:p-8">
         <section className="flex flex-col gap-3">
           <h1 className="text-lg font-semibold text-zinc-900">
             Andamento preventivi (ultimi 6 mesi)
@@ -305,7 +302,6 @@ export default async function StatistichePage() {
             </div>
           </div>
         </section>
-      </div>
     </div>
   );
 }

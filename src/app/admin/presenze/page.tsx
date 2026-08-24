@@ -1,15 +1,14 @@
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { MONTH_LABELS, monthRange } from "@/lib/dates";
 import { computeMonthlyAttendance } from "@/lib/presenze";
-import { AdminNav } from "../AdminNav";
 
 export default async function PresenzePage({
   searchParams,
 }: {
   searchParams: Promise<{ month?: string; year?: string }>;
 }) {
-  await requireAdmin();
+  await requireModule("presenze");
   const params = await searchParams;
 
   const now = new Date();
@@ -57,9 +56,7 @@ export default async function PresenzePage({
   const years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AdminNav active="presenze" />
-      <div className="flex flex-col gap-6 p-4 sm:p-8">
+    <div className="flex flex-col gap-6 p-4 sm:p-8">
         <form className="flex flex-wrap items-end gap-3" method="get">
           <label className="flex flex-col gap-1 text-sm">
             Mese
@@ -157,7 +154,6 @@ export default async function PresenzePage({
           dettaglio completo per il consulente del lavoro è nel file Excel
           esportabile.
         </p>
-      </div>
     </div>
   );
 }

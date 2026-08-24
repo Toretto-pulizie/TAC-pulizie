@@ -5,9 +5,10 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/dal";
+import { requireAdmin, requireModule } from "@/lib/dal";
 import { geocodeAddress } from "@/lib/geocode";
 import { lookupPartitaIva } from "@/lib/viesLookup";
+import { isModuleKey } from "@/lib/modules";
 
 const EmployeeSchema = z.object({
   name: z.string().trim().min(2, "Nome troppo corto"),
@@ -53,7 +54,7 @@ export async function createEmployee(_prevState: unknown, formData: FormData) {
     },
   });
 
-  revalidatePath("/admin/dipendenti");
+  revalidatePath("/admin/utenti");
   return { success: true };
 }
 
@@ -105,14 +106,24 @@ export async function updateEmployee(_prevState: unknown, formData: FormData) {
     },
   });
 
-  revalidatePath("/admin/dipendenti");
-  redirect("/admin/dipendenti");
+  revalidatePath("/admin/utenti");
+  redirect("/admin/utenti");
 }
 
 export async function setEmployeeActive(userId: string, active: boolean) {
   await requireAdmin();
   await prisma.user.update({ where: { id: userId }, data: { active } });
-  revalidatePath("/admin/dipendenti");
+  revalidatePath("/admin/utenti");
+}
+
+export async function updateAllowedModules(userId: string, moduleKeys: string[]) {
+  await requireAdmin();
+  const allowed = moduleKeys.filter((key) => isModuleKey(key));
+  await prisma.user.update({
+    where: { id: userId },
+    data: { allowedModules: allowed },
+  });
+  revalidatePath(`/admin/utenti/${userId}`);
 }
 
 const ClientBaseSchema = {
@@ -158,7 +169,7 @@ function clientFormFields(formData: FormData) {
 }
 
 export async function createClient(_prevState: unknown, formData: FormData) {
-  await requireAdmin();
+  await requireModule("clienti");
 
   const parsed = ClientSchema.safeParse(clientFormFields(formData));
 
@@ -210,7 +221,7 @@ const UpdateClientSchema = z
   .refine(clientRefine, clientRefineMessage);
 
 export async function updateClient(_prevState: unknown, formData: FormData) {
-  await requireAdmin();
+  await requireModule("clienti");
 
   const parsed = UpdateClientSchema.safeParse({
     id: formData.get("id"),
@@ -263,7 +274,7 @@ export async function updateClient(_prevState: unknown, formData: FormData) {
 }
 
 export async function checkPartitaIva(piva: string) {
-  await requireAdmin();
+  await requireModule("clienti");
   const result = await lookupPartitaIva(piva);
   if (!result) {
     return { error: "Partita IVA non trovata o non attiva (verifica VIES)" };
@@ -279,7 +290,7 @@ const SiteSchema = z.object({
 });
 
 export async function createSite(_prevState: unknown, formData: FormData) {
-  await requireAdmin();
+  await requireModule("clienti");
 
   const parsed = SiteSchema.safeParse({
     clientId: formData.get("clientId"),
@@ -303,7 +314,7 @@ export async function createSite(_prevState: unknown, formData: FormData) {
 }
 
 export async function updateSiteCapienza(siteId: string, capienza: number | null) {
-  await requireAdmin();
+  await requireModule("clienti");
   await prisma.site.update({ where: { id: siteId }, data: { capienza } });
   revalidatePath("/admin/clienti");
   revalidatePath("/admin/pianificazione");
@@ -317,7 +328,7 @@ const UpdateSiteSchema = z.object({
 });
 
 export async function updateSite(_prevState: unknown, formData: FormData) {
-  await requireAdmin();
+  await requireModule("clienti");
 
   const parsed = UpdateSiteSchema.safeParse({
     id: formData.get("id"),
@@ -355,7 +366,7 @@ export async function updateSite(_prevState: unknown, formData: FormData) {
 }
 
 export async function deleteSite(siteId: string) {
-  await requireAdmin();
+  await requireModule("clienti");
 
   const [quoteCount, shiftCount, timeEntryCount] = await Promise.all([
     prisma.quote.count({ where: { siteId } }),

@@ -3,7 +3,7 @@
 import * as z from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 
 const TipoPrestazioneSchema = z.object({
   etichetta: z.string().trim().min(1, "Il testo non può essere vuoto"),
@@ -13,7 +13,7 @@ export async function createTipoPrestazione(
   _prevState: unknown,
   formData: FormData
 ) {
-  await requireAdmin();
+  await requireModule("preventivi");
 
   const parsed = TipoPrestazioneSchema.safeParse({
     etichetta: formData.get("etichetta"),
@@ -37,7 +37,7 @@ export async function updateTipoPrestazione(
   _prevState: unknown,
   formData: FormData
 ) {
-  await requireAdmin();
+  await requireModule("preventivi");
 
   const parsed = UpdateTipoPrestazioneSchema.safeParse({
     id: formData.get("id"),
@@ -57,7 +57,7 @@ export async function updateTipoPrestazione(
 }
 
 export async function deleteTipoPrestazione(id: string) {
-  await requireAdmin();
+  await requireModule("preventivi");
   await prisma.tipoPrestazione.delete({ where: { id } });
   revalidatePath("/admin/impostazioni");
   revalidatePath("/admin/preventivi");

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import {
   addDays,
@@ -8,7 +8,6 @@ import {
   startOfWeek,
   toDateInputValue,
 } from "@/lib/dates";
-import { AdminNav } from "../AdminNav";
 import { ShiftForm } from "./ShiftForm";
 import { WeekCalendar } from "./WeekCalendar";
 
@@ -17,7 +16,7 @@ export default async function PianificazionePage({
 }: {
   searchParams: Promise<{ week?: string }>;
 }) {
-  await requireAdmin();
+  await requireModule("pianificazione");
   const params = await searchParams;
 
   const reference = params.week ? new Date(params.week) : new Date();
@@ -86,9 +85,7 @@ export default async function PianificazionePage({
   }
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AdminNav active="pianificazione" />
-      <div className="flex flex-col gap-6 p-4 sm:p-8">
+    <div className="flex flex-col gap-6 p-4 sm:p-8">
         <ShiftForm
           employees={employees.map((e) => ({ id: e.id, name: e.name }))}
           sites={sites.map((s) => ({
@@ -127,7 +124,6 @@ export default async function PianificazionePage({
         <p className="text-xs text-zinc-400">
           Passa il mouse su un turno per i dettagli, clicca sulla × per rimuoverlo.
         </p>
-      </div>
     </div>
   );
 }

@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { AdminNav } from "../../AdminNav";
 import { PhraseForm } from "./PhraseForm";
 import { PhraseRow } from "./PhraseRow";
 
 export default async function FrasiPreimpostatePage() {
-  await requireAdmin();
+  await requireModule("preventivi");
 
   const phrases = await prisma.quotePhrase.findMany({
     orderBy: [{ categoria: "asc" }, { ordine: "asc" }, { titolo: "asc" }],
@@ -22,9 +21,7 @@ export default async function FrasiPreimpostatePage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AdminNav active="preventivi" />
-      <div className="flex flex-col gap-6 p-4 sm:p-8">
+    <div className="flex flex-col gap-6 p-4 sm:p-8">
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-lg font-semibold text-zinc-900">
             Frasi preimpostate
@@ -64,7 +61,6 @@ export default async function FrasiPreimpostatePage() {
             </p>
           )}
         </div>
-      </div>
     </div>
   );
 }

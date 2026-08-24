@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeListPrice, computeSoldAnnual, computeDiscountPct } from "@/lib/quotes";
 import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
 import { labelWithFrequency } from "@/lib/quotePrint";
-import { AdminNav } from "../AdminNav";
 import { QuoteForm } from "./QuoteForm";
 import { QuoteRow } from "./QuoteRow";
 
@@ -17,7 +16,7 @@ export default async function PreventiviPage({
 }: {
   searchParams: Promise<{ edit?: string }>;
 }) {
-  await requireAdmin();
+  await requireModule("preventivi");
   const { edit } = await searchParams;
 
   const [clientsRaw, quotes, phrases, editingQuoteRaw, serviceLabels, tipiPrestazioneRows] =
@@ -95,9 +94,7 @@ export default async function PreventiviPage({
   const annuoAccettato = rows.reduce((sum, r) => sum + r.annuo, 0);
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AdminNav active="preventivi" />
-      <div className="flex flex-col gap-6 p-4 sm:p-8">
+    <div className="flex flex-col gap-6 p-4 sm:p-8">
         <div className="flex justify-end">
           <Link
             href="/admin/preventivi/frasi"
@@ -187,7 +184,6 @@ export default async function PreventiviPage({
             </tbody>
           </table>
         </section>
-      </div>
     </div>
   );
 }

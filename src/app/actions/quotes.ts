@@ -3,7 +3,7 @@
 import * as z from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/dal";
+import { requireModule } from "@/lib/dal";
 import { geocodeAddress } from "@/lib/geocode";
 import { computeListPrice } from "@/lib/quotes";
 
@@ -108,7 +108,7 @@ async function resolveSiteId(formData: FormData): Promise<string> {
 }
 
 export async function saveQuote(_prevState: unknown, formData: FormData) {
-  await requireAdmin();
+  await requireModule("preventivi");
 
   const id = formData.get("id");
 
@@ -168,7 +168,7 @@ export async function setQuoteStatus(
   id: string,
   status: "IN_TRATTATIVA" | "ACCETTATO" | "RIFIUTATO"
 ) {
-  await requireAdmin();
+  await requireModule("preventivi");
 
   await prisma.quote.update({
     where: { id },
@@ -183,7 +183,7 @@ export async function setQuoteStatus(
 }
 
 export async function deleteQuote(id: string) {
-  await requireAdmin();
+  await requireModule("preventivi");
   await prisma.quote.delete({ where: { id } });
   revalidatePath("/admin/preventivi");
   revalidatePath("/admin/consuntivi");
