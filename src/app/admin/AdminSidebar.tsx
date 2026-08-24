@@ -47,7 +47,7 @@ export function AdminSidebar({
                 <Link
                   key={key}
                   href={MODULE_HREFS[key]}
-                  className={linkClass(MODULE_HREFS[key], key === "timbrature")}
+                  className={linkClass(MODULE_HREFS[key])}
                 >
                   {MODULE_LABELS[key]}
                 </Link>

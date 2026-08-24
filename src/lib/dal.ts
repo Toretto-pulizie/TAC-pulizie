@@ -3,7 +3,14 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import type { Role } from "@prisma/client";
 import type { ModuleKey } from "@/lib/modules";
+
+// Un dipendente atterra sul programma solo se ha almeno un permesso assegnato;
+// altrimenti resta confinato alla sua area personale (timbratura + permessi).
+export function homePathFor(role: Role, allowedModules: string[]) {
+  return role === "ADMIN" || allowedModules.length > 0 ? "/admin" : "/dipendente";
+}
 
 export const verifySession = cache(async () => {
   const session = await getSession();

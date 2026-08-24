@@ -27,7 +27,7 @@ export async function punch({ type, siteId, lat, lng }: PunchInput) {
   });
 
   revalidatePath("/dipendente");
-  revalidatePath("/admin");
+  revalidatePath("/admin/timbrature");
 }
 
 export async function getTodayEntries(userId: string) {

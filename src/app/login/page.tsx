@@ -1,12 +1,14 @@
 import Image from "next/image";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
+import { getCurrentUser, homePathFor } from "@/lib/dal";
 import { LoginForm } from "./LoginForm";
 
 export default async function LoginPage() {
   const session = await getSession();
   if (session?.userId) {
-    redirect(session.role === "ADMIN" ? "/admin" : "/dipendente");
+    const user = await getCurrentUser();
+    redirect(homePathFor(session.role, user?.allowedModules ?? []));
   }
 
   return (

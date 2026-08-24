@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { createSession, deleteSession } from "@/lib/session";
+import { homePathFor } from "@/lib/dal";
 
 const LoginSchema = z.object({
   email: z.string().trim().min(1, "Inserisci l'email"),
@@ -43,7 +44,7 @@ export async function login(
 
   await createSession({ userId: user.id, role: user.role, name: user.name });
 
-  redirect(user.role === "ADMIN" ? "/admin" : "/dipendente");
+  redirect(homePathFor(user.role, user.allowedModules));
 }
 
 export async function logout() {

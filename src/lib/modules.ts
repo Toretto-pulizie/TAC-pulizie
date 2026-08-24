@@ -32,7 +32,7 @@ export const MODULE_GROUPS: { label: string; keys: ModuleKey[] }[] = [
 export const STANDALONE_MODULE_KEYS: ModuleKey[] = ["statistiche"];
 
 export const MODULE_HREFS: Record<ModuleKey, string> = {
-  timbrature: "/admin",
+  timbrature: "/admin/timbrature",
   pianificazione: "/admin/pianificazione",
   presenze: "/admin/presenze",
   permessi: "/admin/permessi",

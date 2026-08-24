@@ -1,153 +1,250 @@
-import { requireModule } from "@/lib/dal";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { verifySession, getCurrentUser } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { computeTotals, formatMinutes, pairSessions } from "@/lib/timeCalc";
-import { toDateInputValue } from "@/lib/dates";
+import { startOfToday } from "@/lib/timeCalc";
+import { startOfDay, endOfDay, formatDateLabel, formatTime } from "@/lib/dates";
+import { TIPO_LABELS } from "@/lib/leaveRequests";
+import { isModuleKey } from "@/lib/modules";
 
-export default async function AdminDashboardPage({
-  searchParams,
+type Segment = { label: string; count: number; color: string };
+
+function StatCard({
+  label,
+  value,
+  segments,
 }: {
-  searchParams: Promise<{ from?: string; to?: string; userId?: string }>;
+  label: string;
+  value: number;
+  segments: readonly Segment[];
 }) {
-  await requireModule("timbrature");
-  const params = await searchParams;
-
-  const today = new Date();
-  const defaultFrom = new Date(today);
-  defaultFrom.setDate(defaultFrom.getDate() - 6);
-
-  const from = params.from ? new Date(params.from) : defaultFrom;
-  from.setHours(0, 0, 0, 0);
-  const to = params.to ? new Date(params.to) : today;
-  to.setHours(23, 59, 59, 999);
-
-  const [employees, entries] = await Promise.all([
-    prisma.user.findMany({ orderBy: { name: "asc" } }),
-    prisma.timeEntry.findMany({
-      where: {
-        timestamp: { gte: from, lte: to },
-        ...(params.userId ? { userId: params.userId } : {}),
-      },
-      include: { user: true, site: { include: { client: true } } },
-      orderBy: { timestamp: "desc" },
-    }),
-  ]);
-
-  const totals = computeTotals(entries);
-  const sessions = pairSessions(entries);
+  const total = segments.reduce((sum, s) => sum + s.count, 0);
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-8">
-        <form className="flex flex-wrap items-end gap-3" method="get">
-          <label className="flex flex-col gap-1 text-sm">
-            Da
-            <input
-              type="date"
-              name="from"
-              defaultValue={toDateInputValue(from)}
-              className="rounded-lg border border-zinc-300 px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            A
-            <input
-              type="date"
-              name="to"
-              defaultValue={toDateInputValue(to)}
-              className="rounded-lg border border-zinc-300 px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Dipendente
-            <select
-              name="userId"
-              defaultValue={params.userId ?? ""}
-              className="rounded-lg border border-zinc-300 px-3 py-2"
-            >
-              <option value="">Tutti</option>
-              {employees.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="submit"
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white"
-          >
-            Filtra
-          </button>
-        </form>
+    <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <p className="text-3xl font-semibold text-zinc-900">{value}</p>
+      <p className="mt-1 text-sm text-zinc-500">{label}</p>
 
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {employees
-            .filter((e) => !params.userId || e.id === params.userId)
-            .map((e) => {
-              const t = totals.get(e.id) ?? { travelMinutes: 0, workMinutes: 0 };
-              return (
+      {total > 0 && (
+        <>
+          <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-zinc-100">
+            {segments
+              .filter((s) => s.count > 0)
+              .map((s) => (
                 <div
-                  key={e.id}
-                  className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
-                >
-                  <p className="font-medium text-zinc-900">{e.name}</p>
-                  <div className="mt-2 flex gap-4 text-sm">
-                    <div>
-                      <p className="text-zinc-500">Lavoro</p>
-                      <p className="font-semibold text-zinc-900">
-                        {formatMinutes(t.workMinutes)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-zinc-500">Spostamento</p>
-                      <p className="font-semibold text-zinc-900">
-                        {formatMinutes(t.travelMinutes)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-        </section>
-
-        <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">Dipendente</th>
-                <th className="px-4 py-3 font-medium">Cliente / cantiere</th>
-                <th className="px-4 py-3 font-medium">Inizio lavoro</th>
-                <th className="px-4 py-3 font-medium">Fine lavoro</th>
-                <th className="px-4 py-3 font-medium">GPS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sessions.map((s, i) => (
-                <tr key={i} className="border-b border-zinc-100 last:border-0">
-                  <td className="px-4 py-3">{s.user.name}</td>
-                  <td className="px-4 py-3 text-zinc-500">
-                    {s.site ? `${s.site.client.name} — ${s.site.name}` : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500">
-                    {s.start.toLocaleString("it-IT")}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500">
-                    {s.end ? s.end.toLocaleString("it-IT") : "In corso"}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500">
-                    {s.lat && s.lng ? "✓" : "—"}
-                  </td>
-                </tr>
+                  key={s.label}
+                  className={s.color}
+                  style={{ width: `${(s.count / total) * 100}%` }}
+                />
               ))}
-              {sessions.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-zinc-400">
-                    Nessuna timbratura nel periodo selezionato.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+            {segments.map((s) => (
+              <span
+                key={s.label}
+                className="flex items-center gap-1.5 text-xs text-zinc-500"
+              >
+                <span className={`h-2 w-2 rounded-full ${s.color}`} />
+                {s.label} {s.count}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default async function AdminHomePage() {
+  const session = await verifySession();
+  const user = await getCurrentUser();
+  const isAdmin = session.role === "ADMIN";
+  const allowed = new Set(user?.allowedModules.filter(isModuleKey) ?? []);
+
+  if (!isAdmin && allowed.size === 0) {
+    redirect("/dipendente");
+  }
+
+  const [activeEmployees, todayEntries, leaveByStatus, quotesByStatus] =
+    await Promise.all([
+      prisma.user.count({ where: { active: true, role: "EMPLOYEE" } }),
+      prisma.timeEntry.findMany({
+        where: { timestamp: { gte: startOfToday() } },
+        orderBy: { timestamp: "asc" },
+        select: { userId: true, type: true },
+      }),
+      prisma.leaveRequest.groupBy({ by: ["stato"], _count: true }),
+      prisma.quote.groupBy({ by: ["status"], _count: true }),
+    ]);
+
+  const lastStatusByUser = new Map<string, string>();
+  for (const e of todayEntries) lastStatusByUser.set(e.userId, e.type);
+  const statuses = [...lastStatusByUser.values()];
+  const atWork = statuses.filter((t) => t === "WORK_START").length;
+  const traveling = statuses.filter((t) => t === "TRAVEL_START").length;
+  const free = activeEmployees - atWork - traveling;
+
+  const leaveCount = (stato: string) =>
+    leaveByStatus.find((r) => r.stato === stato)?._count ?? 0;
+  const quoteCount = (status: string) =>
+    quotesByStatus.find((r) => r.status === status)?._count ?? 0;
+
+  const cards = (
+    [
+      {
+        moduleKey: "timbrature",
+        label: "Al lavoro adesso",
+        value: atWork,
+        segments: [
+          { label: "Al lavoro", count: atWork, color: "bg-emerald-500" },
+          { label: "In spostamento", count: traveling, color: "bg-amber-400" },
+          { label: "Liberi", count: free, color: "bg-zinc-300" },
+        ],
+      },
+      {
+        moduleKey: "permessi",
+        label: "Permessi in attesa",
+        value: leaveCount("IN_ATTESA"),
+        segments: [
+          { label: "In attesa", count: leaveCount("IN_ATTESA"), color: "bg-amber-400" },
+          { label: "Approvati", count: leaveCount("APPROVATO"), color: "bg-emerald-500" },
+          { label: "Rifiutati", count: leaveCount("RIFIUTATO"), color: "bg-rose-400" },
+        ],
+      },
+      {
+        moduleKey: "preventivi",
+        label: "Preventivi in trattativa",
+        value: quoteCount("IN_TRATTATIVA"),
+        segments: [
+          { label: "In trattativa", count: quoteCount("IN_TRATTATIVA"), color: "bg-amber-400" },
+          { label: "Accettati", count: quoteCount("ACCETTATO"), color: "bg-emerald-500" },
+          { label: "Rifiutati", count: quoteCount("RIFIUTATO"), color: "bg-rose-400" },
+        ],
+      },
+    ] as const
+  ).filter((c) => isAdmin || allowed.has(c.moduleKey));
+
+  const showShifts = isAdmin || allowed.has("pianificazione");
+  const showPendingLeave = isAdmin || allowed.has("permessi");
+
+  const [todayShifts, pendingRequests] = await Promise.all([
+    showShifts
+      ? prisma.shift.findMany({
+          where: { start: { gte: startOfDay(new Date()), lte: endOfDay(new Date()) } },
+          include: { user: true, site: { include: { client: true } } },
+          orderBy: { start: "asc" },
+        })
+      : Promise.resolve([]),
+    showPendingLeave
+      ? prisma.leaveRequest.findMany({
+          where: { stato: "IN_ATTESA" },
+          include: { user: true },
+          orderBy: { createdAt: "asc" },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  return (
+    <div className="flex flex-col gap-8 p-4 sm:p-8">
+      <div>
+        <p className="text-sm text-zinc-500">Ciao,</p>
+        <h1 className="text-2xl font-semibold text-zinc-900">
+          {session.name}
+        </h1>
+      </div>
+
+      {cards.length > 0 && (
+        <section className="grid gap-3 sm:grid-cols-3">
+          {cards.map((c) => (
+            <StatCard
+              key={c.label}
+              label={c.label}
+              value={c.value}
+              segments={c.segments}
+            />
+          ))}
         </section>
+      )}
+
+      {(showShifts || showPendingLeave) && (
+        <section className="grid gap-5 lg:grid-cols-2">
+          {showShifts && (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-medium tracking-wide text-zinc-400 uppercase">
+                Turni di oggi
+              </p>
+              <div className="rounded-xl border border-zinc-200 bg-white">
+                {todayShifts.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-sm text-zinc-400">
+                    Nessun turno pianificato per oggi.
+                  </p>
+                ) : (
+                  <ul className="divide-y divide-zinc-100">
+                    {todayShifts.map((s) => (
+                      <li
+                        key={s.id}
+                        className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
+                      >
+                        <div>
+                          <p className="font-medium text-zinc-900">
+                            {s.user.name}
+                          </p>
+                          <p className="text-zinc-500">
+                            {s.site.client.name} — {s.site.name}
+                          </p>
+                        </div>
+                        <p className="shrink-0 text-zinc-500">
+                          {formatTime(s.start)} – {formatTime(s.end)}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+
+          {showPendingLeave && (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-medium tracking-wide text-zinc-400 uppercase">
+                Permessi in attesa
+              </p>
+              <div className="rounded-xl border border-zinc-200 bg-white">
+                {pendingRequests.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-sm text-zinc-400">
+                    Nessuna richiesta in attesa.
+                  </p>
+                ) : (
+                  <ul className="divide-y divide-zinc-100">
+                    {pendingRequests.map((r) => (
+                      <li key={r.id}>
+                        <Link
+                          href="/admin/permessi"
+                          className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-zinc-50"
+                        >
+                          <div>
+                            <p className="font-medium text-zinc-900">
+                              {r.user.name}
+                            </p>
+                            <p className="text-zinc-500">
+                              {TIPO_LABELS[r.tipo]}
+                            </p>
+                          </div>
+                          <p className="shrink-0 text-zinc-500">
+                            {r.dataFine.getTime() !== r.dataInizio.getTime()
+                              ? `${formatDateLabel(r.dataInizio)} – ${formatDateLabel(r.dataFine)}`
+                              : formatDateLabel(r.dataInizio)}
+                          </p>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }
