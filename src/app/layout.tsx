@@ -32,7 +32,19 @@ export default function RootLayout({
       lang="it"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="relative min-h-full flex flex-col">
+        <img
+          src="/icon-toretto.png"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 -z-10 h-screen w-screen object-cover opacity-[0.15]"
+          style={{
+            maskImage: "radial-gradient(circle, black 0%, black 55%, transparent 85%)",
+            WebkitMaskImage: "radial-gradient(circle, black 0%, black 55%, transparent 85%)",
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }
