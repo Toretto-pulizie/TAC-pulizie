@@ -23,8 +23,8 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
 };
 
 export const MODULE_GROUPS: { label: string; keys: ModuleKey[] }[] = [
-  { label: "Dipendenti", keys: ["timbrature", "presenze", "permessi"] },
   { label: "Clienti", keys: ["pianificazione", "preventivi", "consuntivi", "clienti"] },
+  { label: "Collaboratori", keys: ["timbrature", "presenze", "permessi"] },
 ];
 
 // Not part of either group visually — shown in the sidebar's bottom section,

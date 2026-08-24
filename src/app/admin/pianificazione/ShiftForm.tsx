@@ -41,7 +41,7 @@ export function ShiftForm({
       className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-end"
     >
       <label className="flex flex-col gap-1 text-sm">
-        Dipendente
+        Collaboratore
         <select
           name="userId"
           required

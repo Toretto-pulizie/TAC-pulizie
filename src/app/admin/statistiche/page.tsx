@@ -236,13 +236,13 @@ export default async function StatistichePage() {
 
         <section className="flex flex-col gap-3">
           <h1 className="text-lg font-semibold text-zinc-900">
-            Ore lavorate per dipendente — mese corrente
+            Ore lavorate per collaboratore — mese corrente
           </h1>
           <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Dipendente</th>
+                  <th className="px-4 py-3 font-medium">Collaboratore</th>
                   <th className="px-4 py-3 font-medium">Ore lavorate</th>
                   <th className="px-4 py-3 font-medium">Ore spostamento</th>
                   <th className="px-4 py-3 font-medium">% spostamento</th>
@@ -266,7 +266,7 @@ export default async function StatistichePage() {
                 {oreDipendenti.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-4 py-6 text-center text-zinc-400">
-                      Nessun dipendente ancora registrato.
+                      Nessun collaboratore ancora registrato.
                     </td>
                   </tr>
                 )}

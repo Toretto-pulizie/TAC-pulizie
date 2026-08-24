@@ -105,7 +105,7 @@ export default async function PresenzePage({
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
               <tr>
                 <th className="sticky left-0 bg-zinc-50 px-4 py-3 font-medium">
-                  Dipendente
+                  Collaboratore
                 </th>
                 {Array.from({ length: daysInMonth }, (_, i) => (
                   <th key={i} className="px-2 py-3 text-center font-medium">
@@ -142,7 +142,7 @@ export default async function PresenzePage({
                     colSpan={daysInMonth + 2}
                     className="px-4 py-6 text-center text-zinc-400"
                   >
-                    Nessun dipendente attivo.
+                    Nessun collaboratore attivo.
                   </td>
                 </tr>
               )}

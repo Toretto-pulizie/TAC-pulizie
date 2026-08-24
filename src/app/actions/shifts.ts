@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/dal";
 
 const ShiftSchema = z.object({
-  userId: z.string().min(1, "Seleziona un dipendente"),
+  userId: z.string().min(1, "Seleziona un collaboratore"),
   siteId: z.string().min(1, "Seleziona un cliente/cantiere"),
   date: z.string().min(1, "Seleziona una data"),
   startTime: z.string().min(1, "Ora inizio richiesta"),

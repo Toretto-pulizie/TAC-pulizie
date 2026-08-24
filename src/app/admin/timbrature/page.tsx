@@ -57,7 +57,7 @@ export default async function TimbraturePage({
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            Dipendente
+            Collaboratore
             <select
               name="userId"
               defaultValue={params.userId ?? ""}
@@ -113,7 +113,7 @@ export default async function TimbraturePage({
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
               <tr>
-                <th className="px-4 py-3 font-medium">Dipendente</th>
+                <th className="px-4 py-3 font-medium">Collaboratore</th>
                 <th className="px-4 py-3 font-medium">Cliente / cantiere</th>
                 <th className="px-4 py-3 font-medium">Inizio lavoro</th>
                 <th className="px-4 py-3 font-medium">Fine lavoro</th>

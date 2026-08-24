@@ -30,7 +30,7 @@ export function EmployeeRow({
       <td className="px-4 py-3 text-zinc-500">{telefono ?? "—"}</td>
       <td className="px-4 py-3 text-zinc-500">{email}</td>
       <td className="px-4 py-3 text-zinc-500">
-        {role === "ADMIN" ? "Amministratore" : "Dipendente"}
+        {role === "ADMIN" ? "Amministratore" : "Collaboratore"}
       </td>
       <td className="px-4 py-3">
         <span

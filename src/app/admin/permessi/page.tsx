@@ -24,7 +24,7 @@ export default async function AdminPermessiPage() {
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
               <tr>
-                <th className="px-4 py-3 font-medium">Dipendente</th>
+                <th className="px-4 py-3 font-medium">Collaboratore</th>
                 <th className="px-4 py-3 font-medium">Tipo</th>
                 <th className="px-4 py-3 font-medium">Periodo</th>
                 <th className="px-4 py-3 font-medium">Note</th>
