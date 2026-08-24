@@ -64,6 +64,7 @@ export default async function DipendentePage() {
             width={90}
             height={26}
             priority
+            unoptimized
             className="shrink-0"
           />
           <div className="min-w-0">

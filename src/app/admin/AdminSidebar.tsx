@@ -33,7 +33,14 @@ export function AdminSidebar({
   return (
     <nav className="flex w-56 shrink-0 flex-col gap-6 border-r border-zinc-200 bg-zinc-50/60 p-4">
       <Link href={isAdmin ? "/admin" : "/dipendente"} className="px-1">
-        <Image src="/logo.png" alt="Toretto" width={120} height={35} priority />
+        <Image
+          src="/logo.png"
+          alt="Toretto"
+          width={120}
+          height={35}
+          priority
+          unoptimized
+        />
       </Link>
 
       <div className="flex flex-1 flex-col gap-6">
