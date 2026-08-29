@@ -4,6 +4,8 @@ import * as z from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { verifySession, requireModule } from "@/lib/dal";
+import { notifyAdmins, notifyUser } from "@/lib/notifications";
+import { TIPO_LABELS } from "@/lib/leaveRequests";
 
 const LeaveRequestSchema = z
   .object({
@@ -52,6 +54,11 @@ export async function createLeaveRequest(_prevState: unknown, formData: FormData
     },
   });
 
+  await notifyAdmins(
+    `${session.name} ha richiesto: ${TIPO_LABELS[tipo]}`,
+    "/admin/permessi"
+  );
+
   revalidatePath("/dipendente/permessi");
   revalidatePath("/admin/permessi");
   return { success: true };
@@ -63,10 +70,20 @@ export async function setLeaveRequestStatus(
 ) {
   await requireModule("permessi");
 
-  await prisma.leaveRequest.update({
+  const request = await prisma.leaveRequest.update({
     where: { id },
     data: { stato, decisoAt: stato === "IN_ATTESA" ? null : new Date() },
   });
+
+  if (stato === "APPROVATO" || stato === "RIFIUTATO") {
+    await notifyUser(
+      request.userId,
+      `Richiesta di ${TIPO_LABELS[request.tipo]} ${
+        stato === "APPROVATO" ? "approvata" : "rifiutata"
+      }`,
+      "/dipendente/permessi"
+    );
+  }
 
   revalidatePath("/admin/permessi");
   revalidatePath("/admin/presenze");

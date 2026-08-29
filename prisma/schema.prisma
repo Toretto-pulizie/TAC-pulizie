@@ -72,6 +72,19 @@ model User {
   timeEntries  TimeEntry[]
   shifts       Shift[]
   leaveRequests LeaveRequest[]
+  notifications Notification[]
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
 }
 
 model LeaveRequest {

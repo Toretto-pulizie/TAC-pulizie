@@ -5,6 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { getTodayEntries } from "@/app/actions/timeEntries";
 import { currentStatus } from "@/lib/timeCalc";
 import { logout } from "@/app/actions/auth";
+import { NotificationBell } from "@/app/NotificationBell";
+import { getRecentNotifications } from "@/lib/notifications";
+import { AutoRefresh } from "@/app/AutoRefresh";
 
 const STATUS_LABELS = {
   FREE: "Libera",
@@ -45,17 +48,19 @@ function PermessoIcon() {
 export default async function DipendentePage() {
   const session = await verifySession();
 
-  const [entries, pendingRequests] = await Promise.all([
+  const [entries, pendingRequests, notifications] = await Promise.all([
     getTodayEntries(session.userId),
     prisma.leaveRequest.count({
       where: { userId: session.userId, stato: "IN_ATTESA" },
     }),
+    getRecentNotifications(session.userId),
   ]);
 
   const status = currentStatus(entries);
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
+      <AutoRefresh intervalMs={20000} />
       <header className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-3">
           <Image
@@ -74,14 +79,17 @@ export default async function DipendentePage() {
             </h1>
           </div>
         </div>
-        <form action={logout} className="shrink-0">
-          <button
-            type="submit"
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600"
-          >
-            Esci
-          </button>
-        </form>
+        <div className="flex shrink-0 items-center gap-2">
+          <NotificationBell initial={notifications} />
+          <form action={logout}>
+            <button
+              type="submit"
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600"
+            >
+              Esci
+            </button>
+          </form>
+        </div>
       </header>
 
       <div className="grid grid-cols-2 gap-3">

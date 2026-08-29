@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/dal";
 import { geocodeAddress } from "@/lib/geocode";
 import { computeListPrice } from "@/lib/quotes";
+import { notifyAdmins } from "@/lib/notifications";
 
 const QuoteSchema = z
   .object({
@@ -170,13 +171,21 @@ export async function setQuoteStatus(
 ) {
   await requireModule("preventivi");
 
-  await prisma.quote.update({
+  const quote = await prisma.quote.update({
     where: { id },
     data: {
       status,
       closedAt: status === "IN_TRATTATIVA" ? null : new Date(),
     },
+    include: { site: { include: { client: true } } },
   });
+
+  if (status === "ACCETTATO" || status === "RIFIUTATO") {
+    await notifyAdmins(
+      `Preventivo ${status === "ACCETTATO" ? "accettato" : "rifiutato"}: ${quote.site.client.name} — ${quote.site.name}`,
+      "/admin/preventivi"
+    );
+  }
 
   revalidatePath("/admin/preventivi");
   revalidatePath("/admin/consuntivi");
