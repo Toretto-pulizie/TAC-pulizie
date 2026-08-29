@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { logout } from "@/app/actions/auth";
 import { MODULE_LABELS, MODULE_HREFS, type ModuleKey } from "@/lib/modules";
 
@@ -22,6 +22,8 @@ export function AdminSidebar({
   isAdmin: boolean;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  if (searchParams.get("pdf") === "1") return null;
 
   const linkClass = (href: string, exact = false) => {
     const isActive = exact ? pathname === href : pathname.startsWith(href);
