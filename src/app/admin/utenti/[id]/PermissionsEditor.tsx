@@ -9,6 +9,38 @@ import {
   type ModuleKey,
 } from "@/lib/modules";
 
+function Toggle({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 text-sm text-zinc-700">
+      <span>{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={onChange}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+          checked ? "bg-emerald-500" : "bg-zinc-200"
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+            checked ? "translate-x-6" : "translate-x-1"
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
 export function PermissionsEditor({
   userId,
   initialAllowed,
@@ -57,20 +89,14 @@ export function PermissionsEditor({
             <p className="mb-2 text-xs font-medium tracking-wide text-zinc-500 uppercase">
               {group.label}
             </p>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2.5">
               {group.keys.map((key) => (
-                <label
+                <Toggle
                   key={key}
-                  className="flex items-center gap-2 text-sm text-zinc-700"
-                >
-                  <input
-                    type="checkbox"
-                    checked={allowed.has(key)}
-                    onChange={() => toggle(key)}
-                    className="h-4 w-4 rounded border-zinc-300"
-                  />
-                  {MODULE_LABELS[key]}
-                </label>
+                  checked={allowed.has(key)}
+                  onChange={() => toggle(key)}
+                  label={MODULE_LABELS[key]}
+                />
               ))}
             </div>
           </div>
@@ -79,20 +105,14 @@ export function PermissionsEditor({
           <p className="mb-2 text-xs font-medium tracking-wide text-zinc-500 uppercase">
             Altro
           </p>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2.5">
             {STANDALONE_MODULE_KEYS.map((key) => (
-              <label
+              <Toggle
                 key={key}
-                className="flex items-center gap-2 text-sm text-zinc-700"
-              >
-                <input
-                  type="checkbox"
-                  checked={allowed.has(key)}
-                  onChange={() => toggle(key)}
-                  className="h-4 w-4 rounded border-zinc-300"
-                />
-                {MODULE_LABELS[key]}
-              </label>
+                checked={allowed.has(key)}
+                onChange={() => toggle(key)}
+                label={MODULE_LABELS[key]}
+              />
             ))}
           </div>
         </div>

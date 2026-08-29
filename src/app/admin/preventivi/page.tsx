@@ -5,6 +5,7 @@ import { computeListPrice, computeSoldAnnual, computeDiscountPct } from "@/lib/q
 import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
 import { labelWithFrequency } from "@/lib/quotePrint";
 import { QuoteForm } from "./QuoteForm";
+import { QuoteFormToggle } from "./QuoteFormToggle";
 import { QuoteRow } from "./QuoteRow";
 
 function formatEuro(n: number) {
@@ -104,9 +105,11 @@ export default async function PreventiviPage({
           </Link>
         </div>
 
-        <div id="quote-form">
+        <QuoteFormToggle
+          key={editingQuote?.id ?? "new"}
+          defaultOpen={!!editingQuote}
+        >
           <QuoteForm
-            key={editingQuote?.id ?? "new"}
             clients={clients}
             phrases={phrases.map((p) => ({
               id: p.id,
@@ -119,7 +122,7 @@ export default async function PreventiviPage({
             tipiPrestazione={tipiPrestazione}
             editingQuote={editingQuote}
           />
-        </div>
+        </QuoteFormToggle>
 
         <section className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
@@ -171,7 +174,6 @@ export default async function PreventiviPage({
                   prezzoVenduto={r.prezzoVenduto}
                   discountPct={r.discountPct}
                   status={r.status}
-                  note={r.note}
                 />
               ))}
               {rows.length === 0 && (

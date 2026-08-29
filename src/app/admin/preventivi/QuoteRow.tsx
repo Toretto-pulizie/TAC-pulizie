@@ -24,7 +24,6 @@ export function QuoteRow({
   prezzoVenduto,
   discountPct,
   status,
-  note,
 }: {
   id: string;
   siteLabel: string;
@@ -33,7 +32,6 @@ export function QuoteRow({
   prezzoVenduto: number | null;
   discountPct: number | null;
   status: "IN_TRATTATIVA" | "ACCETTATO" | "RIFIUTATO";
-  note: string | null;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -41,7 +39,6 @@ export function QuoteRow({
     <tr className="border-b border-zinc-100 last:border-0">
       <td className="px-4 py-3">
         <p className="font-medium text-zinc-900">{siteLabel}</p>
-        {note && <p className="text-xs text-zinc-400">{note}</p>}
       </td>
       <td className="px-4 py-3 text-zinc-500">{serviceLabel}</td>
       <td className="px-4 py-3 text-zinc-500">
