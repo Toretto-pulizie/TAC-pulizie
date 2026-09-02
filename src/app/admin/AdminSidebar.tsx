@@ -49,7 +49,7 @@ export function AdminSidebar({
         {groups.map((group) =>
           group.keys.length === 0 ? null : (
             <div key={group.label} className="flex flex-col gap-1">
-              <p className="px-3 text-xs font-medium tracking-wide text-zinc-400 uppercase">
+              <p className="px-3 text-base font-bold tracking-wide text-zinc-900 uppercase">
                 {group.label}
               </p>
               {group.keys.map((key) => (
