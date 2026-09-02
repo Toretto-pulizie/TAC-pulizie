@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 
-export function QuoteFormToggle({
-  defaultOpen,
+export function CollapsibleForm({
+  label,
+  defaultOpen = false,
   children,
 }: {
-  defaultOpen: boolean;
+  label: string;
+  defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -18,9 +20,9 @@ export function QuoteFormToggle({
         onClick={() => setOpen((o) => !o)}
         className="w-fit rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white"
       >
-        {open ? "✕ Chiudi modulo" : "+ Nuovo preventivo"}
+        {open ? "✕ Chiudi modulo" : `+ ${label}`}
       </button>
-      {open && <div id="quote-form">{children}</div>}
+      {open && children}
     </div>
   );
 }

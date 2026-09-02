@@ -5,7 +5,7 @@ import { computeListPrice, computeSoldAnnual, computeDiscountPct } from "@/lib/q
 import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
 import { labelWithFrequency } from "@/lib/quotePrint";
 import { QuoteForm } from "./QuoteForm";
-import { QuoteFormToggle } from "./QuoteFormToggle";
+import { CollapsibleForm } from "@/app/CollapsibleForm";
 import { QuoteRow } from "./QuoteRow";
 
 function formatEuro(n: number) {
@@ -105,8 +105,9 @@ export default async function PreventiviPage({
           </Link>
         </div>
 
-        <QuoteFormToggle
+        <CollapsibleForm
           key={editingQuote?.id ?? "new"}
+          label="Nuovo preventivo"
           defaultOpen={!!editingQuote}
         >
           <QuoteForm
@@ -122,7 +123,7 @@ export default async function PreventiviPage({
             tipiPrestazione={tipiPrestazione}
             editingQuote={editingQuote}
           />
-        </QuoteFormToggle>
+        </CollapsibleForm>
 
         <section className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
