@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { SiteCapacityEdit } from "./SiteCapacityEdit";
 import { SiteActions } from "./SiteActions";
+import { ClientActions } from "./ClientActions";
 
 type Site = {
   id: string;
@@ -26,12 +27,14 @@ function cittaProvincia(address: string) {
 }
 
 export function ClientRow({
+  clientId,
   codiceCliente,
   name,
   tipo,
   sites,
   editHref,
 }: {
+  clientId: string;
   codiceCliente: number;
   name: string;
   tipo: "AZIENDA" | "PERSONA_FISICA";
@@ -75,6 +78,7 @@ export function ClientRow({
         <Link href={editHref} className="text-xs text-zinc-500 underline">
           Modifica
         </Link>
+        <ClientActions clientId={clientId} />
         {sites.length > 0 && (
           <button
             type="button"

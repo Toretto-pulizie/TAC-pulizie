@@ -385,3 +385,30 @@ export async function deleteSite(siteId: string) {
   revalidatePath("/admin/pianificazione");
   return { success: true };
 }
+
+export async function deleteClient(clientId: string) {
+  await requireModule("clienti");
+
+  const [siteCount, quoteCount, shiftCount, timeEntryCount] = await Promise.all([
+    prisma.site.count({ where: { clientId } }),
+    prisma.quote.count({ where: { site: { clientId } } }),
+    prisma.shift.count({ where: { site: { clientId } } }),
+    prisma.timeEntry.count({ where: { site: { clientId } } }),
+  ]);
+
+  if (quoteCount > 0 || shiftCount > 0 || timeEntryCount > 0) {
+    return {
+      error: `Impossibile eliminare: ci sono ${quoteCount} preventivi, ${shiftCount} turni e ${timeEntryCount} timbrature collegati alle sedi di questo cliente.`,
+    };
+  }
+
+  if (siteCount > 0) {
+    return {
+      error: `Impossibile eliminare: elimina prima le ${siteCount} sedi/cantieri collegati a questo cliente.`,
+    };
+  }
+
+  await prisma.client.delete({ where: { id: clientId } });
+  revalidatePath("/admin/clienti");
+  return { success: true };
+}

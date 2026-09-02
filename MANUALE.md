@@ -72,7 +72,8 @@ Confronta, per **Mese**/**Anno** scelti, quanto contrattualizzato (dai preventiv
 
 ### Clienti (`/admin/clienti`)
 - Pulsanti **+ Nuovo cliente** e **+ Nuova sede/cantiere** in cima: aprono/chiudono i rispettivi moduli (restano chiusi finché non servono).
-- L'elenco clienti mostra, per riga, solo l'essenziale: codice cliente, nome/ragione sociale, tipo (Azienda/Privato), città e provincia della prima sede con icona di geolocalizzazione, e il link **Modifica**. Cliccando **Sedi (N) ▾** si espande la riga con l'indirizzo completo di ogni sede, la capienza modificabile e le azioni **Modifica**/**Elimina** per ciascuna.
+- L'elenco clienti mostra, per riga, solo l'essenziale: codice cliente, nome/ragione sociale, tipo (Azienda/Privato), città e provincia della prima sede con icona di geolocalizzazione, e i link **Modifica**/**Elimina**. Cliccando **Sedi (N) ▾** si espande la riga con l'indirizzo completo di ogni sede, la capienza modificabile e le azioni **Modifica**/**Elimina** per ciascuna.
+- **Elimina cliente**: possibile solo se il cliente non ha più sedi/cantieri collegati (vanno eliminati prima, uno per uno, con lo stesso vincolo: un cantiere non si può eliminare se ha preventivi, turni o timbrature collegati).
 - **Aggiungi cliente**: Azienda/Persona fisica, P. IVA (con verifica automatica su VIES che compila da sola Ragione sociale/Indirizzo/CAP/Città/Provincia), Ragione sociale (o Nome+Cognome), Indirizzo, CAP (compila da solo Città/Provincia), Codice fiscale, Persona di riferimento, Note.
 - **Aggiungi sede/cantiere**: Cliente, Nome sede, Indirizzo, Capienza (posti) facoltativa.
 - Modifica cliente e modifica cantiere hanno pagine dedicate con gli stessi campi. La Capienza di un cantiere si può modificare anche direttamente dall'elenco.
@@ -92,12 +93,14 @@ Solo lettura, quattro tabelle: andamento preventivi ultimi 6 mesi (creati/accett
 
 ## Backup dei dati
 
-Ogni notte alle 3:00, un'attività pianificata sul PC dell'ufficio (Utilità di pianificazione Windows) esegue automaticamente `TAC-TORETTO\backups\run-backup.cmd`, che:
+Ogni notte alle 3:00, se il PC dell'ufficio è acceso e con un utente collegato, un'attività pianificata (Utilità di pianificazione Windows) esegue automaticamente `TAC-TORETTO\backups\run-backup.cmd`, che:
 1. estrae tutti i dati dal database di produzione;
 2. li cifra (AES-256) con una password salvata su Bitwarden;
 3. salva la copia cifrata in `TAC-TORETTO\backups\dumps\` (tiene le ultime 30);
 4. carica la stessa copia su un bucket privato Amazon S3;
 5. segnala l'esito a healthchecks.io, che manda un'email automatica se una notte il backup non arriva.
+
+Se quella notte il PC è spento o nessuno è collegato, il backup salta silenziosamente: è una scelta consapevole (evita di salvare la password di Windows nell'attività pianificata) e per questo esiste l'avviso via email — arrivata quella, il backup riparte da solo alla notte successiva senza bisogno di intervenire.
 
 In caso di disastro (perdita di accesso a Vercel, guasto del database), i dati si possono recuperare da uno di questi due posti con lo script `npm run db:restore` — operazione delicata, da fare insieme con calma.
 

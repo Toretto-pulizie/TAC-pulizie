@@ -27,6 +27,7 @@ export default async function ClientiPage() {
           {clients.map((c) => (
             <ClientRow
               key={c.id}
+              clientId={c.id}
               codiceCliente={c.codiceCliente}
               name={c.name}
               tipo={c.tipo}
