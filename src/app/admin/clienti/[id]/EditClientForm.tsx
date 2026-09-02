@@ -4,6 +4,7 @@ import { useActionState, useRef, useState } from "react";
 import { updateClient, checkPartitaIva } from "@/app/actions/admin";
 import { lookupComuneFromCap } from "@/lib/capLookup";
 import { isValidPartitaIva } from "@/lib/partitaIva";
+import { Tooltip } from "@/app/Tooltip";
 
 type PivaStato =
   | { tipo: "verificando" }
@@ -125,7 +126,9 @@ export function EditClientForm({
 
       {tipo === "AZIENDA" ? (
         <label className="flex flex-col gap-1 text-sm">
-          P. IVA
+          <Tooltip text="Compila da sola ragione sociale, indirizzo, CAP, città e provincia">
+            P. IVA
+          </Tooltip>
           <input
             name="partitaIva"
             defaultValue={partitaIva ?? ""}
@@ -209,7 +212,7 @@ export function EditClientForm({
 
       <div className="flex gap-3">
         <label className="flex flex-col gap-1 text-sm">
-          CAP
+          <Tooltip text="Compila da sola città e provincia">CAP</Tooltip>
           <input
             ref={capRef}
             name="cap"
