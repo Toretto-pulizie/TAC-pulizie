@@ -35,3 +35,26 @@ export async function updateServiceTypeLabel(
   revalidatePath("/admin/preventivi");
   return { success: true };
 }
+
+export async function updateHomeSettings(settings: {
+  showAlLavoro: boolean;
+  showPermessi: boolean;
+  showPreventivi: boolean;
+  showTurni: boolean;
+  showTotalePreventiviAccettati: boolean;
+  showTotaleConsuntivi: boolean;
+  showAlLavoroBar: boolean;
+  showPreventiviBar: boolean;
+  showTotaleConsuntiviBar: boolean;
+}) {
+  await requireAdmin();
+
+  await prisma.homeSettings.upsert({
+    where: { id: "singleton" },
+    update: settings,
+    create: { id: "singleton", ...settings },
+  });
+
+  revalidatePath("/admin/impostazioni");
+  revalidatePath("/admin");
+}

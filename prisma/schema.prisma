@@ -189,6 +189,20 @@ model ServiceTypeLabel {
   etichetta String
 }
 
+// Riga singola: decide quali sezioni compaiono nella home del programma.
+model HomeSettings {
+  id                       String  @id @default("singleton")
+  showAlLavoro             Boolean @default(true)
+  showPermessi             Boolean @default(true)
+  showPreventivi           Boolean @default(true)
+  showTurni                Boolean @default(true)
+  showTotalePreventiviAccettati Boolean @default(true)
+  showTotaleConsuntivi     Boolean @default(true)
+  showAlLavoroBar          Boolean @default(true)
+  showPreventiviBar        Boolean @default(true)
+  showTotaleConsuntiviBar  Boolean @default(true)
+}
+
 model Shift {
   id        String   @id @default(cuid())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
