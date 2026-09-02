@@ -9,7 +9,11 @@ export function CancelButton({ id }: { id: string }) {
   return (
     <button
       disabled={isPending}
-      onClick={() => startTransition(() => deleteLeaveRequest(id))}
+      onClick={() => {
+        if (confirm("Annullare questa richiesta?")) {
+          startTransition(() => deleteLeaveRequest(id));
+        }
+      }}
       className="text-sm text-red-600 underline disabled:opacity-50"
     >
       Annulla

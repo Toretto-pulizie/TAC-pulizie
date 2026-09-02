@@ -101,7 +101,11 @@ export function QuoteRow({
           )}
           <button
             disabled={isPending}
-            onClick={() => startTransition(() => deleteQuote(id))}
+            onClick={() => {
+              if (confirm("Eliminare questo preventivo?")) {
+                startTransition(() => deleteQuote(id));
+              }
+            }}
             className="text-red-600 underline disabled:opacity-50"
           >
             Elimina

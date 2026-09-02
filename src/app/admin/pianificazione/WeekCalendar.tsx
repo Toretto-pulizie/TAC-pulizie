@@ -38,7 +38,11 @@ function ShiftBlock({ shift, startHour }: { shift: ShiftItem; startHour: number 
     >
       <button
         disabled={isPending}
-        onClick={() => startTransition(() => deleteShift(shift.id))}
+        onClick={() => {
+          if (confirm("Rimuovere questo turno?")) {
+            startTransition(() => deleteShift(shift.id));
+          }
+        }}
         className="absolute right-1 top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-white/80 text-[10px] leading-none text-zinc-600 group-hover:flex"
         aria-label="Rimuovi turno"
       >

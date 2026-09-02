@@ -49,6 +49,8 @@ La pagina mostra anche i turni programmati nei prossimi 7 giorni e le timbrature
 
 Il menu è diviso in due gruppi: **Clienti** (Pianificazione, Preventivi, Consuntivi, Clienti) e **Collaboratori** (Timbrature, Presenze, Permessi), più **Statistiche** a parte. **Utenti** e **Impostazioni** sono visibili solo al titolare.
 
+Ogni azione di eliminazione (o "Annulla" per le richieste di permesso) chiede conferma prima di procedere.
+
 ### Timbrature (`/admin/timbrature`)
 Elenco delle timbrature registrate, filtrabile per **Da**/**A** (intervallo di date) e **Collaboratore**. Mostra per ciascun collaboratore le ore totali di lavoro e spostamento nel periodo, e la tabella dettagliata delle sessioni (collaboratore, cliente/cantiere, inizio, fine, se georeferenziata).
 

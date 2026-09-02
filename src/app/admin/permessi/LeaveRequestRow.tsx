@@ -63,7 +63,11 @@ export function LeaveRequestRow({
           )}
           <button
             disabled={isPending}
-            onClick={() => startTransition(() => deleteLeaveRequest(id))}
+            onClick={() => {
+              if (confirm("Eliminare questa richiesta?")) {
+                startTransition(() => deleteLeaveRequest(id));
+              }
+            }}
             className="text-red-600 underline disabled:opacity-50"
           >
             Elimina
