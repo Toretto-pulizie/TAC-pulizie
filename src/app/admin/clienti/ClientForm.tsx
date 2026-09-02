@@ -96,36 +96,46 @@ export function ClientForm() {
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          P. IVA
-          <input
-            name="partitaIva"
-            onBlur={handlePartitaIvaBlur}
-            onChange={() => setPivaStato(null)}
-            placeholder="Propone ragione sociale/indirizzo"
-            className={`w-36 rounded-lg border px-3 py-2 ${
-              pivaStato?.tipo === "non valida" || pivaStato?.tipo === "non trovata"
-                ? "border-red-400"
-                : "border-zinc-300"
-            }`}
-          />
-          {pivaStato?.tipo === "verificando" && (
-            <span className="text-xs text-zinc-500">Verifica in corso...</span>
-          )}
-          {pivaStato?.tipo === "trovata" && (
-            <span className="text-xs text-green-600">
-              ✓ Trovata: {pivaStato.nome}
-            </span>
-          )}
-          {pivaStato?.tipo === "non trovata" && (
-            <span className="text-xs text-red-600">
-              ⚠ Non trovata su VIES (verifica il numero)
-            </span>
-          )}
-          {pivaStato?.tipo === "non valida" && (
-            <span className="text-xs text-red-600">⚠ Partita IVA non valida</span>
-          )}
-        </label>
+        {tipo === "AZIENDA" ? (
+          <label className="flex flex-col gap-1 text-sm">
+            P. IVA
+            <input
+              name="partitaIva"
+              onBlur={handlePartitaIvaBlur}
+              onChange={() => setPivaStato(null)}
+              placeholder="Propone ragione sociale/indirizzo"
+              className={`w-36 rounded-lg border px-3 py-2 ${
+                pivaStato?.tipo === "non valida" || pivaStato?.tipo === "non trovata"
+                  ? "border-red-400"
+                  : "border-zinc-300"
+              }`}
+            />
+            {pivaStato?.tipo === "verificando" && (
+              <span className="text-xs text-zinc-500">Verifica in corso...</span>
+            )}
+            {pivaStato?.tipo === "trovata" && (
+              <span className="text-xs text-green-600">
+                ✓ Trovata: {pivaStato.nome}
+              </span>
+            )}
+            {pivaStato?.tipo === "non trovata" && (
+              <span className="text-xs text-red-600">
+                ⚠ Non trovata su VIES (verifica il numero)
+              </span>
+            )}
+            {pivaStato?.tipo === "non valida" && (
+              <span className="text-xs text-red-600">⚠ Partita IVA non valida</span>
+            )}
+          </label>
+        ) : (
+          <label className="flex flex-col gap-1 text-sm">
+            Codice fiscale
+            <input
+              name="codiceFiscale"
+              className="w-36 rounded-lg border border-zinc-300 px-3 py-2"
+            />
+          </label>
+        )}
 
         {tipo === "AZIENDA" ? (
           <label className="flex flex-col gap-1 text-sm">
@@ -191,13 +201,6 @@ export function ClientForm() {
             name="provincia"
             maxLength={2}
             className="w-20 rounded-lg border border-zinc-300 px-3 py-2 uppercase"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Codice fiscale
-          <input
-            name="codiceFiscale"
-            className="w-36 rounded-lg border border-zinc-300 px-3 py-2"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">

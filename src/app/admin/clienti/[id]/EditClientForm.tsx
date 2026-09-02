@@ -123,34 +123,45 @@ export function EditClientForm({
         </label>
       </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        P. IVA
-        <input
-          name="partitaIva"
-          defaultValue={partitaIva ?? ""}
-          onBlur={handlePartitaIvaBlur}
-          onChange={() => setPivaStato(null)}
-          className={`w-48 rounded-lg border px-3 py-2 ${
-            pivaStato?.tipo === "non valida" || pivaStato?.tipo === "non trovata"
-              ? "border-red-400"
-              : "border-zinc-300"
-          }`}
-        />
-        {pivaStato?.tipo === "verificando" && (
-          <span className="text-xs text-zinc-500">Verifica in corso...</span>
-        )}
-        {pivaStato?.tipo === "trovata" && (
-          <span className="text-xs text-green-600">✓ Trovata: {pivaStato.nome}</span>
-        )}
-        {pivaStato?.tipo === "non trovata" && (
-          <span className="text-xs text-red-600">
-            ⚠ Non trovata su VIES (verifica il numero)
-          </span>
-        )}
-        {pivaStato?.tipo === "non valida" && (
-          <span className="text-xs text-red-600">⚠ Partita IVA non valida</span>
-        )}
-      </label>
+      {tipo === "AZIENDA" ? (
+        <label className="flex flex-col gap-1 text-sm">
+          P. IVA
+          <input
+            name="partitaIva"
+            defaultValue={partitaIva ?? ""}
+            onBlur={handlePartitaIvaBlur}
+            onChange={() => setPivaStato(null)}
+            className={`w-48 rounded-lg border px-3 py-2 ${
+              pivaStato?.tipo === "non valida" || pivaStato?.tipo === "non trovata"
+                ? "border-red-400"
+                : "border-zinc-300"
+            }`}
+          />
+          {pivaStato?.tipo === "verificando" && (
+            <span className="text-xs text-zinc-500">Verifica in corso...</span>
+          )}
+          {pivaStato?.tipo === "trovata" && (
+            <span className="text-xs text-green-600">✓ Trovata: {pivaStato.nome}</span>
+          )}
+          {pivaStato?.tipo === "non trovata" && (
+            <span className="text-xs text-red-600">
+              ⚠ Non trovata su VIES (verifica il numero)
+            </span>
+          )}
+          {pivaStato?.tipo === "non valida" && (
+            <span className="text-xs text-red-600">⚠ Partita IVA non valida</span>
+          )}
+        </label>
+      ) : (
+        <label className="flex flex-col gap-1 text-sm">
+          Codice fiscale
+          <input
+            name="codiceFiscale"
+            defaultValue={codiceFiscale ?? ""}
+            className="w-48 rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+      )}
 
       {tipo === "AZIENDA" ? (
         <label className="flex flex-col gap-1 text-sm">
@@ -228,24 +239,14 @@ export function EditClientForm({
         </label>
       </div>
 
-      <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-sm">
-          Codice fiscale
-          <input
-            name="codiceFiscale"
-            defaultValue={codiceFiscale ?? ""}
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-1 flex-col gap-1 text-sm">
-          Persona di riferimento
-          <input
-            name="personaRiferimento"
-            defaultValue={personaRiferimento ?? ""}
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
-      </div>
+      <label className="flex flex-col gap-1 text-sm">
+        Persona di riferimento
+        <input
+          name="personaRiferimento"
+          defaultValue={personaRiferimento ?? ""}
+          className="rounded-lg border border-zinc-300 px-3 py-2"
+        />
+      </label>
 
       <label className="flex flex-col gap-1 text-sm">
         Note
