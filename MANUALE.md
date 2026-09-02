@@ -16,10 +16,13 @@ Login con email e password. Dopo l'accesso:
 
 ## Home (dashboard)
 
-Prima pagina del programma. Mostra:
-- Fino a tre statistiche con barra di ripartizione a colori: **Al lavoro adesso** (chi sta lavorando/spostandosi/è libero oggi), **Permessi in attesa** (in attesa/approvati/rifiutati), **Preventivi in trattativa** (in trattativa/accettati/rifiutati). Ognuna appare solo se hai accesso al modulo corrispondente.
+Prima pagina del programma. Mostra, in base a cosa il titolare ha attivato in Impostazioni → Visualizzazione → Home:
+- **Al lavoro adesso** (con barra: al lavoro/in spostamento/liberi) e **Preventivi in trattativa** (con barra: in trattativa/accettati/rifiutati).
+- **Totale preventivi accettati**: somma del prezzo venduto di tutti i preventivi accettati (solo il numero, senza riepilogo).
+- **Totale consuntivi (mese)**: valore a consuntivo del mese corrente (ore lavorate × tariffa), stesso calcolo della pagina Consuntivi — con riepilogo di quanto viene da cantieri in utile e quanto da cantieri in perdita.
 - **Turni di oggi**: chi lavora dove, con orario (visibile solo con accesso a Pianificazione).
 - **Permessi in attesa**: elenco delle richieste da approvare, cliccabili per andare ad approvarle (visibile solo con accesso a Permessi).
+- Ogni sezione appare solo se hai anche accesso al modulo corrispondente (es. Totale consuntivi richiede l'accesso a Consuntivi).
 - La pagina (come tutte le altre) si aggiorna da sola ogni 20 secondi: non serve ricaricare per vedere dati nuovi (es. una timbratura appena fatta da un collaboratore).
 
 ## Notifiche
@@ -68,7 +71,8 @@ Elenco di tutte le richieste di permesso/assenza inviate dai collaboratori (in a
 Confronta, per **Mese**/**Anno** scelti, quanto contrattualizzato (dai preventivi accettati) con quanto effettivamente lavorato (dalle timbrature): ore lavorate, ore spostamento, importo a consuntivo e scostamento in euro/percentuale (rosso se in perdita, verde se in surplus), per ogni cantiere. Totali generali in cima.
 
 ### Clienti (`/admin/clienti`)
-- Elenco clienti con codice cliente, tipo (Azienda/Persona fisica), indirizzo, note, e i cantieri collegati.
+- Pulsanti **+ Nuovo cliente** e **+ Nuova sede/cantiere** in cima: aprono/chiudono i rispettivi moduli (restano chiusi finché non servono).
+- L'elenco clienti mostra, per riga, solo l'essenziale: codice cliente, nome/ragione sociale, tipo (Azienda/Privato), città e provincia della prima sede con icona di geolocalizzazione, e il link **Modifica**. Cliccando **Sedi (N) ▾** si espande la riga con l'indirizzo completo di ogni sede, la capienza modificabile e le azioni **Modifica**/**Elimina** per ciascuna.
 - **Aggiungi cliente**: Azienda/Persona fisica, P. IVA (con verifica automatica su VIES che compila da sola Ragione sociale/Indirizzo/CAP/Città/Provincia), Ragione sociale (o Nome+Cognome), Indirizzo, CAP (compila da solo Città/Provincia), Codice fiscale, Persona di riferimento, Note.
 - **Aggiungi sede/cantiere**: Cliente, Nome sede, Indirizzo, Capienza (posti) facoltativa.
 - Modifica cliente e modifica cantiere hanno pagine dedicate con gli stessi campi. La Capienza di un cantiere si può modificare anche direttamente dall'elenco.
@@ -84,6 +88,7 @@ Solo lettura, quattro tabelle: andamento preventivi ultimi 6 mesi (creati/accett
 ### Impostazioni (`/admin/impostazioni`, solo titolare)
 - **Tipi di servizio**: rinomina le tre etichette (una tantum/passaggio settimanale/passaggio mensile) usate nei preventivi — cambia solo il nome mostrato, non i calcoli.
 - **Tipo di prestazione**: elenco personalizzabile delle voci che aprono la descrizione nei preventivi (es. "PRESTAZIONE ORDINARIA DI PULIZIA UFFICI"). Si aggiungono da "Nuova voce" + Aggiungi; modificarle o eliminarle non cambia i preventivi già creati.
+- **Visualizzazione** (schede in alto: Tipi di servizio / Tipo di prestazione / Visualizzazione — si vede una scheda alla volta) → **Home**: un interruttore per ciascuna sezione della home (Al lavoro adesso, Preventivi in trattativa, Turni di oggi, Permessi in attesa, Totale preventivi accettati, Totale consuntivi) — decide cosa vedono tutti, titolare compreso. Per le card che hanno un riepilogo a colori (Al lavoro adesso, Preventivi in trattativa, Totale consuntivi), un secondo interruttore annidato decide se mostrarlo o lasciare solo il numero.
 
 ## Backup dei dati
 
