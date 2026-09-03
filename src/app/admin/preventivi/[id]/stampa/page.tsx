@@ -169,10 +169,10 @@ export default async function StampaPreventivoPage({
   );
 
   function blockClassName(type: DescriptionBlock["type"]) {
-    if (type === "tipo") return "break-inside-avoid uppercase";
-    if (type === "address") return "mt-1 break-inside-avoid text-zinc-600";
-    if (type === "note") return "mt-3 break-inside-avoid text-zinc-700";
-    return "mt-1 break-inside-avoid text-zinc-700";
+    if (type === "tipo") return "break-inside-avoid break-words uppercase";
+    if (type === "address") return "mt-1 break-inside-avoid break-words text-zinc-600";
+    if (type === "note") return "mt-3 break-inside-avoid break-words text-zinc-700";
+    return "mt-1 break-inside-avoid break-words text-zinc-700";
   }
 
   const colgroupEl = (
