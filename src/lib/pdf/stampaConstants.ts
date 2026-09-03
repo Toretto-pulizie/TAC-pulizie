@@ -1,5 +1,3 @@
-// TODO: sostituire con i dati bancari reali dell'azienda
-export const BANCA_APPOGGIO = "[Nome banca] - IBAN: [IBAN]";
 export const CONDIZIONI_PAGAMENTO_DEFAULT = "A ricevimento fattura";
 export const ALIQUOTA_IVA = 0.22;
 export const VALIDITA_GIORNI = 90;

@@ -2,20 +2,23 @@ import { requireAdmin } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
 import { getHomeSettings } from "@/lib/homeSettings";
+import { getBankSettings } from "@/lib/bankSettings";
 import { ServiceTypeLabelRow } from "./ServiceTypeLabelRow";
 import { TipoPrestazioneForm } from "./TipoPrestazioneForm";
 import { TipoPrestazioneRow } from "./TipoPrestazioneRow";
 import { HomeSettingsForm } from "./HomeSettingsForm";
+import { BankSettingsForm } from "./BankSettingsForm";
 import { ImpostazioniTabs } from "./ImpostazioniTabs";
 
 const ORDER = ["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE"] as const;
 
 export default async function ImpostazioniPage() {
   await requireAdmin();
-  const [labels, tipiPrestazione, homeSettings] = await Promise.all([
+  const [labels, tipiPrestazione, homeSettings, bankSettings] = await Promise.all([
     getServiceTypeLabels(),
     prisma.tipoPrestazione.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
     getHomeSettings(),
+    getBankSettings(),
   ]);
 
   return (
@@ -108,6 +111,22 @@ export default async function ImpostazioniPage() {
                     showAlLavoroBar: homeSettings.showAlLavoroBar,
                     showPreventiviBar: homeSettings.showPreventiviBar,
                     showTotaleConsuntiviBar: homeSettings.showTotaleConsuntiviBar,
+                  }}
+                />
+              </section>
+            ),
+          },
+          {
+            id: "banca",
+            label: "Banca",
+            content: (
+              <section className="flex flex-col gap-3">
+                <BankSettingsForm
+                  initial={{
+                    nomeBanca: bankSettings.nomeBanca,
+                    iban: bankSettings.iban,
+                    intestatario: bankSettings.intestatario,
+                    swiftBic: bankSettings.swiftBic,
                   }}
                 />
               </section>

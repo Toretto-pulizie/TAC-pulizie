@@ -92,7 +92,8 @@ Solo lettura, quattro tabelle: andamento preventivi ultimi 6 mesi (creati/accett
 ### Impostazioni (`/admin/impostazioni`, solo titolare)
 - **Tipi di servizio**: rinomina le tre etichette (una tantum/passaggio settimanale/passaggio mensile) usate nei preventivi — cambia solo il nome mostrato, non i calcoli.
 - **Tipo di prestazione**: elenco personalizzabile delle voci che aprono la descrizione nei preventivi (es. "PRESTAZIONE ORDINARIA DI PULIZIA UFFICI"). Si aggiungono da "Nuova voce" + Aggiungi; modificarle o eliminarle non cambia i preventivi già creati.
-- **Visualizzazione** (schede in alto: Tipi di servizio / Tipo di prestazione / Visualizzazione — si vede una scheda alla volta) → **Home**: un interruttore per ciascuna sezione della home (Al lavoro adesso, Preventivi in trattativa, Turni di oggi, Permessi in attesa, Totale preventivi accettati, Totale consuntivi) — decide cosa vedono tutti, titolare compreso. Per le card che hanno un riepilogo a colori (Al lavoro adesso, Preventivi in trattativa, Totale consuntivi), un secondo interruttore annidato decide se mostrarlo o lasciare solo il numero.
+- **Visualizzazione** (schede in alto: Tipi di servizio / Tipo di prestazione / Visualizzazione / Banca — si vede una scheda alla volta) → **Home**: un interruttore per ciascuna sezione della home (Al lavoro adesso, Preventivi in trattativa, Turni di oggi, Permessi in attesa, Totale preventivi accettati, Totale consuntivi) — decide cosa vedono tutti, titolare compreso. Per le card che hanno un riepilogo a colori (Al lavoro adesso, Preventivi in trattativa, Totale consuntivi), un secondo interruttore annidato decide se mostrarlo o lasciare solo il numero.
+- **Banca**: Nome banca, IBAN, Intestatario conto, SWIFT/BIC — questi dati compaiono come "Banca d'appoggio" nel PDF dei preventivi stampati. Finché non li compili, quel riquadro resta vuoto nel PDF.
 
 ## Backup dei dati
 

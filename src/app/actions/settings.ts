@@ -58,3 +58,38 @@ export async function updateHomeSettings(settings: {
   revalidatePath("/admin/impostazioni");
   revalidatePath("/admin");
 }
+
+const BankSettingsSchema = z.object({
+  nomeBanca: z.string().trim(),
+  iban: z.string().trim(),
+  intestatario: z.string().trim(),
+  swiftBic: z.string().trim(),
+});
+
+export async function updateBankSettings(
+  _prevState: unknown,
+  formData: FormData
+) {
+  await requireAdmin();
+
+  const parsed = BankSettingsSchema.safeParse({
+    nomeBanca: formData.get("nomeBanca"),
+    iban: formData.get("iban"),
+    intestatario: formData.get("intestatario"),
+    swiftBic: formData.get("swiftBic"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
+  }
+
+  await prisma.bankSettings.upsert({
+    where: { id: "singleton" },
+    update: parsed.data,
+    create: { id: "singleton", ...parsed.data },
+  });
+
+  revalidatePath("/admin/impostazioni");
+  revalidatePath("/admin/preventivi");
+  return { success: true };
+}

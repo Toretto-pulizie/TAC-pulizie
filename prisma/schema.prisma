@@ -204,6 +204,14 @@ model HomeSettings {
   showTotaleConsuntiviBar  Boolean @default(true)
 }
 
+model BankSettings {
+  id           String  @id @default("singleton")
+  nomeBanca    String  @default("")
+  iban         String  @default("")
+  intestatario String  @default("")
+  swiftBic     String  @default("")
+}
+
 model Shift {
   id        String   @id @default(cuid())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

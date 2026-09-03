@@ -1,5 +1,4 @@
 import {
-  BANCA_APPOGGIO,
   CONDIZIONI_PAGAMENTO_DEFAULT,
   SIGNATURE_LINE,
   SITE_LINE,
@@ -44,10 +43,10 @@ export async function getLogoDataUri(origin: string): Promise<string> {
   return logoDataUriCache;
 }
 
-function infoCol(label: string, value: string, opts: { bold?: boolean; last?: boolean } = {}) {
-  const { bold, last } = opts;
+function infoCol(label: string, value: string, opts: { bold?: boolean; last?: boolean; flex?: number } = {}) {
+  const { bold, last, flex = 1 } = opts;
   return `
-    <div style="flex:1; border-right:${last ? "none" : `1px solid ${ZINC_300}`}; min-width:0;">
+    <div style="flex:${flex}; border-right:${last ? "none" : `1px solid ${ZINC_300}`}; min-width:0;">
       <p style="margin:0; border-bottom:1px solid ${ZINC_300}; background:${ZINC_50}; padding:1px 6px; font-size:8px; text-transform:uppercase; line-height:1; letter-spacing:0.025em; color:${ZINC_500};">${escapeHtml(label)}</p>
       <p style="margin:0; padding:2px 6px; font-size:11px; line-height:1.25; color:${ZINC_900}; ${bold ? "font-weight:700;" : ""} white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(value) || "&mdash;"}</p>
     </div>`;
@@ -66,6 +65,7 @@ export type HeaderTemplateData = {
   codiceFiscale?: string | null;
   personaRiferimento?: string | null;
   condizioniPagamento?: string | null;
+  bancaAppoggio?: string;
 };
 
 export async function buildHeaderTemplate(
@@ -106,8 +106,8 @@ export async function buildHeaderTemplate(
           ${infoCol("Persona di riferimento", data.personaRiferimento ?? "", { last: true })}
         </div>
         <div style="display:flex;">
-          ${infoCol("Banca d'appoggio", BANCA_APPOGGIO)}
-          ${infoCol("Condizioni di pagamento", data.condizioniPagamento ?? CONDIZIONI_PAGAMENTO_DEFAULT, { last: true })}
+          ${infoCol("Banca d'appoggio", data.bancaAppoggio ?? "", { flex: 3 })}
+          ${infoCol("Condizioni di pagamento", data.condizioniPagamento ?? CONDIZIONI_PAGAMENTO_DEFAULT, { last: true, flex: 1 })}
         </div>
       </div>
     </div>`;

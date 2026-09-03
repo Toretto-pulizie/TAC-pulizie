@@ -13,7 +13,6 @@ import {
 import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
 import {
   ALIQUOTA_IVA,
-  BANCA_APPOGGIO,
   CONDIZIONI_PAGAMENTO_DEFAULT,
   NOTA_IVA_PRIVATI,
   NOTA_REVERSE_CHARGE,
@@ -22,19 +21,25 @@ import {
   VALIDITA_GIORNI,
   formatEuro,
 } from "@/lib/pdf/stampaConstants";
+import { getBankSettings, formatBancaAppoggio } from "@/lib/bankSettings";
 import { PrintButton } from "./PrintButton";
 
 function InfoCol({
   label,
   value,
   bold,
+  flex = 1,
 }: {
   label: string;
   value?: string;
   bold?: boolean;
+  flex?: number;
 }) {
   return (
-    <div className="flex-1 border-r border-zinc-300 last:border-r-0">
+    <div
+      className="border-r border-zinc-300 last:border-r-0"
+      style={{ flex }}
+    >
       <p className="border-b border-zinc-300 bg-zinc-50 px-1.5 py-0.5 text-[8px] uppercase leading-none tracking-wide text-zinc-500">
         {label}
       </p>
@@ -59,14 +64,16 @@ export default async function StampaPreventivoPage({
   const { pdf, totale, groups } = await searchParams;
   const isPdfMode = pdf === "1";
 
-  const [quote, serviceLabels] = await Promise.all([
+  const [quote, serviceLabels, bankSettings] = await Promise.all([
     prisma.quote.findUnique({
       where: { id },
       include: { site: { include: { client: true } } },
     }),
     getServiceTypeLabels(),
+    getBankSettings(),
   ]);
   if (!quote) notFound();
+  const bancaAppoggio = formatBancaAppoggio(bankSettings);
 
   const client = quote.site.client;
   const clientName =
@@ -143,10 +150,11 @@ export default async function StampaPreventivoPage({
           />
         </div>
         <div className="flex">
-          <InfoCol label="Banca d'appoggio" value={BANCA_APPOGGIO} />
+          <InfoCol label="Banca d'appoggio" value={bancaAppoggio} flex={3} />
           <InfoCol
             label="Condizioni di pagamento"
             value={quote.condizioniPagamento ?? CONDIZIONI_PAGAMENTO_DEFAULT}
+            flex={1}
           />
         </div>
       </div>

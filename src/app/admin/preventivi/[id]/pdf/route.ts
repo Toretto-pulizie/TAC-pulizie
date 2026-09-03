@@ -10,6 +10,7 @@ import {
   buildNoteParagraphs,
 } from "@/lib/quotePrint";
 import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
+import { getBankSettings, formatBancaAppoggio } from "@/lib/bankSettings";
 import { launchBrowser } from "@/lib/pdf/browser";
 import {
   ALIQUOTA_IVA,
@@ -91,12 +92,13 @@ export async function GET(
   await requireModule("preventivi");
   const { id } = await params;
 
-  const [quote, serviceLabels] = await Promise.all([
+  const [quote, serviceLabels, bankSettings] = await Promise.all([
     prisma.quote.findUnique({
       where: { id },
       include: { site: { include: { client: true } } },
     }),
     getServiceTypeLabels(),
+    getBankSettings(),
   ]);
   if (!quote) {
     return NextResponse.json(
@@ -149,6 +151,7 @@ export async function GET(
       personaRiferimento: client.personaRiferimento,
       condizioniPagamento:
         quote.condizioniPagamento ?? CONDIZIONI_PAGAMENTO_DEFAULT,
+      bancaAppoggio: formatBancaAppoggio(bankSettings),
     },
     origin
   );
