@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { updateClient, checkPartitaIva } from "@/app/actions/admin";
+import { updateClient, checkPartitaIva, findCapFromAddress } from "@/app/actions/admin";
 import { lookupComuneFromCap } from "@/lib/capLookup";
 import { isValidPartitaIva } from "@/lib/partitaIva";
 import { Tooltip } from "@/app/Tooltip";
@@ -12,6 +12,7 @@ type PivaStato =
   | { tipo: "non trovata" }
   | { tipo: "non valida" }
   | null;
+type CapStato = { tipo: "verificando" } | { tipo: "trovato" } | { tipo: "non trovato" } | null;
 
 type Tipo = "AZIENDA" | "PERSONA_FISICA";
 
@@ -49,11 +50,22 @@ export function EditClientForm({
   const [state, action, pending] = useActionState(updateClient, undefined);
   const [tipo, setTipo] = useState<Tipo>(initialTipo);
   const [pivaStato, setPivaStato] = useState<PivaStato>(null);
+  const [capStato, setCapStato] = useState<CapStato>(null);
   const ragioneSocialeRef = useRef<HTMLInputElement>(null);
   const indirizzoRef = useRef<HTMLInputElement>(null);
   const capRef = useRef<HTMLInputElement>(null);
   const cittaRef = useRef<HTMLInputElement>(null);
   const provinciaRef = useRef<HTMLInputElement>(null);
+
+  function applyCap(cap: string) {
+    if (capRef.current) capRef.current.value = cap;
+    const match = lookupComuneFromCap(cap);
+    if (!match) return;
+    if (match.comune && cittaRef.current) cittaRef.current.value = match.comune;
+    if (match.provincia && provinciaRef.current) {
+      provinciaRef.current.value = match.provincia;
+    }
+  }
 
   function handleCapBlur(e: React.FocusEvent<HTMLInputElement>) {
     const match = lookupComuneFromCap(e.target.value);
@@ -62,6 +74,19 @@ export function EditClientForm({
     if (match.provincia && provinciaRef.current) {
       provinciaRef.current.value = match.provincia;
     }
+  }
+
+  async function handleIndirizzoBlur(e: React.FocusEvent<HTMLInputElement>) {
+    const value = e.target.value.trim();
+    if (!value || capRef.current?.value.trim()) return;
+    setCapStato({ tipo: "verificando" });
+    const result = await findCapFromAddress(value);
+    if (!result || "error" in result) {
+      setCapStato({ tipo: "non trovato" });
+      return;
+    }
+    applyCap(result.data.cap);
+    setCapStato({ tipo: "trovato" });
   }
 
   async function handlePartitaIvaBlur(e: React.FocusEvent<HTMLInputElement>) {
@@ -201,13 +226,26 @@ export function EditClientForm({
       )}
 
       <label className="flex flex-col gap-1 text-sm">
-        Indirizzo
+        <Tooltip text="Se manca il CAP, prova a compilarlo da solo (in base all'indirizzo)">
+          Indirizzo
+        </Tooltip>
         <input
           ref={indirizzoRef}
           name="indirizzo"
           defaultValue={indirizzo ?? ""}
+          onBlur={handleIndirizzoBlur}
+          onChange={() => setCapStato(null)}
           className="rounded-lg border border-zinc-300 px-3 py-2"
         />
+        {capStato?.tipo === "verificando" && (
+          <span className="text-xs text-zinc-500">Cerco il CAP...</span>
+        )}
+        {capStato?.tipo === "trovato" && (
+          <span className="text-xs text-green-600">✓ CAP compilato</span>
+        )}
+        {capStato?.tipo === "non trovato" && (
+          <span className="text-xs text-amber-600">⚠ CAP non trovato, inseriscilo a mano</span>
+        )}
       </label>
 
       <div className="flex gap-3">

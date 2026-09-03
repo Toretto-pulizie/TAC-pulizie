@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireModule } from "@/lib/dal";
-import { geocodeAddress } from "@/lib/geocode";
+import { geocodeAddress, lookupCapFromAddress } from "@/lib/geocode";
 import { lookupPartitaIva } from "@/lib/viesLookup";
 import { isModuleKey } from "@/lib/modules";
 
@@ -278,6 +278,16 @@ export async function checkPartitaIva(piva: string) {
   const result = await lookupPartitaIva(piva);
   if (!result) {
     return { error: "Partita IVA non trovata o non attiva (verifica VIES)" };
+  }
+  return { success: true as const, data: result };
+}
+
+export async function findCapFromAddress(address: string) {
+  await requireModule("clienti");
+  if (!address.trim()) return { error: "Indirizzo vuoto" };
+  const result = await lookupCapFromAddress(address);
+  if (!result) {
+    return { error: "CAP non trovato per questo indirizzo" };
   }
   return { success: true as const, data: result };
 }
