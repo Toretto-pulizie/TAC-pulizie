@@ -30,22 +30,26 @@ function InfoCol({
   value,
   bold,
   flex = 1,
+  center,
 }: {
   label: string;
   value?: string;
   bold?: boolean;
   flex?: number;
+  center?: boolean;
 }) {
   return (
     <div
       className="border-r border-zinc-300 last:border-r-0"
       style={{ flex }}
     >
-      <p className="border-b border-zinc-300 bg-zinc-50 px-1.5 py-0.5 text-[8px] uppercase leading-none tracking-wide text-zinc-500">
+      <p
+        className={`border-b border-zinc-300 bg-zinc-50 px-1.5 py-0.5 text-[8px] uppercase leading-none tracking-wide text-zinc-500 ${center ? "text-center" : ""}`}
+      >
         {label}
       </p>
       <p
-        className={`truncate px-1.5 py-0.5 text-[11px] leading-tight text-zinc-900 ${bold ? "font-bold" : ""}`}
+        className={`truncate px-1.5 py-0.5 text-[11px] leading-tight text-zinc-900 ${bold ? "font-bold" : ""} ${center ? "text-center" : ""}`}
       >
         {value || "—"}
       </p>
@@ -116,9 +120,11 @@ export default async function StampaPreventivoPage({
                 label="N. Doc."
                 value={String(quote.numeroOfferta)}
                 bold
+                flex={1}
+                center
               />
-              <InfoCol label="Data" value={dataDocumento} bold />
-              <InfoCol label="Pag." value="1/1" />
+              <InfoCol label="Data" value={dataDocumento} bold flex={1.4} center />
+              <InfoCol label="Pag." value="1/1" flex={1} center />
             </div>
           </div>
         </div>
@@ -171,9 +177,9 @@ export default async function StampaPreventivoPage({
 
   function blockClassName(type: DescriptionBlock["type"]) {
     if (type === "tipo") return "break-inside-avoid break-words whitespace-pre-line uppercase";
-    if (type === "address") return "mt-1 break-inside-avoid break-words whitespace-pre-line text-zinc-600";
+    if (type === "address") return "mt-1 break-inside-avoid break-words whitespace-pre-line uppercase text-zinc-600";
     if (type === "note") return "mt-3 break-inside-avoid break-words whitespace-pre-line text-zinc-700";
-    return "mt-1 break-inside-avoid break-words whitespace-pre-line text-zinc-700";
+    return "mt-1 break-inside-avoid break-words whitespace-pre-line uppercase text-zinc-700";
   }
 
   const colgroupEl = (

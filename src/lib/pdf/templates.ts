@@ -43,12 +43,13 @@ export async function getLogoDataUri(origin: string): Promise<string> {
   return logoDataUriCache;
 }
 
-function infoCol(label: string, value: string, opts: { bold?: boolean; last?: boolean; flex?: number } = {}) {
-  const { bold, last, flex = 1 } = opts;
+function infoCol(label: string, value: string, opts: { bold?: boolean; last?: boolean; flex?: number; center?: boolean } = {}) {
+  const { bold, last, flex = 1, center } = opts;
+  const align = center ? "text-align:center;" : "";
   return `
     <div style="flex:${flex}; border-right:${last ? "none" : `1px solid ${ZINC_300}`}; min-width:0;">
-      <p style="margin:0; border-bottom:1px solid ${ZINC_300}; background:${ZINC_50}; padding:1px 6px; font-size:8px; text-transform:uppercase; line-height:1; letter-spacing:0.025em; color:${ZINC_500};">${escapeHtml(label)}</p>
-      <p style="margin:0; padding:2px 6px; font-size:11px; line-height:1.25; color:${ZINC_900}; ${bold ? "font-weight:700;" : ""} white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(value) || "&mdash;"}</p>
+      <p style="margin:0; border-bottom:1px solid ${ZINC_300}; background:${ZINC_50}; padding:1px 6px; font-size:8px; text-transform:uppercase; line-height:1; letter-spacing:0.025em; color:${ZINC_500}; ${align}">${escapeHtml(label)}</p>
+      <p style="margin:0; padding:2px 6px; font-size:11px; line-height:1.25; color:${ZINC_900}; ${bold ? "font-weight:700;" : ""} ${align} white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(value) || "&mdash;"}</p>
     </div>`;
 }
 
@@ -84,9 +85,9 @@ export async function buildHeaderTemplate(
           <div style="margin-top:30px; width:176px; border-radius:8px; border:1px solid ${ZINC_300};">
             <p style="margin:0; border-bottom:1px solid ${ZINC_300}; background:${ZINC_50}; padding:2px 6px; text-align:center; font-size:9px; font-weight:600; text-transform:uppercase; line-height:1; letter-spacing:0.025em; color:${ZINC_700};">Offerta</p>
             <div style="display:flex;">
-              ${infoCol("N. Doc.", String(data.numeroOfferta), { bold: true })}
-              ${infoCol("Data", data.dataDocumento, { bold: true })}
-              ${infoCol("Pag.", "1/1", { last: true })}
+              ${infoCol("N. Doc.", String(data.numeroOfferta), { bold: true, flex: 1, center: true })}
+              ${infoCol("Data", data.dataDocumento, { bold: true, flex: 1.4, center: true })}
+              ${infoCol("Pag.", "1/1", { last: true, flex: 1, center: true })}
             </div>
           </div>
         </div>
