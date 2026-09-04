@@ -40,7 +40,7 @@ function buildRiepilogoLine(q: QuotePricingInput): string | null {
   if (q.serviceType === "ONE_SHOT") {
     return `Intervento una tantum di pulizia (${q.oneShotCount} intervento${
       q.oneShotCount > 1 ? "i" : ""
-    }), ${q.ore} ore per intervento più ${q.spostamento} ore di spostamento.`;
+    }).`;
   }
   if (q.serviceType === "PASS_SETTIMANALE") {
     const n = q.passSettimanale ?? 0;
@@ -76,11 +76,8 @@ export function buildDescriptionBlocks(
     type: "address",
     text: `Sede dell'intervento: ${q.site.address}`,
   });
-  blocks.push({ type: "line", text: serviceLabel });
-  if (mostraCadenza) {
-    const riepilogoLine = buildRiepilogoLine(q);
-    if (riepilogoLine) blocks.push({ type: "line", text: riepilogoLine });
-  }
+  const riepilogoLine = mostraCadenza ? buildRiepilogoLine(q) : null;
+  blocks.push({ type: "line", text: riepilogoLine ?? serviceLabel });
   for (const paragraph of noteParagraphs)
     blocks.push({ type: "note", text: paragraph });
   return blocks;
