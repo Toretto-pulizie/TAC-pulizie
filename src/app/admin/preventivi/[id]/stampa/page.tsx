@@ -3,14 +3,15 @@ import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeDiscountPct } from "@/lib/quotes";
 import {
-  buildCadenzaLine,
   buildDescriptionBlocks,
-  buildDescriptionLines,
   buildLineItem,
   buildNoteParagraphs,
   type DescriptionBlock,
 } from "@/lib/quotePrint";
-import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
+import {
+  getServiceTypeLabels,
+  getServiceTypeMostraCadenza,
+} from "@/lib/serviceTypeLabels";
 import {
   ALIQUOTA_IVA,
   CONDIZIONI_PAGAMENTO_DEFAULT,
@@ -64,14 +65,16 @@ export default async function StampaPreventivoPage({
   const { pdf, totale, groups } = await searchParams;
   const isPdfMode = pdf === "1";
 
-  const [quote, serviceLabels, bankSettings] = await Promise.all([
-    prisma.quote.findUnique({
-      where: { id },
-      include: { site: { include: { client: true } } },
-    }),
-    getServiceTypeLabels(),
-    getBankSettings(),
-  ]);
+  const [quote, serviceLabels, mostraCadenzaSettings, bankSettings] =
+    await Promise.all([
+      prisma.quote.findUnique({
+        where: { id },
+        include: { site: { include: { client: true } } },
+      }),
+      getServiceTypeLabels(),
+      getServiceTypeMostraCadenza(),
+      getBankSettings(),
+    ]);
   if (!quote) notFound();
   const bancaAppoggio = formatBancaAppoggio(bankSettings);
 
@@ -81,8 +84,6 @@ export default async function StampaPreventivoPage({
       ? `${client.nome ?? ""} ${client.cognome ?? ""}`.trim()
       : (client.ragioneSociale ?? client.name);
 
-  const descriptionLines = buildDescriptionLines(quote);
-  const cadenzaLine = buildCadenzaLine(quote);
   const noteParagraphs = buildNoteParagraphs(quote.note);
   const lineItem = buildLineItem(quote, serviceLabels[quote.serviceType]);
   const prezzoNetto = quote.prezzoVenduto ?? lineItem.listPrice;
@@ -163,8 +164,8 @@ export default async function StampaPreventivoPage({
 
   const blocks = buildDescriptionBlocks(
     quote,
-    descriptionLines,
-    cadenzaLine,
+    serviceLabels[quote.serviceType],
+    mostraCadenzaSettings[quote.serviceType],
     noteParagraphs
   );
 

@@ -1,6 +1,9 @@
 import { requireAdmin } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
+import {
+  getServiceTypeLabels,
+  getServiceTypeMostraCadenza,
+} from "@/lib/serviceTypeLabels";
 import { getHomeSettings } from "@/lib/homeSettings";
 import { getBankSettings } from "@/lib/bankSettings";
 import { ServiceTypeLabelRow } from "./ServiceTypeLabelRow";
@@ -14,12 +17,14 @@ const ORDER = ["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE"] as const;
 
 export default async function ImpostazioniPage() {
   await requireAdmin();
-  const [labels, tipiPrestazione, homeSettings, bankSettings] = await Promise.all([
-    getServiceTypeLabels(),
-    prisma.tipoPrestazione.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
-    getHomeSettings(),
-    getBankSettings(),
-  ]);
+  const [labels, mostraCadenzaSettings, tipiPrestazione, homeSettings, bankSettings] =
+    await Promise.all([
+      getServiceTypeLabels(),
+      getServiceTypeMostraCadenza(),
+      prisma.tipoPrestazione.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
+      getHomeSettings(),
+      getBankSettings(),
+    ]);
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-8">
@@ -46,6 +51,7 @@ export default async function ImpostazioniPage() {
                       key={tipo}
                       tipo={tipo}
                       etichetta={labels[tipo]}
+                      mostraCadenza={mostraCadenzaSettings[tipo]}
                     />
                   ))}
                 </div>

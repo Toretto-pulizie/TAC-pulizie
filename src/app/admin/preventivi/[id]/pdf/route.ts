@@ -3,13 +3,14 @@ import { PDFDocument } from "pdf-lib";
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import {
-  buildCadenzaLine,
   buildDescriptionBlocks,
-  buildDescriptionLines,
   buildLineItem,
   buildNoteParagraphs,
 } from "@/lib/quotePrint";
-import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
+import {
+  getServiceTypeLabels,
+  getServiceTypeMostraCadenza,
+} from "@/lib/serviceTypeLabels";
 import { getBankSettings, formatBancaAppoggio } from "@/lib/bankSettings";
 import { launchBrowser } from "@/lib/pdf/browser";
 import {
@@ -92,14 +93,16 @@ export async function GET(
   await requireModule("preventivi");
   const { id } = await params;
 
-  const [quote, serviceLabels, bankSettings] = await Promise.all([
-    prisma.quote.findUnique({
-      where: { id },
-      include: { site: { include: { client: true } } },
-    }),
-    getServiceTypeLabels(),
-    getBankSettings(),
-  ]);
+  const [quote, serviceLabels, mostraCadenzaSettings, bankSettings] =
+    await Promise.all([
+      prisma.quote.findUnique({
+        where: { id },
+        include: { site: { include: { client: true } } },
+      }),
+      getServiceTypeLabels(),
+      getServiceTypeMostraCadenza(),
+      getBankSettings(),
+    ]);
   if (!quote) {
     return NextResponse.json(
       { error: "Preventivo non trovato" },
@@ -114,13 +117,11 @@ export async function GET(
       : (client.ragioneSociale ?? client.name);
   const isPersonaFisica = client.tipo === "PERSONA_FISICA";
 
-  const descriptionLines = buildDescriptionLines(quote);
-  const cadenzaLine = buildCadenzaLine(quote);
   const noteParagraphs = buildNoteParagraphs(quote.note);
   const blocks = buildDescriptionBlocks(
     quote,
-    descriptionLines,
-    cadenzaLine,
+    serviceLabels[quote.serviceType],
+    mostraCadenzaSettings[quote.serviceType],
     noteParagraphs
   );
 

@@ -186,8 +186,9 @@ model QuotePhrase {
 }
 
 model ServiceTypeLabel {
-  tipo      ServiceType @id
-  etichetta String
+  tipo          ServiceType @id
+  etichetta     String
+  mostraCadenza Boolean     @default(true)
 }
 
 // Riga singola: decide quali sezioni compaiono nella home del programma.

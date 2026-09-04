@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/dal";
 const ServiceTypeLabelSchema = z.object({
   tipo: z.enum(["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE"]),
   etichetta: z.string().trim().min(1, "Il nome non può essere vuoto"),
+  mostraCadenza: z.boolean(),
 });
 
 export async function updateServiceTypeLabel(
@@ -19,6 +20,7 @@ export async function updateServiceTypeLabel(
   const parsed = ServiceTypeLabelSchema.safeParse({
     tipo: formData.get("tipo"),
     etichetta: formData.get("etichetta"),
+    mostraCadenza: formData.get("mostraCadenza") === "on",
   });
 
   if (!parsed.success) {
@@ -27,7 +29,10 @@ export async function updateServiceTypeLabel(
 
   await prisma.serviceTypeLabel.upsert({
     where: { tipo: parsed.data.tipo },
-    update: { etichetta: parsed.data.etichetta },
+    update: {
+      etichetta: parsed.data.etichetta,
+      mostraCadenza: parsed.data.mostraCadenza,
+    },
     create: parsed.data,
   });
 
