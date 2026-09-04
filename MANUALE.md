@@ -66,7 +66,7 @@ Elenco di tutte le richieste di permesso/assenza inviate dai collaboratori (in a
 ### Preventivi (`/admin/preventivi`)
 - Pulsante **+ Nuovo preventivo** in cima: apre/chiude il modulo di creazione (rimane chiuso finché non serve, per non intasare la vista). Cliccando **Modifica** su un preventivo esistente il modulo si apre già compilato.
 - Il modulo comprende: Cliente, Tipo di prestazione, Tipo di servizio, Ore, Spostamento, Interventi/settimana o mese, Ore/pass vetri, Tariffe, Sconto, Prezzo venduto, Condizioni di pagamento, Note (anche da frasi preimpostate).
-- Sotto: tre statistiche (Preventivi in trattativa, Contratti accettati/mese, Valore annuo contratti) e l'elenco preventivi con Cliente/cantiere, Servizio (breve, senza il testo lungo della descrizione), Prezzo listino, Prezzo venduto, Sconto, Stato. Azioni per riga: **Stampa** (PDF), **Modifica**, **Accetta/Rifiuta/Riapri**, **Elimina**.
+- Sotto: tre statistiche (Preventivi in trattativa, Contratti accettati/mese, Valore annuo contratti) e l'elenco preventivi con Cliente/cantiere, Servizio (breve, senza il testo lungo della descrizione), Prezzo listino, Prezzo venduto, Sconto, Stato. Azioni per riga: **Scarica PDF**, **Modifica**, **Accetta/Rifiuta/Riapri**, **Elimina**.
 - "Gestisci frasi preimpostate →" porta alla libreria di frasi riutilizzabili nelle note dei preventivi.
 
 ### Consuntivi (`/admin/consuntivi`)
