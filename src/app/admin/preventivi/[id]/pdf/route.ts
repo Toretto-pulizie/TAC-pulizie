@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument } from "pdf-lib";
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import {
-  buildDescriptionBlocks,
-  buildLineItem,
-  buildNoteParagraphs,
-} from "@/lib/quotePrint";
+import { buildLineItem } from "@/lib/quotePrint";
 import {
   getServiceTypeLabels,
   getServiceTypeMostraCadenza,
@@ -24,67 +20,8 @@ import { buildHeaderTemplate, buildFooterTemplate } from "@/lib/pdf/templates";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// Rather than letting the browser split one long table across pages (it
-// won't repeat the table's own rounded-corner border at the artificial cut
-// point — a real Chromium print limitation), we measure how tall each
-// description paragraph renders and split the content ourselves into
-// separate, complete <table> elements, one per physical page — the same
-// approach a report tool like Crystal Reports uses. Each page's table is
-// then a genuine, independently-bordered box; nothing needs to be patched
-// in afterwards.
-const MM_TO_PX = 96 / 25.4;
-const PAGE_WIDTH_MM = 210;
-const PAGE_HEIGHT_MM = 297;
-const PAGE_MARGIN_LEFT_MM = 6;
-const PAGE_MARGIN_RIGHT_MM = 6;
-// Measured via getBoundingClientRect on the actual rendered templates
-// (header ~72.7mm, footer ~53.9mm at the real print width) plus a 5mm
-// breathing-room gap to the description table / footer box.
 const MARGIN_TOP_MM = 78;
 const MARGIN_BOTTOM_MM = 59;
-const VIEWPORT_WIDTH_PX = Math.round(
-  (PAGE_WIDTH_MM - PAGE_MARGIN_LEFT_MM - PAGE_MARGIN_RIGHT_MM) * MM_TO_PX
-);
-const CONTENT_HEIGHT_PER_PAGE_PX =
-  (PAGE_HEIGHT_MM - MARGIN_TOP_MM - MARGIN_BOTTOM_MM) * MM_TO_PX;
-
-type Measurements = {
-  blockHeights: number[];
-  theadHeight: number;
-  summaryHeight: number;
-  bodyCellOverhead: number;
-};
-
-function bucketBlocks(m: Measurements): number[][] {
-  const pageCapacity =
-    CONTENT_HEIGHT_PER_PAGE_PX - m.theadHeight - m.bodyCellOverhead;
-
-  const groups: number[][] = [];
-  let current: number[] = [];
-  let currentHeight = 0;
-
-  m.blockHeights.forEach((h, i) => {
-    if (current.length > 0 && currentHeight + h > pageCapacity) {
-      groups.push(current);
-      current = [];
-      currentHeight = 0;
-    }
-    current.push(i);
-    currentHeight += h;
-  });
-  groups.push(current);
-
-  const lastGroup = groups[groups.length - 1];
-  const lastGroupHeight = lastGroup.reduce(
-    (sum, i) => sum + m.blockHeights[i],
-    0
-  );
-  if (lastGroupHeight + m.summaryHeight > pageCapacity) {
-    groups.push([]);
-  }
-
-  return groups;
-}
 
 export async function GET(
   req: NextRequest,
@@ -116,14 +53,6 @@ export async function GET(
       ? `${client.nome ?? ""} ${client.cognome ?? ""}`.trim()
       : (client.ragioneSociale ?? client.name);
   const isPersonaFisica = client.tipo === "PERSONA_FISICA";
-
-  const noteParagraphs = buildNoteParagraphs(quote.note);
-  const blocks = buildDescriptionBlocks(
-    quote,
-    serviceLabels[quote.serviceType],
-    mostraCadenzaSettings[quote.serviceType],
-    noteParagraphs
-  );
 
   const lineItem = buildLineItem(quote, serviceLabels[quote.serviceType]);
   const prezzoNetto = quote.prezzoVenduto ?? lineItem.listPrice;
@@ -172,7 +101,7 @@ export async function GET(
   const browser = await launchBrowser();
 
   try {
-    const newPage = async () => {
+    const renderPdf = async (totaleLabel: string): Promise<Uint8Array> => {
       const page = await browser.newPage();
       if (sessionCookie) {
         await page.setCookie({
@@ -181,54 +110,7 @@ export async function GET(
           url: origin,
         });
       }
-      return page;
-    };
-
-    // Measurement pass: load the ungrouped (single-table) rendering and
-    // read back the actual rendered height of every paginatable unit, at
-    // the same width the print content box will use.
-    const measurePage = await newPage();
-    await measurePage.setViewport({
-      width: VIEWPORT_WIDTH_PX,
-      height: 2000,
-    });
-    await measurePage.goto(baseUrl, { waitUntil: "networkidle0" });
-    const measurements: Measurements = await measurePage.evaluate(() => {
-      const blockEls = Array.from(
-        document.querySelectorAll("[data-block-index]")
-      );
-      const blockHeights = blockEls
-        .sort(
-          (a, b) =>
-            Number(a.getAttribute("data-block-index")) -
-            Number(b.getAttribute("data-block-index"))
-        )
-        .map((el) => el.getBoundingClientRect().height);
-      const theadEl = document.querySelector('[data-block="thead"]');
-      const summaryEl = document.querySelector('[data-block="summary"]');
-      const bodyCellEl = document.querySelector('[data-block="body-cell"]');
-      const bodyCellHeight = bodyCellEl
-        ? bodyCellEl.getBoundingClientRect().height
-        : 0;
-      const sumBlockHeights = blockHeights.reduce((a, b) => a + b, 0);
-      return {
-        blockHeights,
-        theadHeight: theadEl ? theadEl.getBoundingClientRect().height : 0,
-        summaryHeight: summaryEl
-          ? summaryEl.getBoundingClientRect().height
-          : 0,
-        bodyCellOverhead: bodyCellHeight - sumBlockHeights,
-      };
-    });
-    await measurePage.close();
-
-    const groups = bucketBlocks(measurements);
-    const groupsParam = groups.map((g) => g.join(",")).join("|");
-    const totalPages = groups.length;
-
-    const renderPdf = async (totaleLabel: string): Promise<Uint8Array> => {
-      const page = await newPage();
-      const url = `${baseUrl}&groups=${encodeURIComponent(groupsParam)}&totale=${encodeURIComponent(totaleLabel)}`;
+      const url = `${baseUrl}&totale=${encodeURIComponent(totaleLabel)}`;
       await page.goto(url, { waitUntil: "networkidle0" });
       const buf = await page.pdf({
         format: "A4",
@@ -247,13 +129,22 @@ export async function GET(
       return buf;
     };
 
+    // The description table is a single continuous <table> and the browser
+    // decides on its own where to break it across physical pages (repeating
+    // the <thead> automatically) — so how many pages there will be is only
+    // known after actually rendering, never estimated in advance. Render
+    // once with "SEGUE" as the footer total, check the real page count, and
+    // only render+merge the "real total" version if there's more than one:
+    // all-but-last page keep "SEGUE", the last one gets the real total.
+    const segueBuf = await renderPdf("SEGUE");
+    const segueDoc = await PDFDocument.load(segueBuf);
+    const totalPages = segueDoc.getPageCount();
+
     let finalBuf: Uint8Array;
     if (totalPages <= 1) {
       finalBuf = await renderPdf(formatEuro(prezzoNetto));
     } else {
-      const segueBuf = await renderPdf("SEGUE");
       const realBuf = await renderPdf(formatEuro(prezzoNetto));
-      const segueDoc = await PDFDocument.load(segueBuf);
       const realDoc = await PDFDocument.load(realBuf);
       const finalDoc = await PDFDocument.create();
       const seguePages = await finalDoc.copyPages(
@@ -270,6 +161,7 @@ export async function GET(
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="preventivo-${quote.numeroOfferta}.pdf"`,
+        "Cache-Control": "no-store",
       },
     });
   } finally {

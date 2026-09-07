@@ -60,10 +60,12 @@ function buildRiepilogoLine(q: QuotePricingInput): string | null {
 }
 
 // The description table cell's content, flattened into an ordered list of
-// paginatable units (one per <p>). Shared between the on-screen preview and
-// the PDF route so both measure and render the exact same blocks in the
-// exact same order — the PDF route splits these across per-page tables
-// using heights measured from this same markup.
+// <p> blocks. Shared between the on-screen preview and the PDF route so
+// both render the exact same blocks in the exact same order.
+function normalizeLineEndings(text: string): string {
+  return text.replace(/\r\n|\r/g, "\n");
+}
+
 export function buildDescriptionBlocks(
   q: QuotePricingInput & { tipoPrestazione?: string | null; site: { address: string } },
   serviceLabel: string,
@@ -71,15 +73,16 @@ export function buildDescriptionBlocks(
   noteParagraphs: string[]
 ): DescriptionBlock[] {
   const blocks: DescriptionBlock[] = [];
-  if (q.tipoPrestazione) blocks.push({ type: "tipo", text: q.tipoPrestazione });
+  if (q.tipoPrestazione)
+    blocks.push({ type: "tipo", text: normalizeLineEndings(q.tipoPrestazione) });
   blocks.push({
     type: "address",
-    text: `Sede dell'intervento: ${q.site.address}`,
+    text: normalizeLineEndings(`Sede dell'intervento: ${q.site.address}`),
   });
   const riepilogoLine = mostraCadenza ? buildRiepilogoLine(q) : null;
-  blocks.push({ type: "line", text: riepilogoLine ?? serviceLabel });
+  blocks.push({ type: "line", text: normalizeLineEndings(riepilogoLine ?? serviceLabel) });
   for (const paragraph of noteParagraphs)
-    blocks.push({ type: "note", text: paragraph });
+    blocks.push({ type: "note", text: normalizeLineEndings(paragraph) });
   return blocks;
 }
 

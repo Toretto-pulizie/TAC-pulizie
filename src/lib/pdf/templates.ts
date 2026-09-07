@@ -43,13 +43,18 @@ export async function getLogoDataUri(origin: string): Promise<string> {
   return logoDataUriCache;
 }
 
-function infoCol(label: string, value: string, opts: { bold?: boolean; last?: boolean; flex?: number; center?: boolean } = {}) {
-  const { bold, last, flex = 1, center } = opts;
+function infoCol(
+  label: string,
+  value: string,
+  opts: { bold?: boolean; last?: boolean; flex?: number; center?: boolean; rawHtml?: string } = {}
+) {
+  const { bold, last, flex = 1, center, rawHtml } = opts;
   const align = center ? "text-align:center;" : "";
+  const content = rawHtml ?? (escapeHtml(value) || "&mdash;");
   return `
     <div style="flex:${flex}; border-right:${last ? "none" : `1px solid ${ZINC_300}`}; min-width:0;">
       <p style="margin:0; border-bottom:1px solid ${ZINC_300}; background:${ZINC_50}; padding:1px 6px; font-size:8px; text-transform:uppercase; line-height:1; letter-spacing:0.025em; color:${ZINC_500}; ${align}">${escapeHtml(label)}</p>
-      <p style="margin:0; padding:2px 6px; font-size:11px; line-height:1.25; color:${ZINC_900}; ${bold ? "font-weight:700;" : ""} ${align} white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(value) || "&mdash;"}</p>
+      <p style="margin:0; padding:2px 6px; font-size:11px; line-height:1.25; color:${ZINC_900}; ${bold ? "font-weight:700;" : ""} ${align} white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${content}</p>
     </div>`;
 }
 
@@ -87,7 +92,12 @@ export async function buildHeaderTemplate(
             <div style="display:flex;">
               ${infoCol("N. Doc.", String(data.numeroOfferta), { bold: true, flex: 1, center: true })}
               ${infoCol("Data", data.dataDocumento, { bold: true, flex: 1.4, center: true })}
-              ${infoCol("Pag.", "1/1", { last: true, flex: 1, center: true })}
+              ${infoCol("Pag.", "", {
+                last: true,
+                flex: 1,
+                center: true,
+                rawHtml: '<span class="pageNumber"></span>/<span class="totalPages"></span>',
+              })}
             </div>
           </div>
         </div>

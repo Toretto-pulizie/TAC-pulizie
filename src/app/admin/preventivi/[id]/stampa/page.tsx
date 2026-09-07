@@ -62,11 +62,11 @@ export default async function StampaPreventivoPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ pdf?: string; totale?: string; groups?: string }>;
+  searchParams: Promise<{ pdf?: string; totale?: string }>;
 }) {
   await requireModule("preventivi");
   const { id } = await params;
-  const { pdf, totale, groups } = await searchParams;
+  const { pdf, totale } = await searchParams;
   const isPdfMode = pdf === "1";
 
   const [quote, serviceLabels, mostraCadenzaSettings, bankSettings] =
@@ -176,10 +176,13 @@ export default async function StampaPreventivoPage({
   );
 
   function blockClassName(type: DescriptionBlock["type"]) {
-    if (type === "tipo") return "break-inside-avoid break-words whitespace-pre-line uppercase";
-    if (type === "address") return "mt-1 break-inside-avoid break-words whitespace-pre-line uppercase text-zinc-600";
-    if (type === "note") return "mt-3 break-inside-avoid break-words whitespace-pre-line text-zinc-700";
-    return "mt-1 break-inside-avoid break-words whitespace-pre-line uppercase text-zinc-700";
+    // Niente break-inside-avoid: un paragrafo lungo (es. l'elenco di una
+    // nota) deve poter proseguire da una pagina all'altra invece di saltare
+    // per intero alla pagina successiva lasciando spazio vuoto dietro di sé.
+    if (type === "tipo") return "break-words whitespace-pre-line uppercase";
+    if (type === "address") return "mt-1 break-words whitespace-pre-line uppercase text-zinc-600";
+    if (type === "note") return "mt-3 break-words whitespace-pre-line text-zinc-700";
+    return "mt-1 break-words whitespace-pre-line uppercase text-zinc-700";
   }
 
   const colgroupEl = (
@@ -193,7 +196,7 @@ export default async function StampaPreventivoPage({
 
   const theadEl = (
     <thead>
-      <tr data-block="thead" className="border-b border-zinc-300 bg-zinc-50">
+      <tr className="border-b border-zinc-300 bg-zinc-50">
         <th className="border-r border-zinc-300 px-2 py-2 text-left">
           Descrizione
         </th>
@@ -205,11 +208,18 @@ export default async function StampaPreventivoPage({
         </th>
         <th className="whitespace-nowrap px-1 py-2">Prezzo netto</th>
       </tr>
+      {/* Riga spaziatrice: fa parte del thead, quindi si ripete su ogni
+          pagina insieme all'intestazione — garantisce sempre 3mm di
+          distanza sotto "Descrizione", anche dove una pagina ricomincia
+          nel mezzo di un paragrafo. */}
+      <tr aria-hidden="true">
+        <td colSpan={4} style={{ height: "3mm", padding: 0, border: "none" }} />
+      </tr>
     </thead>
   );
 
   const summaryRowEl = (
-    <tr data-block="summary">
+    <tr>
       <td className="border-r border-t border-b border-zinc-300 px-2 py-2 font-semibold text-zinc-900">
         Valore del servizio
       </td>
@@ -225,61 +235,40 @@ export default async function StampaPreventivoPage({
     </tr>
   );
 
-  function renderGroupTable(indices: number[], isLast: boolean, key: number) {
-    return (
-      <div
-        key={key}
-        className="overflow-hidden rounded-lg border border-zinc-300"
-        style={{ breakAfter: isLast ? undefined : "page" }}
-      >
-        <table className="w-full table-fixed text-xs">
-          {colgroupEl}
-          {theadEl}
-          <tbody>
-            <tr>
-              <td
-                data-block="body-cell"
-                className="border-r border-t border-zinc-300 px-2 py-2 align-top"
-              >
-                {indices.map((idx) => (
-                  <p
-                    key={idx}
-                    data-block-index={idx}
-                    className={blockClassName(blocks[idx].type)}
-                  >
-                    {blocks[idx].text}
-                  </p>
-                ))}
-              </td>
-              <td className="border-r border-t border-zinc-300 px-2 py-2"></td>
-              <td className="border-r border-t border-zinc-300 px-2 py-2"></td>
-              <td className="border-t border-zinc-300 px-2 py-2"></td>
-            </tr>
-            {isLast && summaryRowEl}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  const parsedGroups: number[][] | null = groups
-    ? groups
-        .split("|")
-        .map((g) => (g.length ? g.split(",").map(Number) : []))
-    : null;
-
-  const tableSection = parsedGroups ? (
-    <>
-      {parsedGroups.map((indices, i) =>
-        renderGroupTable(indices, i === parsedGroups.length - 1, i)
-      )}
-    </>
-  ) : (
-    renderGroupTable(
-      blocks.map((_, i) => i),
-      true,
-      0
-    )
+  // Un'unica tabella continua: è il browser stesso a decidere dove tagliarla
+  // tra una pagina fisica e l'altra (ripetendo il <thead> automaticamente),
+  // invece di stimare noi l'altezza disponibile — questo garantisce che la
+  // pagina si riempia sempre fino in fondo davvero. boxDecorationBreak:clone
+  // fa sì che ogni pagina riceva comunque un riquadro completo e chiuso
+  // (bordo e angoli arrotondati propri), come se fosse indipendente.
+  const tableSection = (
+    <div
+      className="rounded-lg border border-zinc-300"
+      style={{
+        boxDecorationBreak: "clone",
+        WebkitBoxDecorationBreak: "clone",
+      }}
+    >
+      <table className="w-full table-fixed text-xs">
+        {colgroupEl}
+        {theadEl}
+        <tbody>
+          <tr>
+            <td className="border-r border-zinc-300 px-2 py-2 align-top">
+              {blocks.map((block, i) => (
+                <p key={i} className={blockClassName(block.type)}>
+                  {block.text}
+                </p>
+              ))}
+            </td>
+            <td className="border-r border-zinc-300 px-2 py-2"></td>
+            <td className="border-r border-zinc-300 px-2 py-2"></td>
+            <td className="px-2 py-2"></td>
+          </tr>
+          {summaryRowEl}
+        </tbody>
+      </table>
+    </div>
   );
 
   const mainContent = (
@@ -356,7 +345,7 @@ export default async function StampaPreventivoPage({
           style={{ width: "16px" }}
         >
           <p
-            className="whitespace-nowrap text-[7px] text-zinc-500"
+            className="whitespace-nowrap text-[6px] text-zinc-500"
             style={{
               writingMode: "vertical-rl",
               transform: "rotate(180deg)",
