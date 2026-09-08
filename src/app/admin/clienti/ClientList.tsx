@@ -43,7 +43,7 @@ export function ClientList({ clients }: { clients: Client[] }) {
     ...c,
     codice: String(c.codiceCliente).padStart(6, "0"),
     tipoLabel: c.tipo === "AZIENDA" ? "Azienda" : "Privato",
-    denominazioneSort:
+    denominazione:
       c.tipo === "PERSONA_FISICA"
         ? `${c.cognome ?? ""} ${c.nome ?? ""}`.trim()
         : (c.ragioneSociale ?? c.name),
@@ -78,7 +78,7 @@ export function ClientList({ clients }: { clients: Client[] }) {
             <tr>
               <ExcelHeader label="Codice" active={filters.codice} onFilterChange={(v) => handleFilterChange("codice", v)} sortDir={sortDirFor("codice")} onSort={(d) => handleSort("codice", d)} />
               <ExcelHeader label="Tipo" active={filters.tipoLabel} onFilterChange={(v) => handleFilterChange("tipoLabel", v)} sortDir={sortDirFor("tipoLabel")} onSort={(d) => handleSort("tipoLabel", d)} />
-              <ExcelHeader label="Denominazione" active={filters.name} onFilterChange={(v) => handleFilterChange("name", v)} sortDir={sortDirFor("denominazioneSort")} onSort={(d) => handleSort("denominazioneSort", d)} />
+              <ExcelHeader label="Denominazione" active={filters.denominazione} onFilterChange={(v) => handleFilterChange("denominazione", v)} sortDir={sortDirFor("denominazione")} onSort={(d) => handleSort("denominazione", d)} />
               <ExcelHeader label="Città" active={filters.citta} onFilterChange={(v) => handleFilterChange("citta", v)} sortDir={sortDirFor("citta")} onSort={(d) => handleSort("citta", d)} />
               <ExcelHeader label="Telefono" active={filters.telefono} onFilterChange={(v) => handleFilterChange("telefono", v)} sortDir={sortDirFor("telefono")} onSort={(d) => handleSort("telefono", d)} />
               <ExcelHeader label="Email" active={filters.email} onFilterChange={(v) => handleFilterChange("email", v)} sortDir={sortDirFor("email")} onSort={(d) => handleSort("email", d)} />
@@ -91,7 +91,7 @@ export function ClientList({ clients }: { clients: Client[] }) {
                 key={c.id}
                 clientId={c.id}
                 codiceCliente={c.codiceCliente}
-                name={c.name}
+                name={c.denominazione}
                 tipo={c.tipo}
                 citta={c.citta}
                 telefono={c.telefono}
