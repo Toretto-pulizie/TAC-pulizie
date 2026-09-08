@@ -27,8 +27,8 @@ export function CollaboratoreList({
   collaboratori: Collaboratore[];
 }) {
   const [filters, setFilters] = useState<FilterState>({});
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortKey, setSortKey] = useState<string | null>("codice");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const rowsForFilter = collaboratori.map((c) => ({
     ...c,

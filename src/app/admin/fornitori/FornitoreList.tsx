@@ -23,8 +23,8 @@ type FilterState = Record<string, Set<string> | null>;
 
 export function FornitoreList({ fornitori }: { fornitori: Fornitore[] }) {
   const [filters, setFilters] = useState<FilterState>({});
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortKey, setSortKey] = useState<string | null>("codice");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const rowsForFilter = fornitori.map((f) => ({
     ...f,

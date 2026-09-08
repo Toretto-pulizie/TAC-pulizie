@@ -20,6 +20,9 @@ type Client = {
   codiceCliente: number;
   name: string;
   tipo: "AZIENDA" | "PERSONA_FISICA";
+  nome: string | null;
+  cognome: string | null;
+  ragioneSociale: string | null;
   citta: string | null;
   telefono: string | null;
   email: string | null;
@@ -33,13 +36,17 @@ type FilterState = Record<string, Set<string> | null>;
 
 export function ClientList({ clients }: { clients: Client[] }) {
   const [filters, setFilters] = useState<FilterState>({});
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortKey, setSortKey] = useState<string | null>("codice");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const rowsForFilter = clients.map((c) => ({
     ...c,
     codice: String(c.codiceCliente).padStart(6, "0"),
     tipoLabel: c.tipo === "AZIENDA" ? "Azienda" : "Privato",
+    denominazioneSort:
+      c.tipo === "PERSONA_FISICA"
+        ? `${c.cognome ?? ""} ${c.nome ?? ""}`.trim()
+        : (c.ragioneSociale ?? c.name),
   }));
 
   const filtered = rowsForFilter.filter((r) => passesColumnFilters(r, filters));
@@ -71,7 +78,7 @@ export function ClientList({ clients }: { clients: Client[] }) {
             <tr>
               <ExcelHeader label="Codice" values={rowsForFilter.map((r) => r.codice)} active={filters.codice} onFilterChange={(v) => handleFilterChange("codice", v)} sortDir={sortDirFor("codice")} onSort={(d) => handleSort("codice", d)} />
               <ExcelHeader label="Tipo" values={rowsForFilter.map((r) => r.tipoLabel)} active={filters.tipoLabel} onFilterChange={(v) => handleFilterChange("tipoLabel", v)} sortDir={sortDirFor("tipoLabel")} onSort={(d) => handleSort("tipoLabel", d)} />
-              <ExcelHeader label="Denominazione" values={rowsForFilter.map((r) => r.name)} active={filters.name} onFilterChange={(v) => handleFilterChange("name", v)} sortDir={sortDirFor("name")} onSort={(d) => handleSort("name", d)} />
+              <ExcelHeader label="Denominazione" values={rowsForFilter.map((r) => r.name)} active={filters.name} onFilterChange={(v) => handleFilterChange("name", v)} sortDir={sortDirFor("denominazioneSort")} onSort={(d) => handleSort("denominazioneSort", d)} />
               <ExcelHeader label="Città" values={rowsForFilter.map((r) => r.citta)} active={filters.citta} onFilterChange={(v) => handleFilterChange("citta", v)} sortDir={sortDirFor("citta")} onSort={(d) => handleSort("citta", d)} />
               <ExcelHeader label="Telefono" values={rowsForFilter.map((r) => r.telefono)} active={filters.telefono} onFilterChange={(v) => handleFilterChange("telefono", v)} sortDir={sortDirFor("telefono")} onSort={(d) => handleSort("telefono", d)} />
               <ExcelHeader label="Email" values={rowsForFilter.map((r) => r.email)} active={filters.email} onFilterChange={(v) => handleFilterChange("email", v)} sortDir={sortDirFor("email")} onSort={(d) => handleSort("email", d)} />
