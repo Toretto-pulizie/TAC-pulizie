@@ -96,34 +96,6 @@ export default async function PreventiviPage({
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
-        <div className="flex justify-end">
-          <Link
-            href="/admin/preventivi/frasi"
-            className="text-sm text-zinc-600 underline"
-          >
-            Gestisci frasi preimpostate →
-          </Link>
-        </div>
-
-        <CollapsibleForm
-          key={editingQuote?.id ?? "new"}
-          label="Nuovo preventivo"
-          defaultOpen={!!editingQuote}
-        >
-          <QuoteForm
-            clients={clients}
-            phrases={phrases.map((p) => ({
-              id: p.id,
-              codice: p.codice,
-              titolo: p.titolo,
-              testo: p.testo,
-            }))}
-            serviceLabels={serviceLabels}
-            tipiPrestazione={tipiPrestazione}
-            editingQuote={editingQuote}
-          />
-        </CollapsibleForm>
-
         <section className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-zinc-500">Preventivi in trattativa</p>
@@ -144,6 +116,33 @@ export default async function PreventiviPage({
             </p>
           </div>
         </section>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <CollapsibleForm
+            key={editingQuote?.id ?? "new"}
+            label="Nuovo preventivo"
+            defaultOpen={!!editingQuote}
+          >
+            <QuoteForm
+              clients={clients}
+              phrases={phrases.map((p) => ({
+                id: p.id,
+                codice: p.codice,
+                titolo: p.titolo,
+                testo: p.testo,
+              }))}
+              serviceLabels={serviceLabels}
+              tipiPrestazione={tipiPrestazione}
+              editingQuote={editingQuote}
+            />
+          </CollapsibleForm>
+          <Link
+            href="/admin/preventivi/frasi"
+            className="text-sm text-zinc-600 underline"
+          >
+            Gestisci frasi preimpostate →
+          </Link>
+        </div>
 
         <QuoteList
           rows={rows.map((r) => ({

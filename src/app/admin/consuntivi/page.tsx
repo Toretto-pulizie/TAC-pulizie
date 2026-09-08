@@ -65,6 +65,33 @@ export default async function ConsuntiviPage({
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
+        <section className="grid gap-3 sm:grid-cols-4">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <p className="text-sm text-zinc-500">Contrattualizzato</p>
+            <p className="text-xl font-semibold text-zinc-900">
+              {formatEuro(totContratto)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <p className="text-sm text-zinc-500">Consuntivato</p>
+            <p className="text-xl font-semibold text-zinc-900">
+              {formatEuro(totConsuntivo)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <p className="text-sm text-zinc-500">Ore lavorate</p>
+            <p className="text-xl font-semibold text-zinc-900">
+              {totOreLavorate.toFixed(1)}h
+            </p>
+          </div>
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <p className="text-sm text-zinc-500">Ore spostamento</p>
+            <p className="text-xl font-semibold text-zinc-900">
+              {totOreSpostamento.toFixed(1)}h
+            </p>
+          </div>
+        </section>
+
         <form className="flex flex-wrap items-end gap-3" method="get">
           <label className="flex flex-col gap-1 text-sm">
             Mese
@@ -101,33 +128,6 @@ export default async function ConsuntiviPage({
             Mostra
           </button>
         </form>
-
-        <section className="grid gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <p className="text-sm text-zinc-500">Contrattualizzato</p>
-            <p className="text-xl font-semibold text-zinc-900">
-              {formatEuro(totContratto)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <p className="text-sm text-zinc-500">Consuntivato</p>
-            <p className="text-xl font-semibold text-zinc-900">
-              {formatEuro(totConsuntivo)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <p className="text-sm text-zinc-500">Ore lavorate</p>
-            <p className="text-xl font-semibold text-zinc-900">
-              {totOreLavorate.toFixed(1)}h
-            </p>
-          </div>
-          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <p className="text-sm text-zinc-500">Ore spostamento</p>
-            <p className="text-xl font-semibold text-zinc-900">
-              {totOreSpostamento.toFixed(1)}h
-            </p>
-          </div>
-        </section>
 
         <ConsuntiviList rows={rows} />
     </div>
