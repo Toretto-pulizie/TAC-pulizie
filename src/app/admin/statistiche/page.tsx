@@ -126,7 +126,7 @@ export default async function StatistichePage() {
     .sort((a, b) => b.oreLavorate - a.oreLavorate);
 
   return (
-    <div className="flex flex-col gap-8 px-4 pt-20 pb-4 sm:px-8 sm:pt-24 sm:pb-8">
+    <div className="flex flex-col gap-8 px-4 py-4 sm:px-8 sm:py-8">
         <section className="flex flex-col gap-3">
           <h1 className="text-lg font-semibold text-zinc-900">
             Andamento preventivi (ultimi 6 mesi)

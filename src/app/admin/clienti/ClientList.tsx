@@ -19,7 +19,7 @@ type Client = {
   id: string;
   codiceCliente: number;
   name: string;
-  tipo: "AZIENDA" | "PERSONA_FISICA";
+  tipo: "AZIENDA" | "PERSONA_FISICA" | "ENTE" | "ASSOCIAZIONE";
   nome: string | null;
   cognome: string | null;
   ragioneSociale: string | null;
@@ -32,6 +32,13 @@ type Client = {
   sites: Site[];
 };
 
+const TIPO_LABELS: Record<Client["tipo"], string> = {
+  AZIENDA: "Azienda",
+  PERSONA_FISICA: "Privato",
+  ENTE: "Ente",
+  ASSOCIAZIONE: "Associazione",
+};
+
 type FilterState = Record<string, string>;
 
 export function ClientList({ clients }: { clients: Client[] }) {
@@ -42,7 +49,7 @@ export function ClientList({ clients }: { clients: Client[] }) {
   const rowsForFilter = clients.map((c) => ({
     ...c,
     codice: String(c.codiceCliente).padStart(6, "0"),
-    tipoLabel: c.tipo === "AZIENDA" ? "Azienda" : "Privato",
+    tipoLabel: TIPO_LABELS[c.tipo],
     denominazione:
       c.tipo === "PERSONA_FISICA"
         ? `${c.cognome ?? ""} ${c.nome ?? ""}`.trim()

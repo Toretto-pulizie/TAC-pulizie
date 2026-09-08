@@ -85,7 +85,7 @@ export default async function PianificazionePage({
   }
 
   return (
-    <div className="flex flex-col gap-6 px-4 pt-20 pb-4 sm:px-8 sm:pt-24 sm:pb-8">
+    <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
         <ShiftForm
           employees={employees.map((e) => ({ id: e.id, name: e.name }))}
           sites={sites.map((s) => ({

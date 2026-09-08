@@ -1,9 +1,7 @@
 import { verifySession, getCurrentUser } from "@/lib/dal";
-import { AdminSidebar } from "./AdminSidebar";
-import { UserMenu } from "./UserMenu";
+import { AdminShell } from "./AdminShell";
 import { MODULE_GROUPS, isModuleKey } from "@/lib/modules";
 import { getRecentNotifications } from "@/lib/notifications";
-import { NotificationBell } from "@/app/NotificationBell";
 import { AutoRefresh } from "@/app/AutoRefresh";
 
 export default async function AdminLayout({
@@ -25,16 +23,18 @@ export default async function AdminLayout({
   }));
 
   return (
-    <div className="flex min-h-screen">
+    <>
       <AutoRefresh intervalMs={20000} />
-      <AdminSidebar groups={groups} showImpostazioni={isAdmin} isAdmin={isAdmin} />
-      <div className="fixed top-4 right-4 z-30 flex items-center gap-2">
-        <NotificationBell initial={notifications} />
-        {user && (
-          <UserMenu name={user.name} email={user.email} isAdmin={isAdmin} />
-        )}
-      </div>
-      <main className="flex flex-1 flex-col">{children}</main>
-    </div>
+      <AdminShell
+        groups={groups}
+        showImpostazioni={isAdmin}
+        isAdmin={isAdmin}
+        userName={user?.name ?? null}
+        userEmail={user?.email ?? null}
+        notifications={notifications}
+      >
+        {children}
+      </AdminShell>
+    </>
   );
 }

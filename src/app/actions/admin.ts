@@ -127,7 +127,7 @@ export async function updateAllowedModules(userId: string, moduleKeys: string[])
 }
 
 const ClientBaseSchema = {
-  tipo: z.enum(["AZIENDA", "PERSONA_FISICA"]),
+  tipo: z.enum(["AZIENDA", "PERSONA_FISICA", "ENTE", "ASSOCIAZIONE"]),
   ragioneSociale: z.string().trim().optional(),
   nome: z.string().trim().optional(),
   cognome: z.string().trim().optional(),
@@ -144,11 +144,11 @@ const ClientBaseSchema = {
 };
 
 const clientRefine = (data: { tipo: string; ragioneSociale?: string; nome?: string; cognome?: string }) =>
-  data.tipo === "AZIENDA" ? !!data.ragioneSociale : !!data.nome && !!data.cognome;
+  data.tipo === "PERSONA_FISICA" ? !!data.nome && !!data.cognome : !!data.ragioneSociale;
 
 const clientRefineMessage = {
   message:
-    "Compila ragione sociale (azienda) oppure nome e cognome (persona fisica).",
+    "Compila ragione sociale/denominazione (azienda o ente) oppure nome e cognome (persona fisica).",
 };
 
 const ClientSchema = z.object(ClientBaseSchema).refine(clientRefine, clientRefineMessage);
@@ -226,13 +226,13 @@ export async function createClient(_prevState: unknown, formData: FormData) {
   }
 
   const name =
-    tipo === "AZIENDA" ? ragioneSociale! : `${cognome} ${nome}`;
+    tipo === "PERSONA_FISICA" ? `${cognome} ${nome}` : ragioneSociale!;
 
   await prisma.client.create({
     data: {
       tipo,
       name,
-      ragioneSociale: tipo === "AZIENDA" ? ragioneSociale : null,
+      ragioneSociale: tipo === "PERSONA_FISICA" ? null : ragioneSociale,
       nome: tipo === "PERSONA_FISICA" ? nome : null,
       cognome: tipo === "PERSONA_FISICA" ? cognome : null,
       indirizzo: indirizzo || null,
@@ -292,14 +292,14 @@ export async function updateClient(_prevState: unknown, formData: FormData) {
     };
   }
 
-  const name = tipo === "AZIENDA" ? ragioneSociale! : `${cognome} ${nome}`;
+  const name = tipo === "PERSONA_FISICA" ? `${cognome} ${nome}` : ragioneSociale!;
 
   await prisma.client.update({
     where: { id },
     data: {
       tipo,
       name,
-      ragioneSociale: tipo === "AZIENDA" ? ragioneSociale : null,
+      ragioneSociale: tipo === "PERSONA_FISICA" ? null : ragioneSociale,
       nome: tipo === "PERSONA_FISICA" ? nome : null,
       cognome: tipo === "PERSONA_FISICA" ? cognome : null,
       indirizzo: indirizzo || null,

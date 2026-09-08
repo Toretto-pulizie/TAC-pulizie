@@ -1,0 +1,3 @@
+-- AlterEnum
+ALTER TYPE "ClientTipo" ADD VALUE 'ENTE';
+ALTER TYPE "ClientTipo" ADD VALUE 'ASSOCIAZIONE';

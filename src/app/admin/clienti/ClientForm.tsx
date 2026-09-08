@@ -6,7 +6,7 @@ import { lookupComuneFromCap } from "@/lib/capLookup";
 import { isValidPartitaIva } from "@/lib/partitaIva";
 import { Tooltip } from "@/app/Tooltip";
 
-type Tipo = "AZIENDA" | "PERSONA_FISICA";
+type Tipo = "AZIENDA" | "PERSONA_FISICA" | "ENTE" | "ASSOCIAZIONE";
 type PivaStato =
   | { tipo: "verificando" }
   | { tipo: "trovata"; nome: string }
@@ -121,6 +121,26 @@ export function ClientForm() {
           />
           Persona fisica
         </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name="tipo"
+            value="ENTE"
+            checked={tipo === "ENTE"}
+            onChange={() => setTipo("ENTE")}
+          />
+          Ente
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name="tipo"
+            value="ASSOCIAZIONE"
+            checked={tipo === "ASSOCIAZIONE"}
+            onChange={() => setTipo("ASSOCIAZIONE")}
+          />
+          Associazione
+        </label>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
@@ -166,9 +186,9 @@ export function ClientForm() {
           </label>
         )}
 
-        {tipo === "AZIENDA" ? (
+        {tipo !== "PERSONA_FISICA" ? (
           <label className="flex flex-col gap-1 text-sm">
-            Ragione sociale
+            {tipo === "AZIENDA" ? "Ragione sociale" : "Denominazione"}
             <input
               ref={ragioneSocialeRef}
               name="ragioneSociale"

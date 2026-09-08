@@ -39,6 +39,8 @@ enum QuoteStatus {
 enum ClientTipo {
   AZIENDA
   PERSONA_FISICA
+  ENTE
+  ASSOCIAZIONE
 }
 
 enum TipoAssenza {

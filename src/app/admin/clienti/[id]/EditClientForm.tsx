@@ -14,7 +14,7 @@ type PivaStato =
   | null;
 type CapStato = { tipo: "verificando" } | { tipo: "trovato" } | { tipo: "non trovato" } | null;
 
-type Tipo = "AZIENDA" | "PERSONA_FISICA";
+type Tipo = "AZIENDA" | "PERSONA_FISICA" | "ENTE" | "ASSOCIAZIONE";
 
 export function EditClientForm({
   id,
@@ -152,6 +152,26 @@ export function EditClientForm({
           />
           Persona fisica
         </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name="tipo"
+            value="ENTE"
+            checked={tipo === "ENTE"}
+            onChange={() => setTipo("ENTE")}
+          />
+          Ente
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name="tipo"
+            value="ASSOCIAZIONE"
+            checked={tipo === "ASSOCIAZIONE"}
+            onChange={() => setTipo("ASSOCIAZIONE")}
+          />
+          Associazione
+        </label>
       </div>
 
       {tipo === "AZIENDA" ? (
@@ -196,9 +216,9 @@ export function EditClientForm({
         </label>
       )}
 
-      {tipo === "AZIENDA" ? (
+      {tipo !== "PERSONA_FISICA" ? (
         <label className="flex flex-col gap-1 text-sm">
-          Ragione sociale
+          {tipo === "AZIENDA" ? "Ragione sociale" : "Denominazione"}
           <input
             ref={ragioneSocialeRef}
             name="ragioneSociale"

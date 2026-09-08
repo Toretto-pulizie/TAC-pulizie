@@ -15,6 +15,13 @@ type Site = {
   capienza: number | null;
 };
 
+const TIPO_LABELS: Record<"AZIENDA" | "PERSONA_FISICA" | "ENTE" | "ASSOCIAZIONE", string> = {
+  AZIENDA: "Azienda",
+  PERSONA_FISICA: "Privato",
+  ENTE: "Ente",
+  ASSOCIAZIONE: "Associazione",
+};
+
 export function ClientRow({
   clientId,
   codiceCliente,
@@ -29,7 +36,7 @@ export function ClientRow({
   clientId: string;
   codiceCliente: number;
   name: string;
-  tipo: "AZIENDA" | "PERSONA_FISICA";
+  tipo: "AZIENDA" | "PERSONA_FISICA" | "ENTE" | "ASSOCIAZIONE";
   citta: string | null;
   telefono: string | null;
   email: string | null;
@@ -46,7 +53,7 @@ export function ClientRow({
         </td>
         <td className="px-3 py-1.5">
           <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500">
-            {tipo === "AZIENDA" ? "Azienda" : "Privato"}
+            {TIPO_LABELS[tipo]}
           </span>
         </td>
         <td className="px-3 py-1.5 font-medium text-zinc-900">{name}</td>

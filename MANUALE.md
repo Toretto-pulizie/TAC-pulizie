@@ -14,6 +14,10 @@ Login con email e password. Dopo l'accesso:
 - Un collaboratore **senza** nessun permesso assegnato atterra sulla propria area personale.
 - Un collaboratore **con** almeno un permesso assegnato atterra direttamente sul programma (non più sull'area personale), e da lì può tornare alla sua area cliccando "La mia area" in fondo al menu laterale.
 
+## Barra superiore
+
+In cima ad ogni pagina, sopra il contenuto: a sinistra il pulsante **☰** apre/chiude il menu laterale (utile su schermi piccoli o per avere più spazio); a destra la campanella delle notifiche e il menu utente (vedi sotto). Subito sotto, una seconda riga mostra il titolo della pagina in cui ci si trova, aggiornato automaticamente in base alla voce di menu selezionata.
+
 ## Home (dashboard)
 
 Prima pagina del programma. Mostra, in base a cosa il titolare ha attivato in Impostazioni → Visualizzazione → Home:
@@ -27,7 +31,7 @@ Prima pagina del programma. Mostra, in base a cosa il titolare ha attivato in Im
 
 ## Notifiche
 
-Campanella fissa in alto a destra su ogni pagina, con un numero rosso per le notifiche non lette. Avvisa quando:
+Campanella nella barra superiore di ogni pagina, con un numero rosso per le notifiche non lette. Avvisa quando:
 - un collaboratore invia una richiesta di permesso (avvisa il titolare);
 - una richiesta di permesso viene approvata o rifiutata (avvisa chi l'ha inviata);
 - un preventivo viene accettato o rifiutato (avvisa il titolare).
@@ -36,7 +40,7 @@ Cliccando una notifica si viene portati alla pagina pertinente e la notifica si 
 
 ## Menu utente
 
-Accanto alla campanella, in alto a destra, il cerchietto con l'iniziale e il proprio nome apre il menu personale:
+Accanto alla campanella, nella barra superiore, il cerchietto con l'iniziale e il proprio nome apre il menu personale:
 - **Modifica nome**: cambia il proprio nome visualizzato.
 - **Cambia password**: richiede la password attuale, poi la nuova password (due volte per conferma).
 - **Gestione utenti** (solo titolare): collegamento rapido alla pagina Utenti.
@@ -88,10 +92,10 @@ Confronta, per **Mese**/**Anno** scelti, quanto contrattualizzato (dai preventiv
 
 ### Clienti (`/admin/clienti`)
 - Pulsanti **+ Nuovo cliente** e **+ Nuova sede/cantiere** in cima: aprono/chiudono i rispettivi moduli (restano chiusi finché non servono).
-- L'elenco clienti è una tabella con colonne Codice, Tipo (Azienda/Privato), Denominazione, Città, Telefono, Email, e i link **Modifica**/**Elimina**. Cliccando **Sedi (N) ▾** si espande la riga con l'indirizzo completo di ogni sede, la capienza modificabile e le azioni **Modifica**/**Elimina** per ciascuna.
+- L'elenco clienti è una tabella con colonne Codice, Tipo (Azienda/Privato/Ente/Associazione), Denominazione, Città, Telefono, Email, e i link **Modifica**/**Elimina**. Cliccando **Sedi (N) ▾** si espande la riga con l'indirizzo completo di ogni sede, la capienza modificabile e le azioni **Modifica**/**Elimina** per ciascuna.
 - **Filtro e ordinamento come in Excel**: cliccando il nome di una colonna la si ordina subito (crescente/decrescente); l'icona a imbuto accanto apre invece un piccolo campo di ricerca per quella colonna, che filtra le righe in tempo reale mentre si scrive (ogni carattere in più restringe subito il risultato). Un pallino sull'icona indica che un filtro è attivo su quella colonna. Funziona così su tutte le tabelle di Anagrafiche, Preventivi e Consuntivi. Nelle Anagrafiche (Clienti, Fornitori, Collaboratori) la tabella si apre di default ordinata per Codice decrescente. Per i Clienti Persona fisica la colonna Denominazione mostra ed ordina sempre "Cognome Nome" (es. "VOLPE ALESSIA"), anche per i record più vecchi salvati in origine con l'ordine inverso; per i Collaboratori vale lo stesso comportamento.
 - **Elimina cliente**: possibile solo se il cliente non ha più sedi/cantieri collegati (vanno eliminati prima, uno per uno, con lo stesso vincolo: un cantiere non si può eliminare se ha preventivi, turni o timbrature collegati).
-- **Aggiungi cliente**: Azienda/Persona fisica, poi il campo proposto cambia in base al tipo: **P. IVA** per Azienda (con verifica automatica su VIES che compila da sola Ragione sociale/Indirizzo/CAP/Città/Provincia — nota: VIES copre solo le posizioni registrate per operazioni intracomunitarie, quindi può non trovare ditte individuali o associazioni che lavorano solo in Italia) oppure **Codice fiscale** per Persona fisica. Seguono Ragione sociale (o Cognome+Nome, in quest'ordine), Indirizzo, CAP, Persona di riferimento, Telefono, Email, Note. Se la P. IVA o il codice fiscale coincidono con un cliente già esistente, il sistema blocca il salvataggio e segnala di chi si tratta (probabile doppione).
+- **Aggiungi cliente**: si sceglie il tipo tra **Azienda**, **Persona fisica**, **Ente** e **Associazione**; il campo proposto cambia di conseguenza: **P. IVA** solo per Azienda (con verifica automatica su VIES che compila da sola Ragione sociale/Indirizzo/CAP/Città/Provincia — nota: VIES copre solo le posizioni registrate per operazioni intracomunitarie, quindi può non trovare ditte individuali o associazioni che lavorano solo in Italia) oppure **Codice fiscale** per Persona fisica, Ente e Associazione. Seguono Ragione sociale/Denominazione (o Cognome+Nome per la Persona fisica, in quest'ordine), Indirizzo, CAP, Persona di riferimento, Telefono, Email, Note. Se la P. IVA o il codice fiscale coincidono con un cliente già esistente, il sistema blocca il salvataggio e segnala di chi si tratta (probabile doppione).
 - Automatismi sul CAP: se scrivi l'**Indirizzo** e lasci il CAP vuoto, il sistema prova a trovarlo da solo (in base all'indirizzo); se invece scrivi direttamente il **CAP**, compila da sola Città e Provincia. In entrambi i campi un popup al passaggio del mouse ricorda questi automatismi. Tutto ciò che il sistema compila da solo (da CAP o da P. IVA) viene scritto in STAMPATELLO MAIUSCOLO; quello che scrivi tu a mano resta come lo digiti.
 - **Aggiungi sede/cantiere**: Cliente, Nome sede, Indirizzo, Capienza (posti) facoltativa.
 - Modifica cliente e modifica cantiere hanno pagine dedicate con gli stessi campi. La Capienza di un cantiere si può modificare anche direttamente dall'elenco.
