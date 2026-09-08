@@ -20,7 +20,7 @@ function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
 }
 
-type FilterState = Record<string, Set<string> | null>;
+type FilterState = Record<string, string>;
 
 export function ConsuntiviList({ rows }: { rows: ConsuntivoRow[] }) {
   const [filters, setFilters] = useState<FilterState>({});
@@ -52,7 +52,7 @@ export function ConsuntiviList({ rows }: { rows: ConsuntivoRow[] }) {
     setSortKey(key);
     setSortDir(dir);
   }
-  function handleFilterChange(key: string, next: Set<string> | null) {
+  function handleFilterChange(key: string, next: string) {
     setFilters((f) => ({ ...f, [key]: next }));
   }
   const sortDirFor = (key: string) => (sortKey === key ? sortDir : null);
@@ -63,12 +63,12 @@ export function ConsuntiviList({ rows }: { rows: ConsuntivoRow[] }) {
         <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
             <tr>
-              <ExcelHeader label="Cliente / cantiere" values={rowsForFilter.map((r) => r.siteLabel)} active={filters.siteLabel} onFilterChange={(v) => handleFilterChange("siteLabel", v)} sortDir={sortDirFor("siteLabel")} onSort={(d) => handleSort("siteLabel", d)} />
-              <ExcelHeader label="Contratto mensile" values={rowsForFilter.map((r) => r.contrattoMensileLabel)} active={filters.contrattoMensileLabel} onFilterChange={(v) => handleFilterChange("contrattoMensileLabel", v)} sortDir={sortDirFor("contrattoMensile")} onSort={(d) => handleSort("contrattoMensile", d)} />
-              <ExcelHeader label="Ore lavorate" values={rowsForFilter.map((r) => r.oreLavorateLabel)} active={filters.oreLavorateLabel} onFilterChange={(v) => handleFilterChange("oreLavorateLabel", v)} sortDir={sortDirFor("oreLavorate")} onSort={(d) => handleSort("oreLavorate", d)} />
-              <ExcelHeader label="Ore spostamento" values={rowsForFilter.map((r) => r.oreSpostamentoLabel)} active={filters.oreSpostamentoLabel} onFilterChange={(v) => handleFilterChange("oreSpostamentoLabel", v)} sortDir={sortDirFor("oreSpostamento")} onSort={(d) => handleSort("oreSpostamento", d)} />
-              <ExcelHeader label="Euro consuntivo" values={rowsForFilter.map((r) => r.euroConsuntivoLabel)} active={filters.euroConsuntivoLabel} onFilterChange={(v) => handleFilterChange("euroConsuntivoLabel", v)} sortDir={sortDirFor("euroConsuntivo")} onSort={(d) => handleSort("euroConsuntivo", d)} />
-              <ExcelHeader label="Scostamento" values={rowsForFilter.map((r) => r.scostamentoLabel)} active={filters.scostamentoLabel} onFilterChange={(v) => handleFilterChange("scostamentoLabel", v)} sortDir={sortDirFor("scostamento")} onSort={(d) => handleSort("scostamento", d)} />
+              <ExcelHeader label="Cliente / cantiere" active={filters.siteLabel} onFilterChange={(v) => handleFilterChange("siteLabel", v)} sortDir={sortDirFor("siteLabel")} onSort={(d) => handleSort("siteLabel", d)} />
+              <ExcelHeader label="Contratto mensile" active={filters.contrattoMensileLabel} onFilterChange={(v) => handleFilterChange("contrattoMensileLabel", v)} sortDir={sortDirFor("contrattoMensile")} onSort={(d) => handleSort("contrattoMensile", d)} />
+              <ExcelHeader label="Ore lavorate" active={filters.oreLavorateLabel} onFilterChange={(v) => handleFilterChange("oreLavorateLabel", v)} sortDir={sortDirFor("oreLavorate")} onSort={(d) => handleSort("oreLavorate", d)} />
+              <ExcelHeader label="Ore spostamento" active={filters.oreSpostamentoLabel} onFilterChange={(v) => handleFilterChange("oreSpostamentoLabel", v)} sortDir={sortDirFor("oreSpostamento")} onSort={(d) => handleSort("oreSpostamento", d)} />
+              <ExcelHeader label="Euro consuntivo" active={filters.euroConsuntivoLabel} onFilterChange={(v) => handleFilterChange("euroConsuntivoLabel", v)} sortDir={sortDirFor("euroConsuntivo")} onSort={(d) => handleSort("euroConsuntivo", d)} />
+              <ExcelHeader label="Scostamento" active={filters.scostamentoLabel} onFilterChange={(v) => handleFilterChange("scostamentoLabel", v)} sortDir={sortDirFor("scostamento")} onSort={(d) => handleSort("scostamento", d)} />
             </tr>
           </thead>
           <tbody>

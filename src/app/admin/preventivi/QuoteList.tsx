@@ -29,7 +29,7 @@ function formatEuro(n: number | null) {
     : n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
 }
 
-type FilterState = Record<string, Set<string> | null>;
+type FilterState = Record<string, string>;
 
 export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
   const [filters, setFilters] = useState<FilterState>({});
@@ -60,7 +60,7 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
     setSortKey(key);
     setSortDir(dir);
   }
-  function handleFilterChange(key: string, next: Set<string> | null) {
+  function handleFilterChange(key: string, next: string) {
     setFilters((f) => ({ ...f, [key]: next }));
   }
   const sortDirFor = (key: string) => (sortKey === key ? sortDir : null);
@@ -71,12 +71,12 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
         <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
             <tr>
-              <ExcelHeader label="Cliente / cantiere" values={rowsForFilter.map((r) => r.siteLabel)} active={filters.siteLabel} onFilterChange={(v) => handleFilterChange("siteLabel", v)} sortDir={sortDirFor("siteLabel")} onSort={(d) => handleSort("siteLabel", d)} />
-              <ExcelHeader label="Servizio" values={rowsForFilter.map((r) => r.serviceLabel)} active={filters.serviceLabel} onFilterChange={(v) => handleFilterChange("serviceLabel", v)} sortDir={sortDirFor("serviceLabel")} onSort={(d) => handleSort("serviceLabel", d)} />
-              <ExcelHeader label="Prezzo listino" values={rowsForFilter.map((r) => r.listPriceLabel)} active={filters.listPriceLabel} onFilterChange={(v) => handleFilterChange("listPriceLabel", v)} sortDir={sortDirFor("listPrice")} onSort={(d) => handleSort("listPrice", d)} />
-              <ExcelHeader label="Prezzo venduto" values={rowsForFilter.map((r) => r.prezzoVendutoLabel)} active={filters.prezzoVendutoLabel} onFilterChange={(v) => handleFilterChange("prezzoVendutoLabel", v)} sortDir={sortDirFor("prezzoVenduto")} onSort={(d) => handleSort("prezzoVenduto", d)} />
-              <ExcelHeader label="Sconto" values={rowsForFilter.map((r) => r.discountLabel)} active={filters.discountLabel} onFilterChange={(v) => handleFilterChange("discountLabel", v)} sortDir={sortDirFor("discountPct")} onSort={(d) => handleSort("discountPct", d)} />
-              <ExcelHeader label="Stato" values={rowsForFilter.map((r) => r.statusLabel)} active={filters.statusLabel} onFilterChange={(v) => handleFilterChange("statusLabel", v)} sortDir={sortDirFor("statusLabel")} onSort={(d) => handleSort("statusLabel", d)} />
+              <ExcelHeader label="Cliente / cantiere" active={filters.siteLabel} onFilterChange={(v) => handleFilterChange("siteLabel", v)} sortDir={sortDirFor("siteLabel")} onSort={(d) => handleSort("siteLabel", d)} />
+              <ExcelHeader label="Servizio" active={filters.serviceLabel} onFilterChange={(v) => handleFilterChange("serviceLabel", v)} sortDir={sortDirFor("serviceLabel")} onSort={(d) => handleSort("serviceLabel", d)} />
+              <ExcelHeader label="Prezzo listino" active={filters.listPriceLabel} onFilterChange={(v) => handleFilterChange("listPriceLabel", v)} sortDir={sortDirFor("listPrice")} onSort={(d) => handleSort("listPrice", d)} />
+              <ExcelHeader label="Prezzo venduto" active={filters.prezzoVendutoLabel} onFilterChange={(v) => handleFilterChange("prezzoVendutoLabel", v)} sortDir={sortDirFor("prezzoVenduto")} onSort={(d) => handleSort("prezzoVenduto", d)} />
+              <ExcelHeader label="Sconto" active={filters.discountLabel} onFilterChange={(v) => handleFilterChange("discountLabel", v)} sortDir={sortDirFor("discountPct")} onSort={(d) => handleSort("discountPct", d)} />
+              <ExcelHeader label="Stato" active={filters.statusLabel} onFilterChange={(v) => handleFilterChange("statusLabel", v)} sortDir={sortDirFor("statusLabel")} onSort={(d) => handleSort("statusLabel", d)} />
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
