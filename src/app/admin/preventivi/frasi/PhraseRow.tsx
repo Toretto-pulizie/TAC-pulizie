@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { deletePhrase } from "@/app/actions/quotePhrases";
 
 export function PhraseRow({
@@ -16,6 +16,7 @@ export function PhraseRow({
   testo: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <li className="flex flex-col gap-1 rounded-lg border border-zinc-200 px-4 py-3">
@@ -27,6 +28,13 @@ export function PhraseRow({
           {titolo}
         </p>
         <div className="flex shrink-0 gap-3">
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            className="text-sm text-zinc-600 underline"
+          >
+            Contenuto {expanded ? "▴" : "▾"}
+          </button>
           <Link
             href={`/admin/preventivi/frasi/${id}`}
             className="text-sm text-zinc-600 underline"
@@ -46,7 +54,9 @@ export function PhraseRow({
           </button>
         </div>
       </div>
-      <p className="whitespace-pre-wrap text-sm text-zinc-500">{testo}</p>
+      {expanded && (
+        <p className="whitespace-pre-wrap text-sm text-zinc-500">{testo}</p>
+      )}
     </li>
   );
 }

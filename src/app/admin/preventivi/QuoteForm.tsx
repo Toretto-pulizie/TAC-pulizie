@@ -8,7 +8,6 @@ type ServiceType = "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
 type Phrase = {
   id: string;
   codice: number;
-  categoria: string;
   titolo: string;
   testo: string;
 };
@@ -65,6 +64,11 @@ export function QuoteForm({
   );
   const selectedClient = clients.find((c) => c.id === selectedClientId);
   const [selectedPhraseIds, setSelectedPhraseIds] = useState<string[]>([]);
+  const [previewPhrase, setPreviewPhrase] = useState<{
+    testo: string;
+    top: number;
+    left: number;
+  } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -434,18 +438,40 @@ export function QuoteForm({
                       onChange={() => togglePhrase(p.id)}
                       className="mt-1"
                     />
-                    <span className="flex items-baseline gap-1.5">
+                    <span
+                      className="flex items-baseline gap-1.5"
+                      onMouseEnter={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const dialogRect = dialogRef.current?.getBoundingClientRect();
+                        const placeRight =
+                          !dialogRect || dialogRect.right + 320 <= window.innerWidth;
+                        setPreviewPhrase({
+                          testo: p.testo,
+                          top: rect.top,
+                          left: placeRight
+                            ? (dialogRect?.right ?? rect.right) + 8
+                            : (dialogRect?.left ?? rect.left) - 8 - 320,
+                        });
+                      }}
+                      onMouseLeave={() => setPreviewPhrase(null)}
+                    >
                       <span className="font-mono text-xs text-zinc-400">
                         #{String(p.codice).padStart(3, "0")}
-                      </span>
-                      <span className="text-xs uppercase tracking-wide text-zinc-400">
-                        {p.categoria}
                       </span>
                       <span className="font-medium text-zinc-900">{p.titolo}</span>
                     </span>
                   </label>
                 ))}
               </div>
+
+              {previewPhrase && (
+                <div
+                  className="pointer-events-none fixed z-50 w-80 whitespace-pre-wrap rounded-md bg-zinc-900 px-3 py-2 text-xs text-white shadow-lg"
+                  style={{ top: previewPhrase.top, left: previewPhrase.left }}
+                >
+                  {previewPhrase.testo}
+                </div>
+              )}
 
               <div className="flex justify-end gap-3 border-t border-zinc-200 px-4 py-3">
                 <button

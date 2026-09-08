@@ -115,7 +115,6 @@ export default async function PreventiviPage({
             phrases={phrases.map((p) => ({
               id: p.id,
               codice: p.codice,
-              categoria: p.categoria,
               titolo: p.titolo,
               testo: p.testo,
             }))}

@@ -8,17 +8,8 @@ export default async function FrasiPreimpostatePage() {
   await requireModule("preventivi");
 
   const phrases = await prisma.quotePhrase.findMany({
-    orderBy: [{ categoria: "asc" }, { ordine: "asc" }, { titolo: "asc" }],
+    orderBy: [{ ordine: "asc" }, { titolo: "asc" }],
   });
-
-  const categorie = [...new Set(phrases.map((p) => p.categoria))];
-
-  const byCategoria = new Map<string, typeof phrases>();
-  for (const p of phrases) {
-    const list = byCategoria.get(p.categoria) ?? [];
-    list.push(p);
-    byCategoria.set(p.categoria, list);
-  }
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-8">
@@ -34,33 +25,24 @@ export default async function FrasiPreimpostatePage() {
           </Link>
         </div>
 
-        <PhraseForm categorie={categorie} />
+        <PhraseForm />
 
-        <div className="flex flex-col gap-4">
-          {[...byCategoria.entries()].map(([categoria, list]) => (
-            <section key={categoria} className="flex flex-col gap-2">
-              <h2 className="text-sm font-medium text-zinc-500">
-                {categoria}
-              </h2>
-              <ul className="flex flex-col gap-2">
-                {list.map((p) => (
-                  <PhraseRow
-                    key={p.id}
-                    id={p.id}
-                    codice={p.codice}
-                    titolo={p.titolo}
-                    testo={p.testo}
-                  />
-                ))}
-              </ul>
-            </section>
+        <ul className="flex flex-col gap-2">
+          {phrases.map((p) => (
+            <PhraseRow
+              key={p.id}
+              id={p.id}
+              codice={p.codice}
+              titolo={p.titolo}
+              testo={p.testo}
+            />
           ))}
-          {phrases.length === 0 && (
-            <p className="text-sm text-zinc-400">
-              Nessuna frase preimpostata ancora creata.
-            </p>
-          )}
-        </div>
+        </ul>
+        {phrases.length === 0 && (
+          <p className="text-sm text-zinc-400">
+            Nessuna frase preimpostata ancora creata.
+          </p>
+        )}
     </div>
   );
 }

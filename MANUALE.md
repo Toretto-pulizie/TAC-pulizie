@@ -34,6 +34,14 @@ Campanella fissa in alto a destra su ogni pagina, con un numero rosso per le not
 
 Cliccando una notifica si viene portati alla pagina pertinente e la notifica si segna come letta. C'è anche "Segna tutte come lette".
 
+## Menu utente
+
+Accanto alla campanella, in alto a destra, il cerchietto con l'iniziale e il proprio nome apre il menu personale:
+- **Modifica nome**: cambia il proprio nome visualizzato.
+- **Cambia password**: richiede la password attuale, poi la nuova password (due volte per conferma).
+- **Gestione utenti** (solo titolare): collegamento rapido alla pagina Utenti.
+- **Esci**: chiude la sessione.
+
 ## Area personale del collaboratore (`/dipendente`)
 
 **Timbratura** — si timbra in tre fasi:
@@ -47,7 +55,13 @@ La pagina mostra anche i turni programmati nei prossimi 7 giorni e le timbrature
 
 ## Moduli del programma (menu laterale)
 
-Il menu è diviso in due gruppi: **Clienti** (Pianificazione, Preventivi, Consuntivi, Clienti) e **Collaboratori** (Timbrature, Presenze, Permessi), più **Statistiche** a parte. **Utenti** e **Impostazioni** sono visibili solo al titolare.
+Il menu è diviso in quattro gruppi, in quest'ordine:
+- **Anagrafiche**: Clienti, Fornitori, Collaboratori (le schede anagrafiche dei collaboratori — dati personali, non l'accesso al programma).
+- **Gestione**: Pianificazione, Preventivi, Consuntivi.
+- **Produzione**: Timbrature, Presenze, Permessi (i moduli operativi che i collaboratori usano ogni giorno).
+- **Utilità**: Statistiche.
+
+In fondo al menu resta solo **Impostazioni** (solo titolare) — **Utenti** ed **Esci** sono nel menu utente in alto a destra (vedi sopra).
 
 Ogni azione di eliminazione (o "Annulla" per le richieste di permesso) chiede conferma prima di procedere.
 
@@ -67,7 +81,7 @@ Elenco di tutte le richieste di permesso/assenza inviate dai collaboratori (in a
 - Pulsante **+ Nuovo preventivo** in cima: apre/chiude il modulo di creazione (rimane chiuso finché non serve, per non intasare la vista). Cliccando **Modifica** su un preventivo esistente il modulo si apre già compilato.
 - Il modulo comprende: Cliente, Tipo di prestazione, Tipo di servizio, Ore, Spostamento, Interventi/settimana o mese, Ore/pass vetri, Tariffe, Sconto, Prezzo venduto, Condizioni di pagamento, Note (anche da frasi preimpostate).
 - Sotto: tre statistiche (Preventivi in trattativa, Contratti accettati/mese, Valore annuo contratti) e l'elenco preventivi con Cliente/cantiere, Servizio (breve, senza il testo lungo della descrizione), Prezzo listino, Prezzo venduto, Sconto, Stato. Azioni per riga: **Scarica PDF**, **Modifica**, **Accetta/Rifiuta/Riapri**, **Elimina**.
-- "Gestisci frasi preimpostate →" porta alla libreria di frasi riutilizzabili nelle note dei preventivi.
+- "Gestisci frasi preimpostate →" porta alla libreria di frasi riutilizzabili nelle note dei preventivi (raggiungibile anche da Impostazioni). Nel selettore frasi del modulo, passando il mouse su una frase ne appare l'anteprima completa senza doverla selezionare.
 
 ### Consuntivi (`/admin/consuntivi`)
 Confronta, per **Mese**/**Anno** scelti, quanto contrattualizzato (dai preventivi accettati) con quanto effettivamente lavorato (dalle timbrature): ore lavorate, ore spostamento, importo a consuntivo e scostamento in euro/percentuale (rosso se in perdita, verde se in surplus), per ogni cantiere. Totali generali in cima.
@@ -81,19 +95,27 @@ Confronta, per **Mese**/**Anno** scelti, quanto contrattualizzato (dai preventiv
 - **Aggiungi sede/cantiere**: Cliente, Nome sede, Indirizzo, Capienza (posti) facoltativa.
 - Modifica cliente e modifica cantiere hanno pagine dedicate con gli stessi campi. La Capienza di un cantiere si può modificare anche direttamente dall'elenco.
 
+### Fornitori (`/admin/fornitori`)
+Anagrafica semplice: **+ Nuovo fornitore** con Nome/Ragione sociale, P. IVA, Codice fiscale, Indirizzo, Telefono, Email, Note. L'elenco mostra codice assegnato automaticamente, nome, P.IVA/CF, telefono, email, con **Modifica**/**Elimina**.
+
+### Collaboratori — anagrafica (`/admin/collaboratori`)
+Scheda anagrafica dei collaboratori (dati personali: Nome, Cognome, Codice fiscale, Indirizzo, Telefono, Email, Note), distinta dall'account di accesso al programma (quello si gestisce da Utenti). Stesso stile di Fornitori: codice automatico, elenco con **Modifica**/**Elimina**.
+
 ### Statistiche (`/admin/statistiche`)
 Solo lettura, quattro tabelle: andamento preventivi ultimi 6 mesi (creati/accettati/conversione/sconto medio/valore), marginalità cantieri del mese corrente, ore lavorate per collaboratore del mese corrente, qualità anagrafica (quanti clienti/cantieri hanno dati completi o sono georeferenziati).
 
 ### Utenti (`/admin/utenti`, solo titolare)
+Raggiungibile da **Gestione utenti** nel menu utente in alto a destra (non più dal menu laterale).
 - Elenco utenti (Nome, Cognome, Telefono, Email, Ruolo, Stato).
 - **Aggiungi utente** / **Modifica utente**: Nome, Cognome, Telefono, Email, Password (o "Nuova password" in modifica, vuoto per non cambiarla), Ruolo (Collaboratore o Amministratore).
-- Per i Collaboratori, sezione **Pagine accessibili** con un interruttore per ogni pagina, raggruppate come nel menu (Clienti / Collaboratori / Altro). Utenti e Impostazioni non sono mai assegnabili. Pulsante **Salva permessi**.
+- Per i Collaboratori, sezione **Pagine accessibili** con un interruttore per ogni pagina, raggruppate come nel menu (Anagrafiche / Gestione / Produzione / Utilità). Utenti e Impostazioni non sono mai assegnabili. Pulsante **Salva permessi**.
 
 ### Impostazioni (`/admin/impostazioni`, solo titolare)
 - **Tipi di servizio**: rinomina le tre etichette (una tantum/passaggio settimanale/passaggio mensile) usate nei preventivi — cambia solo il nome mostrato, non i calcoli. Per ciascun tipo, l'interruttore **"Mostra cadenza/riepilogo in stampa"** decide cosa compare nel PDF al posto della semplice etichetta: acceso mostra il dettaglio (es. "Cadenza: n° 2 passaggi settimanali così distribuiti", oppure per una tantum "Intervento una tantum di pulizia (1 intervento)."), spento mostra solo l'etichetta — mai entrambi insieme, e senza mai citare ore o spostamento. Di default acceso per i passaggi settimanali/mensili, spento per una tantum.
 - **Tipo di prestazione**: elenco personalizzabile delle voci che aprono la descrizione nei preventivi (es. "PRESTAZIONE ORDINARIA DI PULIZIA UFFICI"). Si aggiungono da "Nuova voce" + Aggiungi; modificarle o eliminarle non cambia i preventivi già creati.
-- **Visualizzazione** (schede in alto: Tipi di servizio / Tipo di prestazione / Visualizzazione / Banca — si vede una scheda alla volta) → **Home**: un interruttore per ciascuna sezione della home (Al lavoro adesso, Preventivi in trattativa, Turni di oggi, Permessi in attesa, Totale preventivi accettati, Totale consuntivi) — decide cosa vedono tutti, titolare compreso. Per le card che hanno un riepilogo a colori (Al lavoro adesso, Preventivi in trattativa, Totale consuntivi), un secondo interruttore annidato decide se mostrarlo o lasciare solo il numero.
+- **Visualizzazione** (schede in alto: Tipi di servizio / Tipo di prestazione / Visualizzazione / Banca / Frasi preimpostate — si vede una scheda alla volta) → **Home**: un interruttore per ciascuna sezione della home (Al lavoro adesso, Preventivi in trattativa, Turni di oggi, Permessi in attesa, Totale preventivi accettati, Totale consuntivi) — decide cosa vedono tutti, titolare compreso. Per le card che hanno un riepilogo a colori (Al lavoro adesso, Preventivi in trattativa, Totale consuntivi), un secondo interruttore annidato decide se mostrarlo o lasciare solo il numero.
 - **Banca**: Nome banca, IBAN, Intestatario conto, SWIFT/BIC — questi dati compaiono come "Banca d'appoggio" nel PDF dei preventivi stampati. Finché non li compili, quel riquadro resta vuoto nel PDF.
+- **Frasi preimpostate**: stessa gestione raggiungibile anche da Preventivi → "Gestisci frasi preimpostate" (è la stessa identica lista, comoda da entrambi i posti). Ogni frase ha un codice assegnato automaticamente; il contenuto si vede aprendo "Contenuto ▾" sulla riga.
 
 ## Backup dei dati
 

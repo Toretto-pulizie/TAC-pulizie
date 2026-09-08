@@ -12,19 +12,28 @@ import { TipoPrestazioneRow } from "./TipoPrestazioneRow";
 import { HomeSettingsForm } from "./HomeSettingsForm";
 import { BankSettingsForm } from "./BankSettingsForm";
 import { ImpostazioniTabs } from "./ImpostazioniTabs";
+import { PhraseForm } from "@/app/admin/preventivi/frasi/PhraseForm";
+import { PhraseRow } from "@/app/admin/preventivi/frasi/PhraseRow";
 
 const ORDER = ["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE"] as const;
 
 export default async function ImpostazioniPage() {
   await requireAdmin();
-  const [labels, mostraCadenzaSettings, tipiPrestazione, homeSettings, bankSettings] =
-    await Promise.all([
-      getServiceTypeLabels(),
-      getServiceTypeMostraCadenza(),
-      prisma.tipoPrestazione.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
-      getHomeSettings(),
-      getBankSettings(),
-    ]);
+  const [
+    labels,
+    mostraCadenzaSettings,
+    tipiPrestazione,
+    homeSettings,
+    bankSettings,
+    phrases,
+  ] = await Promise.all([
+    getServiceTypeLabels(),
+    getServiceTypeMostraCadenza(),
+    prisma.tipoPrestazione.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
+    getHomeSettings(),
+    getBankSettings(),
+    prisma.quotePhrase.findMany({ orderBy: [{ ordine: "asc" }, { titolo: "asc" }] }),
+  ]);
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-8">
@@ -135,6 +144,41 @@ export default async function ImpostazioniPage() {
                     swiftBic: bankSettings.swiftBic,
                   }}
                 />
+              </section>
+            ),
+          },
+          {
+            id: "frasi",
+            label: "Frasi preimpostate",
+            content: (
+              <section className="flex flex-col gap-3">
+                <div>
+                  <h1 className="text-lg font-semibold text-zinc-900">
+                    Frasi preimpostate
+                  </h1>
+                  <p className="text-sm text-zinc-500">
+                    Le frasi richiamabili nelle note dei preventivi.
+                    Raggiungibili anche da Preventivi → Gestisci frasi
+                    preimpostate.
+                  </p>
+                </div>
+                <PhraseForm />
+                <ul className="flex flex-col gap-2">
+                  {phrases.map((p) => (
+                    <PhraseRow
+                      key={p.id}
+                      id={p.id}
+                      codice={p.codice}
+                      titolo={p.titolo}
+                      testo={p.testo}
+                    />
+                  ))}
+                </ul>
+                {phrases.length === 0 && (
+                  <p className="text-sm text-zinc-400">
+                    Nessuna frase preimpostata ancora creata.
+                  </p>
+                )}
               </section>
             ),
           },

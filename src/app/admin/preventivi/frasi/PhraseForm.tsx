@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { createPhrase } from "@/app/actions/quotePhrases";
 
-export function PhraseForm({ categorie }: { categorie: string[] }) {
+export function PhraseForm() {
   const [state, action, pending] = useActionState(createPhrase, undefined);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -19,32 +19,15 @@ export function PhraseForm({ categorie }: { categorie: string[] }) {
       action={action}
       className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
     >
-      <div className="flex flex-wrap gap-3">
-        <label className="flex flex-1 min-w-[10rem] flex-col gap-1 text-sm">
-          Categoria
-          <input
-            name="categoria"
-            required
-            list="categorie-esistenti"
-            placeholder="Es. Operazioni standard"
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          />
-          <datalist id="categorie-esistenti">
-            {categorie.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-        </label>
-        <label className="flex flex-1 min-w-[10rem] flex-col gap-1 text-sm">
-          Titolo
-          <input
-            name="titolo"
-            required
-            placeholder="Es. Pulizia a fondo"
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
-      </div>
+      <label className="flex flex-col gap-1 text-sm">
+        Titolo
+        <input
+          name="titolo"
+          required
+          placeholder="Es. Pulizia a fondo"
+          className="rounded-lg border border-zinc-300 px-3 py-2"
+        />
+      </label>
 
       <label className="flex flex-col gap-1 text-sm">
         Testo della frase

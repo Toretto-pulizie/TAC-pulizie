@@ -166,6 +166,32 @@ model Quote {
   @@index([siteId, status])
 }
 
+model Fornitore {
+  id              String   @id @default(cuid())
+  name            String
+  partitaIva      String?
+  codiceFiscale   String?
+  indirizzo       String?
+  telefono        String?
+  email           String?
+  note            String?
+  codiceFornitore Int      @unique @default(autoincrement())
+  createdAt       DateTime @default(now())
+}
+
+model Collaboratore {
+  id                  String   @id @default(cuid())
+  nome                String
+  cognome             String?
+  codiceFiscale       String?
+  indirizzo           String?
+  telefono            String?
+  email               String?
+  note                String?
+  codiceCollaboratore Int      @unique @default(autoincrement())
+  createdAt           DateTime @default(now())
+}
+
 model TipoPrestazione {
   id        String   @id @default(cuid())
   etichetta String
@@ -176,13 +202,10 @@ model TipoPrestazione {
 model QuotePhrase {
   id        String   @id @default(cuid())
   codice    Int      @unique @default(autoincrement())
-  categoria String
   titolo    String
   testo     String
   ordine    Int      @default(0)
   createdAt DateTime @default(now())
-
-  @@index([categoria])
 }
 
 model ServiceTypeLabel {

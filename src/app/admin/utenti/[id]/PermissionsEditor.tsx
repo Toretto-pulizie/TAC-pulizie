@@ -3,12 +3,7 @@
 import { useState, useTransition } from "react";
 import { updateAllowedModules } from "@/app/actions/admin";
 import { Toggle } from "@/app/Toggle";
-import {
-  MODULE_GROUPS,
-  MODULE_LABELS,
-  STANDALONE_MODULE_KEYS,
-  type ModuleKey,
-} from "@/lib/modules";
+import { MODULE_GROUPS, MODULE_LABELS, type ModuleKey } from "@/lib/modules";
 
 export function PermissionsEditor({
   userId,
@@ -70,21 +65,6 @@ export function PermissionsEditor({
             </div>
           </div>
         ))}
-        <div className="rounded-lg border border-zinc-200 p-3">
-          <p className="mb-2 text-xs font-medium tracking-wide text-zinc-500 uppercase">
-            Altro
-          </p>
-          <div className="flex flex-col gap-2.5">
-            {STANDALONE_MODULE_KEYS.map((key) => (
-              <Toggle
-                key={key}
-                checked={allowed.has(key)}
-                onChange={() => toggle(key)}
-                label={MODULE_LABELS[key]}
-              />
-            ))}
-          </div>
-        </div>
       </div>
 
       <p className="text-xs text-zinc-400">

@@ -7,7 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/dal";
 
 const PhraseSchema = z.object({
-  categoria: z.string().trim().min(1, "Categoria richiesta"),
   titolo: z.string().trim().min(1, "Titolo richiesto"),
   testo: z.string().trim().min(1, "Testo richiesto"),
 });
@@ -16,7 +15,6 @@ export async function createPhrase(_prevState: unknown, formData: FormData) {
   await requireModule("preventivi");
 
   const parsed = PhraseSchema.safeParse({
-    categoria: formData.get("categoria"),
     titolo: formData.get("titolo"),
     testo: formData.get("testo"),
   });
@@ -40,7 +38,6 @@ export async function updatePhrase(_prevState: unknown, formData: FormData) {
 
   const parsed = UpdatePhraseSchema.safeParse({
     id: formData.get("id"),
-    categoria: formData.get("categoria"),
     titolo: formData.get("titolo"),
     testo: formData.get("testo"),
   });

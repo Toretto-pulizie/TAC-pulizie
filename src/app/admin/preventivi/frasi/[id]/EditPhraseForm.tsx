@@ -6,13 +6,11 @@ import { updatePhrase } from "@/app/actions/quotePhrases";
 export function EditPhraseForm({
   id,
   codice,
-  categoria,
   titolo,
   testo,
 }: {
   id: string;
   codice: number;
-  categoria: string;
   titolo: string;
   testo: string;
 }) {
@@ -32,16 +30,6 @@ export function EditPhraseForm({
         </span>{" "}
         <span className="text-xs text-zinc-400">(assegnato automaticamente)</span>
       </p>
-
-      <label className="flex flex-col gap-1 text-sm">
-        Categoria
-        <input
-          name="categoria"
-          defaultValue={categoria}
-          required
-          className="rounded-lg border border-zinc-300 px-3 py-2"
-        />
-      </label>
 
       <label className="flex flex-col gap-1 text-sm">
         Titolo

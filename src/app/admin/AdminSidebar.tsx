@@ -3,21 +3,16 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
-import { logout } from "@/app/actions/auth";
 import { MODULE_LABELS, MODULE_HREFS, type ModuleKey } from "@/lib/modules";
 
 type NavGroup = { label: string; keys: ModuleKey[] };
 
 export function AdminSidebar({
   groups,
-  standaloneKeys,
-  showUtenti,
   showImpostazioni,
   isAdmin,
 }: {
   groups: NavGroup[];
-  standaloneKeys: ModuleKey[];
-  showUtenti: boolean;
   showImpostazioni: boolean;
   isAdmin: boolean;
 }) {
@@ -72,20 +67,6 @@ export function AdminSidebar({
             La mia area
           </Link>
         )}
-        {standaloneKeys.map((key) => (
-          <Link
-            key={key}
-            href={MODULE_HREFS[key]}
-            className={linkClass(MODULE_HREFS[key])}
-          >
-            {MODULE_LABELS[key]}
-          </Link>
-        ))}
-        {showUtenti && (
-          <Link href="/admin/utenti" className={linkClass("/admin/utenti")}>
-            Utenti
-          </Link>
-        )}
         {showImpostazioni && (
           <Link
             href="/admin/impostazioni"
@@ -94,14 +75,6 @@ export function AdminSidebar({
             Impostazioni
           </Link>
         )}
-        <form action={logout}>
-          <button
-            type="submit"
-            className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-left text-sm text-zinc-600"
-          >
-            Esci
-          </button>
-        </form>
       </div>
     </nav>
   );
