@@ -33,6 +33,8 @@ export default async function EditClientPage({
         partitaIva={client.partitaIva}
         codiceFiscale={client.codiceFiscale}
         personaRiferimento={client.personaRiferimento}
+        telefono={client.telefono}
+        email={client.email}
         notes={client.notes}
       />
     </div>

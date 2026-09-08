@@ -85,7 +85,7 @@ export default async function StampaPreventivoPage({
   const client = quote.site.client;
   const clientName =
     client.tipo === "PERSONA_FISICA"
-      ? `${client.nome ?? ""} ${client.cognome ?? ""}`.trim()
+      ? `${client.cognome ?? ""} ${client.nome ?? ""}`.trim()
       : (client.ragioneSociale ?? client.name);
 
   const noteParagraphs = buildNoteParagraphs(quote.note);

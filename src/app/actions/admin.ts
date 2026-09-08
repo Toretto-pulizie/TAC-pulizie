@@ -138,6 +138,8 @@ const ClientBaseSchema = {
   partitaIva: z.string().trim().optional(),
   codiceFiscale: z.string().trim().optional(),
   personaRiferimento: z.string().trim().optional(),
+  telefono: z.string().trim().optional(),
+  email: z.string().trim().optional(),
   notes: z.string().trim().optional(),
 };
 
@@ -150,6 +152,26 @@ const clientRefineMessage = {
 };
 
 const ClientSchema = z.object(ClientBaseSchema).refine(clientRefine, clientRefineMessage);
+
+// P. IVA e codice fiscale identificano univocamente un soggetto reale: se uno
+// dei due coincide con un cliente già in anagrafica, è quasi certamente un
+// doppione (o un errore di battitura), non una coincidenza.
+async function findDuplicateClient(
+  partitaIva: string | undefined,
+  codiceFiscale: string | undefined,
+  excludeId?: string
+) {
+  if (!partitaIva && !codiceFiscale) return null;
+  return prisma.client.findFirst({
+    where: {
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+      OR: [
+        ...(partitaIva ? [{ partitaIva }] : []),
+        ...(codiceFiscale ? [{ codiceFiscale }] : []),
+      ],
+    },
+  });
+}
 
 function clientFormFields(formData: FormData) {
   return {
@@ -164,6 +186,8 @@ function clientFormFields(formData: FormData) {
     partitaIva: formData.get("partitaIva") || undefined,
     codiceFiscale: formData.get("codiceFiscale") || undefined,
     personaRiferimento: formData.get("personaRiferimento") || undefined,
+    telefono: formData.get("telefono") || undefined,
+    email: formData.get("email") || undefined,
     notes: formData.get("notes") || undefined,
   };
 }
@@ -189,11 +213,20 @@ export async function createClient(_prevState: unknown, formData: FormData) {
     partitaIva,
     codiceFiscale,
     personaRiferimento,
+    telefono,
+    email,
     notes,
   } = parsed.data;
 
+  const duplicate = await findDuplicateClient(partitaIva, codiceFiscale);
+  if (duplicate) {
+    return {
+      error: `Esiste già un cliente con questa P. IVA o codice fiscale: ${duplicate.name}`,
+    };
+  }
+
   const name =
-    tipo === "AZIENDA" ? ragioneSociale! : `${nome} ${cognome}`;
+    tipo === "AZIENDA" ? ragioneSociale! : `${cognome} ${nome}`;
 
   await prisma.client.create({
     data: {
@@ -209,6 +242,8 @@ export async function createClient(_prevState: unknown, formData: FormData) {
       partitaIva: partitaIva || null,
       codiceFiscale: codiceFiscale || null,
       personaRiferimento: personaRiferimento || null,
+      telefono: telefono || null,
+      email: email || null,
       notes: notes || null,
     },
   });
@@ -245,10 +280,19 @@ export async function updateClient(_prevState: unknown, formData: FormData) {
     partitaIva,
     codiceFiscale,
     personaRiferimento,
+    telefono,
+    email,
     notes,
   } = parsed.data;
 
-  const name = tipo === "AZIENDA" ? ragioneSociale! : `${nome} ${cognome}`;
+  const duplicate = await findDuplicateClient(partitaIva, codiceFiscale, id);
+  if (duplicate) {
+    return {
+      error: `Esiste già un cliente con questa P. IVA o codice fiscale: ${duplicate.name}`,
+    };
+  }
+
+  const name = tipo === "AZIENDA" ? ragioneSociale! : `${cognome} ${nome}`;
 
   await prisma.client.update({
     where: { id },
@@ -265,6 +309,8 @@ export async function updateClient(_prevState: unknown, formData: FormData) {
       partitaIva: partitaIva || null,
       codiceFiscale: codiceFiscale || null,
       personaRiferimento: personaRiferimento || null,
+      telefono: telefono || null,
+      email: email || null,
       notes: notes || null,
     },
   });

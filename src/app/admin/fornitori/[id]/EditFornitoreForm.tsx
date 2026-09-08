@@ -9,6 +9,7 @@ export function EditFornitoreForm({
   partitaIva,
   codiceFiscale,
   indirizzo,
+  citta,
   telefono,
   email,
   note,
@@ -18,6 +19,7 @@ export function EditFornitoreForm({
   partitaIva: string | null;
   codiceFiscale: string | null;
   indirizzo: string | null;
+  citta: string | null;
   telefono: string | null;
   email: string | null;
   note: string | null;
@@ -60,14 +62,24 @@ export function EditFornitoreForm({
         </label>
       </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Indirizzo
-        <input
-          name="indirizzo"
-          defaultValue={indirizzo ?? ""}
-          className="rounded-lg border border-zinc-300 px-3 py-2"
-        />
-      </label>
+      <div className="flex flex-wrap gap-3">
+        <label className="flex min-w-[12rem] flex-1 flex-col gap-1 text-sm">
+          Indirizzo
+          <input
+            name="indirizzo"
+            defaultValue={indirizzo ?? ""}
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+          Città
+          <input
+            name="citta"
+            defaultValue={citta ?? ""}
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+      </div>
 
       <div className="flex flex-wrap gap-3">
         <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">

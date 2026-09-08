@@ -40,18 +40,18 @@ export function ClientForm() {
     if (capRef.current) capRef.current.value = cap;
     const match = lookupComuneFromCap(cap);
     if (!match) return;
-    if (match.comune && cittaRef.current) cittaRef.current.value = match.comune;
+    if (match.comune && cittaRef.current) cittaRef.current.value = match.comune.toUpperCase();
     if (match.provincia && provinciaRef.current) {
-      provinciaRef.current.value = match.provincia;
+      provinciaRef.current.value = match.provincia.toUpperCase();
     }
   }
 
   function handleCapBlur(e: React.FocusEvent<HTMLInputElement>) {
     const match = lookupComuneFromCap(e.target.value);
     if (!match) return;
-    if (match.comune && cittaRef.current) cittaRef.current.value = match.comune;
+    if (match.comune && cittaRef.current) cittaRef.current.value = match.comune.toUpperCase();
     if (match.provincia && provinciaRef.current) {
-      provinciaRef.current.value = match.provincia;
+      provinciaRef.current.value = match.provincia.toUpperCase();
     }
   }
 
@@ -85,11 +85,12 @@ export function ClientForm() {
       return;
     }
     const { ragioneSociale, indirizzo, cap, citta, provincia } = result.data;
-    if (ragioneSocialeRef.current) ragioneSocialeRef.current.value = ragioneSociale;
-    if (indirizzoRef.current) indirizzoRef.current.value = indirizzo;
+    if (ragioneSocialeRef.current)
+      ragioneSocialeRef.current.value = ragioneSociale.toUpperCase();
+    if (indirizzoRef.current) indirizzoRef.current.value = indirizzo.toUpperCase();
     if (capRef.current) capRef.current.value = cap;
-    if (cittaRef.current) cittaRef.current.value = citta;
-    if (provinciaRef.current) provinciaRef.current.value = provincia;
+    if (cittaRef.current) cittaRef.current.value = citta.toUpperCase();
+    if (provinciaRef.current) provinciaRef.current.value = provincia.toUpperCase();
     setPivaStato({ tipo: "trovata", nome: ragioneSociale });
   }
 
@@ -178,17 +179,17 @@ export function ClientForm() {
         ) : (
           <>
             <label className="flex flex-col gap-1 text-sm">
-              Nome
+              Cognome
               <input
-                name="nome"
+                name="cognome"
                 required
                 className="rounded-lg border border-zinc-300 px-3 py-2"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
-              Cognome
+              Nome
               <input
-                name="cognome"
+                name="nome"
                 required
                 className="rounded-lg border border-zinc-300 px-3 py-2"
               />
@@ -247,6 +248,21 @@ export function ClientForm() {
           Persona di riferimento
           <input
             name="personaRiferimento"
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Telefono
+          <input
+            name="telefono"
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Email
+          <input
+            name="email"
+            type="email"
             className="rounded-lg border border-zinc-300 px-3 py-2"
           />
         </label>

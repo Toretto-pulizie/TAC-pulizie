@@ -6,7 +6,7 @@ import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
 import { labelWithFrequency } from "@/lib/quotePrint";
 import { QuoteForm } from "./QuoteForm";
 import { CollapsibleForm } from "@/app/CollapsibleForm";
-import { QuoteRow } from "./QuoteRow";
+import { QuoteList } from "./QuoteList";
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
@@ -145,47 +145,23 @@ export default async function PreventiviPage({
           </div>
         </section>
 
-        <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
-          <table className="w-full min-w-[820px] text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">Cliente / cantiere</th>
-                <th className="px-4 py-3 font-medium">Servizio</th>
-                <th className="px-4 py-3 font-medium">Prezzo listino</th>
-                <th className="px-4 py-3 font-medium">Prezzo venduto</th>
-                <th className="px-4 py-3 font-medium">Sconto</th>
-                <th className="px-4 py-3 font-medium">Stato</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <QuoteRow
-                  key={r.id}
-                  id={r.id}
-                  siteLabel={`${r.site.client.name} — ${r.site.name}`}
-                  serviceLabel={labelWithFrequency(
-                    r.serviceType,
-                    serviceLabels[r.serviceType],
-                    r.passSettimanale,
-                    r.passMensile
-                  )}
-                  listPrice={r.listPrice}
-                  prezzoVenduto={r.prezzoVenduto}
-                  discountPct={r.discountPct}
-                  status={r.status}
-                />
-              ))}
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-6 text-center text-zinc-400">
-                    Nessun preventivo ancora creato.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </section>
+        <QuoteList
+          rows={rows.map((r) => ({
+            id: r.id,
+            numeroOfferta: r.numeroOfferta,
+            siteLabel: `${r.site.client.name} — ${r.site.name}`,
+            serviceLabel: labelWithFrequency(
+              r.serviceType,
+              serviceLabels[r.serviceType],
+              r.passSettimanale,
+              r.passMensile
+            ),
+            listPrice: r.listPrice,
+            prezzoVenduto: r.prezzoVenduto,
+            discountPct: r.discountPct,
+            status: r.status,
+          }))}
+        />
     </div>
   );
 }

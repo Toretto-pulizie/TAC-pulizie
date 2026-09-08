@@ -1,13 +1,13 @@
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { CollaboratoreForm } from "./CollaboratoreForm";
-import { CollaboratoreRow } from "./CollaboratoreRow";
+import { CollaboratoreList } from "./CollaboratoreList";
 import { CollapsibleForm } from "@/app/CollapsibleForm";
 
 export default async function CollaboratoriPage() {
   await requireModule("collaboratori");
   const collaboratori = await prisma.collaboratore.findMany({
-    orderBy: [{ nome: "asc" }, { cognome: "asc" }],
+    orderBy: [{ cognome: "asc" }, { nome: "asc" }],
   });
 
   return (
@@ -20,22 +20,20 @@ export default async function CollaboratoriPage() {
         <CollaboratoreForm />
       </CollapsibleForm>
 
-      <section className="flex flex-col gap-3">
-        {collaboratori.map((c) => (
-          <CollaboratoreRow
-            key={c.id}
-            id={c.id}
-            codiceCollaboratore={c.codiceCollaboratore}
-            nome={c.nome}
-            cognome={c.cognome}
-            telefono={c.telefono}
-            email={c.email}
-          />
-        ))}
-        {collaboratori.length === 0 && (
-          <p className="text-sm text-zinc-400">Nessun collaboratore ancora.</p>
-        )}
-      </section>
+      <CollaboratoreList
+        collaboratori={collaboratori.map((c) => ({
+          id: c.id,
+          codiceCollaboratore: c.codiceCollaboratore,
+          nome: c.nome,
+          cognome: c.cognome,
+          codiceFiscale: c.codiceFiscale,
+          indirizzo: c.indirizzo,
+          citta: c.citta,
+          telefono: c.telefono,
+          email: c.email,
+          note: c.note,
+        }))}
+      />
     </div>
   );
 }

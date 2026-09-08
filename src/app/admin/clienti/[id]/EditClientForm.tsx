@@ -30,6 +30,8 @@ export function EditClientForm({
   partitaIva,
   codiceFiscale,
   personaRiferimento,
+  telefono,
+  email,
   notes,
 }: {
   id: string;
@@ -45,6 +47,8 @@ export function EditClientForm({
   partitaIva: string | null;
   codiceFiscale: string | null;
   personaRiferimento: string | null;
+  telefono: string | null;
+  email: string | null;
   notes: string | null;
 }) {
   const [state, action, pending] = useActionState(updateClient, undefined);
@@ -61,18 +65,18 @@ export function EditClientForm({
     if (capRef.current) capRef.current.value = cap;
     const match = lookupComuneFromCap(cap);
     if (!match) return;
-    if (match.comune && cittaRef.current) cittaRef.current.value = match.comune;
+    if (match.comune && cittaRef.current) cittaRef.current.value = match.comune.toUpperCase();
     if (match.provincia && provinciaRef.current) {
-      provinciaRef.current.value = match.provincia;
+      provinciaRef.current.value = match.provincia.toUpperCase();
     }
   }
 
   function handleCapBlur(e: React.FocusEvent<HTMLInputElement>) {
     const match = lookupComuneFromCap(e.target.value);
     if (!match) return;
-    if (match.comune && cittaRef.current) cittaRef.current.value = match.comune;
+    if (match.comune && cittaRef.current) cittaRef.current.value = match.comune.toUpperCase();
     if (match.provincia && provinciaRef.current) {
-      provinciaRef.current.value = match.provincia;
+      provinciaRef.current.value = match.provincia.toUpperCase();
     }
   }
 
@@ -106,11 +110,12 @@ export function EditClientForm({
       return;
     }
     const { ragioneSociale, indirizzo, cap, citta, provincia } = result.data;
-    if (ragioneSocialeRef.current) ragioneSocialeRef.current.value = ragioneSociale;
-    if (indirizzoRef.current) indirizzoRef.current.value = indirizzo;
+    if (ragioneSocialeRef.current)
+      ragioneSocialeRef.current.value = ragioneSociale.toUpperCase();
+    if (indirizzoRef.current) indirizzoRef.current.value = indirizzo.toUpperCase();
     if (capRef.current) capRef.current.value = cap;
-    if (cittaRef.current) cittaRef.current.value = citta;
-    if (provinciaRef.current) provinciaRef.current.value = provincia;
+    if (cittaRef.current) cittaRef.current.value = citta.toUpperCase();
+    if (provinciaRef.current) provinciaRef.current.value = provincia.toUpperCase();
     setPivaStato({ tipo: "trovata", nome: ragioneSociale });
   }
 
@@ -205,19 +210,19 @@ export function EditClientForm({
       ) : (
         <div className="flex gap-3">
           <label className="flex flex-1 flex-col gap-1 text-sm">
-            Nome
+            Cognome
             <input
-              name="nome"
-              defaultValue={nome ?? ""}
+              name="cognome"
+              defaultValue={cognome ?? ""}
               required
               className="rounded-lg border border-zinc-300 px-3 py-2"
             />
           </label>
           <label className="flex flex-1 flex-col gap-1 text-sm">
-            Cognome
+            Nome
             <input
-              name="cognome"
-              defaultValue={cognome ?? ""}
+              name="nome"
+              defaultValue={nome ?? ""}
               required
               className="rounded-lg border border-zinc-300 px-3 py-2"
             />
@@ -288,6 +293,26 @@ export function EditClientForm({
           className="rounded-lg border border-zinc-300 px-3 py-2"
         />
       </label>
+
+      <div className="flex gap-3">
+        <label className="flex flex-1 flex-col gap-1 text-sm">
+          Telefono
+          <input
+            name="telefono"
+            defaultValue={telefono ?? ""}
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex flex-1 flex-col gap-1 text-sm">
+          Email
+          <input
+            name="email"
+            type="email"
+            defaultValue={email ?? ""}
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+      </div>
 
       <label className="flex flex-col gap-1 text-sm">
         Note

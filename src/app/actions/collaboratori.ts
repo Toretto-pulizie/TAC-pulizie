@@ -11,6 +11,7 @@ const CollaboratoreSchema = z.object({
   cognome: z.string().trim().optional(),
   codiceFiscale: z.string().trim().optional(),
   indirizzo: z.string().trim().optional(),
+  citta: z.string().trim().optional(),
   telefono: z.string().trim().optional(),
   email: z.string().trim().optional(),
   note: z.string().trim().optional(),
@@ -18,6 +19,19 @@ const CollaboratoreSchema = z.object({
 
 function emptyToNull(v: string | undefined) {
   return v && v.length > 0 ? v : null;
+}
+
+async function findDuplicateCollaboratore(
+  codiceFiscale: string | undefined,
+  excludeId?: string
+) {
+  if (!codiceFiscale) return null;
+  return prisma.collaboratore.findFirst({
+    where: {
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+      codiceFiscale,
+    },
+  });
 }
 
 export async function createCollaboratore(
@@ -31,6 +45,7 @@ export async function createCollaboratore(
     cognome: formData.get("cognome") || undefined,
     codiceFiscale: formData.get("codiceFiscale") || undefined,
     indirizzo: formData.get("indirizzo") || undefined,
+    citta: formData.get("citta") || undefined,
     telefono: formData.get("telefono") || undefined,
     email: formData.get("email") || undefined,
     note: formData.get("note") || undefined,
@@ -40,14 +55,23 @@ export async function createCollaboratore(
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  const { nome, cognome, codiceFiscale, indirizzo, telefono, email, note } =
+  const { nome, cognome, codiceFiscale, indirizzo, citta, telefono, email, note } =
     parsed.data;
+
+  const duplicate = await findDuplicateCollaboratore(codiceFiscale);
+  if (duplicate) {
+    return {
+      error: `Esiste già un collaboratore con questo codice fiscale: ${duplicate.nome} ${duplicate.cognome ?? ""}`.trim(),
+    };
+  }
+
   await prisma.collaboratore.create({
     data: {
       nome,
       cognome: emptyToNull(cognome),
       codiceFiscale: emptyToNull(codiceFiscale),
       indirizzo: emptyToNull(indirizzo),
+      citta: emptyToNull(citta),
       telefono: emptyToNull(telefono),
       email: emptyToNull(email),
       note: emptyToNull(note),
@@ -74,6 +98,7 @@ export async function updateCollaboratore(
     cognome: formData.get("cognome") || undefined,
     codiceFiscale: formData.get("codiceFiscale") || undefined,
     indirizzo: formData.get("indirizzo") || undefined,
+    citta: formData.get("citta") || undefined,
     telefono: formData.get("telefono") || undefined,
     email: formData.get("email") || undefined,
     note: formData.get("note") || undefined,
@@ -83,8 +108,16 @@ export async function updateCollaboratore(
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  const { id, nome, cognome, codiceFiscale, indirizzo, telefono, email, note } =
+  const { id, nome, cognome, codiceFiscale, indirizzo, citta, telefono, email, note } =
     parsed.data;
+
+  const duplicate = await findDuplicateCollaboratore(codiceFiscale, id);
+  if (duplicate) {
+    return {
+      error: `Esiste già un collaboratore con questo codice fiscale: ${duplicate.nome} ${duplicate.cognome ?? ""}`.trim(),
+    };
+  }
+
   await prisma.collaboratore.update({
     where: { id },
     data: {
@@ -92,6 +125,7 @@ export async function updateCollaboratore(
       cognome: emptyToNull(cognome),
       codiceFiscale: emptyToNull(codiceFiscale),
       indirizzo: emptyToNull(indirizzo),
+      citta: emptyToNull(citta),
       telefono: emptyToNull(telefono),
       email: emptyToNull(email),
       note: emptyToNull(note),

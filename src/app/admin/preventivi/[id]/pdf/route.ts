@@ -50,7 +50,7 @@ export async function GET(
   const client = quote.site.client;
   const clientName =
     client.tipo === "PERSONA_FISICA"
-      ? `${client.nome ?? ""} ${client.cognome ?? ""}`.trim()
+      ? `${client.cognome ?? ""} ${client.nome ?? ""}`.trim()
       : (client.ragioneSociale ?? client.name);
   const isPersonaFisica = client.tipo === "PERSONA_FISICA";
 

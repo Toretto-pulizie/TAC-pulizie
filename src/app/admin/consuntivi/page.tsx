@@ -2,6 +2,7 @@ import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeSiteTotals } from "@/lib/timeCalc";
 import { MONTH_LABELS, monthRange } from "@/lib/dates";
+import { ConsuntiviList } from "./ConsuntiviList";
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
@@ -128,50 +129,7 @@ export default async function ConsuntiviPage({
           </div>
         </section>
 
-        <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
-          <table className="w-full min-w-[820px] text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">Cliente / cantiere</th>
-                <th className="px-4 py-3 font-medium">Contratto mensile</th>
-                <th className="px-4 py-3 font-medium">Ore lavorate</th>
-                <th className="px-4 py-3 font-medium">Ore spostamento</th>
-                <th className="px-4 py-3 font-medium">Euro consuntivo</th>
-                <th className="px-4 py-3 font-medium">Scostamento</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-b border-zinc-100 last:border-0">
-                  <td className="px-4 py-3 font-medium text-zinc-900">{r.siteLabel}</td>
-                  <td className="px-4 py-3 text-zinc-500">{formatEuro(r.contrattoMensile)}</td>
-                  <td className="px-4 py-3 text-zinc-500">{r.oreLavorate.toFixed(1)}h</td>
-                  <td className="px-4 py-3 text-zinc-500">{r.oreSpostamento.toFixed(1)}h</td>
-                  <td className="px-4 py-3 text-zinc-500">{formatEuro(r.euroConsuntivo)}</td>
-                  <td
-                    className={`px-4 py-3 font-medium ${
-                      r.scostamento < 0 ? "text-red-600" : "text-green-700"
-                    }`}
-                  >
-                    {formatEuro(r.scostamento)}
-                    {r.scostamentoPct != null && (
-                      <span className="ml-1 text-xs text-zinc-400">
-                        ({(r.scostamentoPct * 100).toFixed(0)}%)
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-zinc-400">
-                    Nessun contratto accettato al momento.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </section>
+        <ConsuntiviList rows={rows} />
     </div>
   );
 }

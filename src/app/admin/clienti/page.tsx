@@ -2,7 +2,7 @@ import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { ClientForm } from "./ClientForm";
 import { SiteForm } from "./SiteForm";
-import { ClientRow } from "./ClientRow";
+import { ClientList } from "./ClientList";
 import { CollapsibleForm } from "@/app/CollapsibleForm";
 
 export default async function ClientiPage() {
@@ -23,29 +23,28 @@ export default async function ClientiPage() {
           </CollapsibleForm>
         </div>
 
-        <section className="flex flex-col gap-3">
-          {clients.map((c) => (
-            <ClientRow
-              key={c.id}
-              clientId={c.id}
-              codiceCliente={c.codiceCliente}
-              name={c.name}
-              tipo={c.tipo}
-              editHref={`/admin/clienti/${c.id}`}
-              sites={c.sites.map((s) => ({
-                id: s.id,
-                name: s.name,
-                address: s.address,
-                lat: s.lat,
-                lng: s.lng,
-                capienza: s.capienza,
-              }))}
-            />
-          ))}
-          {clients.length === 0 && (
-            <p className="text-sm text-zinc-400">Nessun cliente ancora.</p>
-          )}
-        </section>
+        <ClientList
+          clients={clients.map((c) => ({
+            id: c.id,
+            codiceCliente: c.codiceCliente,
+            name: c.name,
+            tipo: c.tipo,
+            citta: c.citta,
+            telefono: c.telefono,
+            email: c.email,
+            partitaIva: c.partitaIva,
+            codiceFiscale: c.codiceFiscale,
+            personaRiferimento: c.personaRiferimento,
+            sites: c.sites.map((s) => ({
+              id: s.id,
+              name: s.name,
+              address: s.address,
+              lat: s.lat,
+              lng: s.lng,
+              capienza: s.capienza,
+            })),
+          }))}
+        />
     </div>
   );
 }

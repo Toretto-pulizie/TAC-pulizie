@@ -1,7 +1,7 @@
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { FornitoreForm } from "./FornitoreForm";
-import { FornitoreRow } from "./FornitoreRow";
+import { FornitoreList } from "./FornitoreList";
 import { CollapsibleForm } from "@/app/CollapsibleForm";
 
 export default async function FornitoriPage() {
@@ -18,23 +18,20 @@ export default async function FornitoriPage() {
         <FornitoreForm />
       </CollapsibleForm>
 
-      <section className="flex flex-col gap-3">
-        {fornitori.map((f) => (
-          <FornitoreRow
-            key={f.id}
-            id={f.id}
-            codiceFornitore={f.codiceFornitore}
-            name={f.name}
-            partitaIva={f.partitaIva}
-            codiceFiscale={f.codiceFiscale}
-            telefono={f.telefono}
-            email={f.email}
-          />
-        ))}
-        {fornitori.length === 0 && (
-          <p className="text-sm text-zinc-400">Nessun fornitore ancora.</p>
-        )}
-      </section>
+      <FornitoreList
+        fornitori={fornitori.map((f) => ({
+          id: f.id,
+          codiceFornitore: f.codiceFornitore,
+          name: f.name,
+          partitaIva: f.partitaIva,
+          codiceFiscale: f.codiceFiscale,
+          indirizzo: f.indirizzo,
+          citta: f.citta,
+          telefono: f.telefono,
+          email: f.email,
+          note: f.note,
+        }))}
+      />
     </div>
   );
 }

@@ -118,6 +118,8 @@ model Client {
   partitaIva         String?
   codiceFiscale      String?
   personaRiferimento String?
+  telefono           String?
+  email              String?
   notes              String?
   createdAt          DateTime   @default(now())
   sites              Site[]
@@ -172,6 +174,7 @@ model Fornitore {
   partitaIva      String?
   codiceFiscale   String?
   indirizzo       String?
+  citta           String?
   telefono        String?
   email           String?
   note            String?
@@ -185,6 +188,7 @@ model Collaboratore {
   cognome             String?
   codiceFiscale       String?
   indirizzo           String?
+  citta               String?
   telefono            String?
   email               String?
   note                String?

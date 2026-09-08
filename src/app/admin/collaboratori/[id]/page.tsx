@@ -27,6 +27,7 @@ export default async function EditCollaboratorePage({
         cognome={collaboratore.cognome}
         codiceFiscale={collaboratore.codiceFiscale}
         indirizzo={collaboratore.indirizzo}
+        citta={collaboratore.citta}
         telefono={collaboratore.telefono}
         email={collaboratore.email}
         note={collaboratore.note}

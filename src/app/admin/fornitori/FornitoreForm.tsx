@@ -45,13 +45,22 @@ export function FornitoreForm() {
         </label>
       </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Indirizzo
-        <input
-          name="indirizzo"
-          className="rounded-lg border border-zinc-300 px-3 py-2"
-        />
-      </label>
+      <div className="flex flex-wrap gap-3">
+        <label className="flex min-w-[12rem] flex-1 flex-col gap-1 text-sm">
+          Indirizzo
+          <input
+            name="indirizzo"
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+          Città
+          <input
+            name="citta"
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+      </div>
 
       <div className="flex flex-wrap gap-3">
         <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
