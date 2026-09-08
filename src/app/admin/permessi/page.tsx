@@ -19,7 +19,7 @@ export default async function AdminPermessiPage() {
   );
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-8">
+    <div className="flex flex-col gap-6 px-4 pt-20 pb-4 sm:px-8 sm:pt-24 sm:pb-8">
         <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">

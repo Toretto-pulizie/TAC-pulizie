@@ -225,7 +225,7 @@ export default async function AdminHomePage() {
   }
 
   return (
-    <div className="flex flex-col gap-8 p-4 sm:p-8">
+    <div className="flex flex-col gap-8 px-4 pt-20 pb-4 sm:px-8 sm:pt-24 sm:pb-8">
       <div>
         <p className="text-sm text-zinc-500">Ciao,</p>
         <h1 className="text-2xl font-semibold text-zinc-900">

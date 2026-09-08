@@ -8,7 +8,7 @@ export default async function UtentiPage() {
   const employees = await prisma.user.findMany({ orderBy: { name: "asc" } });
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-8">
+    <div className="flex flex-col gap-6 px-4 pt-20 pb-4 sm:px-8 sm:pt-24 sm:pb-8">
         <EmployeeForm />
 
         <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
