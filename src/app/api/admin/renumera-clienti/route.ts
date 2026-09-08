@@ -46,24 +46,34 @@ const MAPPING: [oldCode: number, newCode: number][] = [
 export async function POST() {
   await requireAdmin();
 
-  const result = await prisma.$transaction(async (tx) => {
-    for (const [oldCode, newCode] of MAPPING) {
-      await tx.client.update({
-        where: { codiceCliente: oldCode },
-        data: { codiceCliente: -newCode },
-      });
-    }
-    for (const [, newCode] of MAPPING) {
-      await tx.client.update({
-        where: { codiceCliente: -newCode },
-        data: { codiceCliente: newCode },
-      });
-    }
-    return tx.client.findMany({
+  const valuesSql = MAPPING.map(([o, n]) => `(${o}, ${n})`).join(", ");
+
+  try {
+    await prisma.$transaction([
+      prisma.$executeRawUnsafe(`
+        UPDATE "Client" AS c
+        SET "codiceCliente" = -v.new_code
+        FROM (VALUES ${valuesSql}) AS v(old_code, new_code)
+        WHERE c."codiceCliente" = v.old_code;
+      `),
+      prisma.$executeRawUnsafe(`
+        UPDATE "Client" AS c
+        SET "codiceCliente" = v.new_code
+        FROM (VALUES ${valuesSql}) AS v(old_code, new_code)
+        WHERE c."codiceCliente" = -v.new_code;
+      `),
+    ]);
+
+    const clients = await prisma.client.findMany({
       orderBy: { codiceCliente: "asc" },
       select: { codiceCliente: true, name: true },
     });
-  });
 
-  return NextResponse.json({ ok: true, clients: result });
+    return NextResponse.json({ ok: true, clients });
+  } catch (err) {
+    return NextResponse.json(
+      { ok: false, error: err instanceof Error ? err.message : String(err) },
+      { status: 500 }
+    );
+  }
 }
