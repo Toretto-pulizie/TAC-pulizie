@@ -48,49 +48,37 @@ export function ExcelHeader({
 
   return (
     <th className="relative px-3 py-2 font-medium select-none">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 hover:text-zinc-900"
-      >
-        {label}
-        <span
-          className={`text-[10px] ${isFiltered ? "text-zinc-900" : "text-zinc-400"}`}
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => onSort(sortDir === "asc" ? "desc" : "asc")}
+          className="flex items-center gap-1 hover:text-zinc-900"
+          title="Ordina"
         >
-          {sortDir === "asc" ? "▲" : sortDir === "desc" ? "▼" : "▾"}
-        </span>
-        {isFiltered && (
-          <span className="h-1.5 w-1.5 rounded-full bg-zinc-900" />
-        )}
-      </button>
+          {label}
+          <span className={sortDir ? "text-zinc-900" : "text-zinc-400"}>
+            {sortDir === "asc" ? "▲" : sortDir === "desc" ? "▼" : "▾"}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="rounded p-0.5 hover:bg-zinc-200"
+          title="Filtra"
+        >
+          <svg
+            viewBox="0 0 16 16"
+            className={`h-3 w-3 ${isFiltered ? "fill-zinc-900" : "fill-zinc-400"}`}
+          >
+            <path d="M1 2h14l-5.5 6.5V14l-3-1.5V8.5z" />
+          </svg>
+        </button>
+      </div>
 
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute left-0 z-20 mt-1 w-56 rounded-lg border border-zinc-200 bg-white p-2 text-xs font-normal normal-case text-zinc-700 shadow-lg">
-            <button
-              type="button"
-              onClick={() => {
-                onSort("asc");
-                setOpen(false);
-              }}
-              className="block w-full rounded px-2 py-1.5 text-left hover:bg-zinc-100"
-            >
-              ▲ Ordina crescente
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onSort("desc");
-                setOpen(false);
-              }}
-              className="block w-full rounded px-2 py-1.5 text-left hover:bg-zinc-100"
-            >
-              ▼ Ordina decrescente
-            </button>
-
-            <div className="my-2 border-t border-zinc-100" />
-
             <input
               type="text"
               value={search}
