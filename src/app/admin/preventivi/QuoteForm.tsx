@@ -3,45 +3,31 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveQuote } from "@/app/actions/quotes";
-import { computeListPrice } from "@/lib/quotes";
+import {
+  QuoteSiteFieldset,
+  type ClientOption,
+  type ServiceType,
+  type SiteBlockInitial,
+} from "./QuoteSiteFieldset";
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
 }
 
-type ServiceType = "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
 type Phrase = {
   id: string;
   codice: number;
   titolo: string;
   testo: string;
 };
-type ClientOption = {
-  id: string;
-  name: string;
-  baseAddress: string | null;
-  sites: { id: string; name: string; address: string }[];
-};
+
 export type EditingQuote = {
   id: string;
   clientId: string;
-  siteId: string;
-  serviceType: ServiceType;
-  ore: number;
-  spostamento: number;
-  oneShotCount: number;
-  passSettimanale: number | null;
-  passMensile: number | null;
-  oreVetri: number;
-  passVetriAnno: number;
-  tariffaOraria: number;
-  tariffaVetri: number;
-  tariffaConsuntivo: number;
-  prezzoVenduto: number | null;
-  adeguamento: number | null;
-  condizioniPagamento: string | null;
   tipoPrestazione: string;
+  condizioniPagamento: string | null;
   note: string | null;
+  sites: SiteBlockInitial[];
 };
 
 export function QuoteForm({
@@ -59,14 +45,8 @@ export function QuoteForm({
 }) {
   const router = useRouter();
   const [state, action, pending] = useActionState(saveQuote, undefined);
-  const [serviceType, setServiceType] = useState<ServiceType>(
-    editingQuote?.serviceType ?? "PASS_SETTIMANALE"
-  );
   const [selectedClientId, setSelectedClientId] = useState(
     editingQuote?.clientId ?? ""
-  );
-  const [siteSelection, setSiteSelection] = useState(
-    editingQuote?.siteId ?? ""
   );
   const selectedClient = clients.find((c) => c.id === selectedClientId);
   const [selectedPhraseIds, setSelectedPhraseIds] = useState<string[]>([]);
@@ -78,37 +58,30 @@ export function QuoteForm({
   const formRef = useRef<HTMLFormElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [totale, setTotale] = useState(0);
 
-  function recomputeTotale() {
-    if (!formRef.current) return;
-    const fd = new FormData(formRef.current);
-    const num = (name: string, fallback = 0) => {
-      const raw = fd.get(name);
-      const n = typeof raw === "string" ? parseFloat(raw) : NaN;
-      return Number.isFinite(n) ? n : fallback;
-    };
-    const st = (fd.get("serviceType") as ServiceType) || serviceType;
-    setTotale(
-      computeListPrice({
-        serviceType: st,
-        ore: num("ore"),
-        spostamento: num("spostamento"),
-        oneShotCount: num("oneShotCount", 1),
-        passSettimanale: st === "PASS_SETTIMANALE" ? num("passSettimanale") : null,
-        passMensile: st === "PASS_MENSILE" ? num("passMensile") : null,
-        oreVetri: num("oreVetri"),
-        passVetriAnno: num("passVetriAnno"),
-        tariffaOraria: num("tariffaOraria"),
-        tariffaVetri: num("tariffaVetri"),
-      })
-    );
+  const nextBlockId = useRef(
+    editingQuote ? Math.max(0, editingQuote.sites.length - 1) : 0
+  );
+  const [blockIds, setBlockIds] = useState<number[]>(() =>
+    editingQuote && editingQuote.sites.length > 0
+      ? editingQuote.sites.map((_, i) => i)
+      : [0]
+  );
+  const [totali, setTotali] = useState<Record<number, number>>({});
+  const totaleComplessivo = Object.values(totali).reduce((a, b) => a + b, 0);
+
+  function addBlock() {
+    nextBlockId.current += 1;
+    setBlockIds((ids) => [...ids, nextBlockId.current]);
   }
 
-  useEffect(() => {
-    recomputeTotale();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serviceType]);
+  function removeBlock(id: number) {
+    setBlockIds((ids) => ids.filter((x) => x !== id));
+    setTotali((t) => {
+      const { [id]: _removed, ...rest } = t;
+      return rest;
+    });
+  }
 
   useEffect(() => {
     if (state && "success" in state && state.success) {
@@ -116,11 +89,11 @@ export function QuoteForm({
         router.push("/admin/preventivi");
       } else {
         formRef.current?.reset();
-        setServiceType("PASS_SETTIMANALE");
         setSelectedPhraseIds([]);
         setSelectedClientId("");
-        setSiteSelection("");
-        setTimeout(recomputeTotale, 0);
+        nextBlockId.current = 0;
+        setBlockIds([0]);
+        setTotali({});
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -147,7 +120,6 @@ export function QuoteForm({
     <form
       ref={formRef}
       action={action}
-      onChange={recomputeTotale}
       className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
     >
       {editingQuote && (
@@ -160,279 +132,81 @@ export function QuoteForm({
       )}
 
       <div className="flex flex-wrap items-start gap-3">
-        <div className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm">
-            Cliente
-            <select
-              name="clientId"
-              required
-              value={selectedClientId}
-              onChange={(e) => {
-                setSelectedClientId(e.target.value);
-                setSiteSelection("");
-              }}
-              className="rounded-lg border border-zinc-300 px-3 py-2"
-            >
-              <option value="">Seleziona...</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex min-w-[16rem] flex-col gap-1 text-sm">
-            Tipo di prestazione
-            <select
-              name="tipoPrestazione"
-              required
-              defaultValue={editingQuote?.tipoPrestazione ?? ""}
-              className="rounded-lg border border-zinc-300 px-3 py-2"
-            >
-              <option value="">Seleziona...</option>
-              {editingQuote?.tipoPrestazione &&
-                !tipiPrestazione.includes(editingQuote.tipoPrestazione) && (
-                  <option value={editingQuote.tipoPrestazione}>
-                    {editingQuote.tipoPrestazione}
-                  </option>
-                )}
-              {tipiPrestazione.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        {selectedClient && (
-          <label className="flex flex-col gap-1 text-sm">
-            Sede
-            <select
-              name="siteSelection"
-              required
-              value={siteSelection}
-              onChange={(e) => setSiteSelection(e.target.value)}
-              className="rounded-lg border border-zinc-300 px-3 py-2"
-            >
-              <option value="">Seleziona...</option>
-              {selectedClient.sites.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} — {s.address}
-                </option>
-              ))}
-              {selectedClient.baseAddress && (
-                <option value="__base__">
-                  Usa indirizzo cliente: {selectedClient.baseAddress}
-                </option>
-              )}
-              <option value="__custom__">Altro (nuovo indirizzo)</option>
-            </select>
-          </label>
-        )}
-
-        {siteSelection === "__custom__" && (
-          <label className="flex flex-col gap-1 text-sm">
-            Nuovo indirizzo
-            <input
-              name="nuovoIndirizzo"
-              required
-              placeholder="Via, numero civico, città"
-              className="rounded-lg border border-zinc-300 px-3 py-2"
-            />
-          </label>
-        )}
-
         <label className="flex flex-col gap-1 text-sm">
-          Tipo di servizio
+          Cliente
           <select
-            name="serviceType"
-            value={serviceType}
-            onChange={(e) => setServiceType(e.target.value as ServiceType)}
+            name="clientId"
+            required
+            value={selectedClientId}
+            onChange={(e) => setSelectedClientId(e.target.value)}
             className="rounded-lg border border-zinc-300 px-3 py-2"
           >
-            <option value="ONE_SHOT">{serviceLabels.ONE_SHOT}</option>
-            <option value="PASS_SETTIMANALE">
-              {serviceLabels.PASS_SETTIMANALE}
-            </option>
-            <option value="PASS_MENSILE">{serviceLabels.PASS_MENSILE}</option>
+            <option value="">Seleziona...</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-sm">
-          Ore per intervento
-          <input
-            type="number"
-            step="0.5"
-            name="ore"
+        <label className="flex min-w-[16rem] flex-col gap-1 text-sm">
+          Tipo di prestazione
+          <select
+            name="tipoPrestazione"
             required
-            defaultValue={editingQuote?.ore}
-            className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
-          />
+            defaultValue={editingQuote?.tipoPrestazione ?? ""}
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          >
+            <option value="">Seleziona...</option>
+            {editingQuote?.tipoPrestazione &&
+              !tipiPrestazione.includes(editingQuote.tipoPrestazione) && (
+                <option value={editingQuote.tipoPrestazione}>
+                  {editingQuote.tipoPrestazione}
+                </option>
+              )}
+            {tipiPrestazione.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
         </label>
-
-        <label className="flex flex-col gap-1 text-sm">
-          Spostamento (ore)
-          <input
-            type="number"
-            step="0.5"
-            name="spostamento"
-            defaultValue={editingQuote?.spostamento ?? 0.5}
-            className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
-
-        {serviceType === "ONE_SHOT" && (
-          <label className="flex flex-col gap-1 text-sm">
-            N. interventi
-            <input
-              type="number"
-              step="0.5"
-              name="oneShotCount"
-              defaultValue={editingQuote?.oneShotCount ?? 1}
-              className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
-            />
-          </label>
-        )}
-
-        {serviceType === "PASS_SETTIMANALE" && (
-          <label className="flex flex-col gap-1 text-sm">
-            Interventi/settimana
-            <input
-              type="number"
-              step="0.5"
-              min="0.5"
-              name="passSettimanale"
-              required
-              defaultValue={editingQuote?.passSettimanale ?? undefined}
-              className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
-            />
-          </label>
-        )}
-
-        {serviceType === "PASS_MENSILE" && (
-          <label className="flex flex-col gap-1 text-sm">
-            Interventi/mese
-            <input
-              type="number"
-              step="0.5"
-              min="0.5"
-              name="passMensile"
-              required
-              defaultValue={editingQuote?.passMensile ?? undefined}
-              className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
-            />
-          </label>
-        )}
       </div>
 
-      <div className="flex flex-wrap items-end gap-3 border-t border-zinc-100 pt-3">
-        {serviceType !== "ONE_SHOT" && (
-          <>
-            <label className="flex flex-col gap-1 text-sm">
-              Ore vetri/anno
-              <input
-                type="number"
-                step="0.5"
-                name="oreVetri"
-                defaultValue={editingQuote?.oreVetri ?? 0}
-                className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              Pass vetri/anno
-              <input
-                type="number"
-                step="0.5"
-                name="passVetriAnno"
-                defaultValue={editingQuote?.passVetriAnno ?? 0}
-                className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              Tariffa vetri €/h
-              <input
-                type="number"
-                step="0.5"
-                name="tariffaVetri"
-                defaultValue={editingQuote?.tariffaVetri ?? 30}
-                className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
-              />
-            </label>
-          </>
-        )}
-
-        <label className="flex flex-col gap-1 text-sm">
-          Tariffa oraria €/h
-          <input
-            type="number"
-            step="0.5"
-            name="tariffaOraria"
-            defaultValue={editingQuote?.tariffaOraria ?? 25}
-            required
-            className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
+      <div className="flex flex-col gap-3">
+        {blockIds.map((id, i) => (
+          <QuoteSiteFieldset
+            key={id}
+            index={id}
+            selectedClient={selectedClient}
+            initial={editingQuote?.sites[i]}
+            canRemove={blockIds.length > 1}
+            onRemove={() => removeBlock(id)}
+            onTotaleChange={(idx, t) =>
+              setTotali((prev) => ({ ...prev, [idx]: t }))
+            }
+            serviceLabels={serviceLabels}
           />
-        </label>
-
-        <label className="flex flex-col gap-1 text-sm">
-          Tariffa consuntivo €/h
-          <input
-            type="number"
-            step="0.5"
-            name="tariffaConsuntivo"
-            defaultValue={editingQuote?.tariffaConsuntivo ?? 25}
-            required
-            className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
-
+        ))}
       </div>
 
-      <div className="flex flex-wrap items-end gap-3 border-t border-zinc-100 pt-3">
-        <div className="flex flex-col gap-1 text-sm">
-          Totale
-          <div className="w-28 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 font-medium text-zinc-900">
-            {formatEuro(totale)}
-          </div>
-        </div>
-
-        <label className="flex flex-col gap-1 text-sm">
-          Sconto % (opzionale)
-          <input
-            type="number"
-            step="0.5"
-            min="0"
-            max="100"
-            name="scontoPct"
-            placeholder="Es. 10"
-            className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
-
-        <label className="flex flex-col gap-1 text-sm">
-          Netto (se noto)
-          <input
-            type="number"
-            step="0.5"
-            name="prezzoVenduto"
-            defaultValue={editingQuote?.prezzoVenduto ?? undefined}
-            className="w-32 rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
-
-        <label className="flex flex-col gap-1 text-sm">
-          Adeguamento € (opzionale)
-          <input
-            type="number"
-            step="0.5"
-            name="adeguamento"
-            placeholder="Es. 150"
-            defaultValue={editingQuote?.adeguamento ?? undefined}
-            className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
-            title="Se compilato, sostituisce il Netto come prezzo venduto finale"
-          />
-        </label>
+      <div className="flex items-center justify-between border-t border-zinc-100 pt-3">
+        <button
+          type="button"
+          onClick={addBlock}
+          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700"
+        >
+          + Aggiungi sede al preventivo
+        </button>
+        {blockIds.length > 1 && (
+          <p className="text-sm text-zinc-600">
+            Totale complessivo:{" "}
+            <span className="font-semibold text-zinc-900">
+              {formatEuro(totaleComplessivo)}
+            </span>
+          </p>
+        )}
       </div>
 
       <div className="flex flex-wrap items-end gap-3 border-t border-zinc-100 pt-3">
@@ -445,18 +219,18 @@ export function QuoteForm({
             className="w-48 rounded-lg border border-zinc-300 px-3 py-2"
           />
         </label>
-
-        <label className="flex flex-1 min-w-[10rem] flex-col gap-1 text-sm">
-          Note
-          <textarea
-            ref={noteRef}
-            name="note"
-            rows={3}
-            defaultValue={editingQuote?.note ?? ""}
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
       </div>
+
+      <label className="flex flex-col gap-1 text-sm">
+        Note
+        <textarea
+          ref={noteRef}
+          name="note"
+          rows={10}
+          defaultValue={editingQuote?.note ?? ""}
+          className="rounded-lg border border-zinc-300 px-3 py-2"
+        />
+      </label>
 
       {phrases.length > 0 && (
         <div className="border-t border-zinc-100 pt-3">

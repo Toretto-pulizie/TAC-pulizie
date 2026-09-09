@@ -21,9 +21,9 @@ export default async function ConsuntiviPage({
   const month = params.month ? parseInt(params.month, 10) : now.getMonth() + 1;
   const { start, end } = monthRange(year, month);
 
-  const [quotes, entries] = await Promise.all([
-    prisma.quote.findMany({
-      where: { status: "ACCETTATO" },
+  const [quoteSites, entries] = await Promise.all([
+    prisma.quoteSite.findMany({
+      where: { quote: { status: "ACCETTATO" } },
       include: { site: { include: { client: true } } },
       orderBy: [{ site: { client: { name: "asc" } } }],
     }),
@@ -35,21 +35,24 @@ export default async function ConsuntiviPage({
 
   const siteTotals = computeSiteTotals(entries);
 
-  const rows = quotes.map((q) => {
-    const totals = siteTotals.get(q.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
-    const contrattoMensile = q.adeguamento ?? q.prezzoVenduto ?? 0;
+  // Ogni sede di un preventivo accettato è una riga indipendente: ognuna ha
+  // il proprio contratto (Netto o Adeguamento, se presente) confrontato con
+  // le ore effettivamente lavorate su quella sede.
+  const rows = quoteSites.map((qs) => {
+    const totals = siteTotals.get(qs.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
+    const contrattoMensile = qs.adeguamento ?? qs.prezzoVenduto ?? 0;
     const oreLavorate = totals.workMinutes / 60;
     const oreSpostamento = totals.travelMinutes / 60;
-    const euroConsuntivo = oreLavorate * q.tariffaConsuntivo;
+    const euroConsuntivo = oreLavorate * qs.tariffaConsuntivo;
     const scostamento = euroConsuntivo - contrattoMensile;
     const scostamentoPct = contrattoMensile !== 0 ? scostamento / contrattoMensile : null;
     return {
-      id: q.id,
-      siteLabel: `${q.site.client.name} — ${q.site.name}`,
+      id: qs.id,
+      siteLabel: `${qs.site.client.name} — ${qs.site.name}`,
       contrattoMensile,
       oreLavorate,
       oreSpostamento,
-      tariffaConsuntivo: q.tariffaConsuntivo,
+      tariffaConsuntivo: qs.tariffaConsuntivo,
       euroConsuntivo,
       scostamento,
       scostamentoPct,

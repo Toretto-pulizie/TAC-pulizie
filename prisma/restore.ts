@@ -63,6 +63,7 @@ async function main() {
   // Cancella nell'ordine inverso delle dipendenze.
   await prisma.timeEntry.deleteMany();
   await prisma.shift.deleteMany();
+  await prisma.quoteSite.deleteMany();
   await prisma.quote.deleteMany();
   await prisma.leaveRequest.deleteMany();
   await prisma.site.deleteMany();
@@ -85,6 +86,8 @@ async function main() {
   if (data.leaveRequests?.length)
     await prisma.leaveRequest.createMany({ data: data.leaveRequests });
   if (data.quotes?.length) await prisma.quote.createMany({ data: data.quotes });
+  if (data.quoteSites?.length)
+    await prisma.quoteSite.createMany({ data: data.quoteSites });
   if (data.shifts?.length) await prisma.shift.createMany({ data: data.shifts });
   if (data.timeEntries?.length)
     await prisma.timeEntry.createMany({ data: data.timeEntries });

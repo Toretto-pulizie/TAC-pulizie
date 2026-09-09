@@ -34,7 +34,7 @@ export async function GET(
     await Promise.all([
       prisma.quote.findUnique({
         where: { id },
-        include: { site: { include: { client: true } } },
+        include: { client: true, sites: true },
       }),
       getServiceTypeLabels(),
       getServiceTypeMostraCadenza(),
@@ -47,16 +47,18 @@ export async function GET(
     );
   }
 
-  const client = quote.site.client;
+  const client = quote.client;
   const clientName =
     client.tipo === "PERSONA_FISICA"
       ? `${client.cognome ?? ""} ${client.nome ?? ""}`.trim()
       : (client.ragioneSociale ?? client.name);
   const isPersonaFisica = client.tipo === "PERSONA_FISICA";
 
-  const lineItem = buildLineItem(quote, serviceLabels[quote.serviceType]);
-  // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
-  const prezzoNetto = quote.adeguamento ?? quote.prezzoVenduto ?? lineItem.listPrice;
+  // Somma su tutte le sedi: ognuna ha il proprio Netto/Adeguamento indipendente.
+  const prezzoNetto = quote.sites.reduce((sum, qs) => {
+    const lineItem = buildLineItem(qs, serviceLabels[qs.serviceType]);
+    return sum + (qs.adeguamento ?? qs.prezzoVenduto ?? lineItem.listPrice);
+  }, 0);
   const totaleIva = isPersonaFisica ? prezzoNetto * ALIQUOTA_IVA : 0;
   const totaleConIva = prezzoNetto + totaleIva;
 

@@ -178,16 +178,21 @@ export default async function AdminHomePage() {
         })
       : Promise.resolve([]),
     showTotalePreventivi
-      ? prisma.quote.findMany({
-          where: { status: "ACCETTATO" },
-          select: { prezzoVenduto: true },
+      ? prisma.quoteSite.findMany({
+          where: { quote: { status: "ACCETTATO" } },
+          select: { prezzoVenduto: true, adeguamento: true },
         })
       : Promise.resolve([]),
     showTotaleConsuntivi
       ? Promise.all([
-          prisma.quote.findMany({
-            where: { status: "ACCETTATO" },
-            select: { siteId: true, tariffaConsuntivo: true, prezzoVenduto: true },
+          prisma.quoteSite.findMany({
+            where: { quote: { status: "ACCETTATO" } },
+            select: {
+              siteId: true,
+              tariffaConsuntivo: true,
+              prezzoVenduto: true,
+              adeguamento: true,
+            },
           }),
           prisma.timeEntry.findMany({
             where: { timestamp: { gte: monthStart, lte: monthEnd } },
@@ -195,29 +200,35 @@ export default async function AdminHomePage() {
           }),
         ])
       : Promise.resolve([[], []] as [
-          { siteId: string; tariffaConsuntivo: number; prezzoVenduto: number | null }[],
+          {
+            siteId: string;
+            tariffaConsuntivo: number;
+            prezzoVenduto: number | null;
+            adeguamento: number | null;
+          }[],
           { userId: string; siteId: string | null; type: EntryType; timestamp: Date }[],
         ]),
   ]);
 
+  // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
   const totalePreventiviAccettati = acceptedQuotes.reduce(
-    (sum, q) => sum + (q.prezzoVenduto ?? 0),
+    (sum, qs) => sum + (qs.adeguamento ?? qs.prezzoVenduto ?? 0),
     0
   );
 
-  const [consuntivoQuotes, consuntivoEntries] = monthEntries;
+  const [consuntivoQuoteSites, consuntivoEntries] = monthEntries;
   const consuntivoSiteTotals = computeSiteTotals(consuntivoEntries);
   let totaleConsuntivo = 0;
   let consuntivoInUtile = 0;
   let consuntivoInPerdita = 0;
-  for (const q of consuntivoQuotes) {
-    const totals = consuntivoSiteTotals.get(q.siteId) ?? {
+  for (const qs of consuntivoQuoteSites) {
+    const totals = consuntivoSiteTotals.get(qs.siteId) ?? {
       travelMinutes: 0,
       workMinutes: 0,
     };
-    const euroConsuntivo = (totals.workMinutes / 60) * q.tariffaConsuntivo;
+    const euroConsuntivo = (totals.workMinutes / 60) * qs.tariffaConsuntivo;
     totaleConsuntivo += euroConsuntivo;
-    if (euroConsuntivo >= (q.prezzoVenduto ?? 0)) {
+    if (euroConsuntivo >= (qs.adeguamento ?? qs.prezzoVenduto ?? 0)) {
       consuntivoInUtile += euroConsuntivo;
     } else {
       consuntivoInPerdita += euroConsuntivo;

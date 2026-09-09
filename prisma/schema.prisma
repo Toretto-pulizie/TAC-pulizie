@@ -125,6 +125,7 @@ model Client {
   notes              String?
   createdAt          DateTime   @default(now())
   sites              Site[]
+  quotes             Quote[]
 }
 
 model Site {
@@ -140,27 +141,15 @@ model Site {
   createdAt   DateTime    @default(now())
   timeEntries TimeEntry[]
   shifts      Shift[]
-  quotes      Quote[]
+  quoteSites  QuoteSite[]
 }
 
 model Quote {
   id                  String      @id @default(cuid())
   numeroOfferta       Int         @default(autoincrement())
-  site                Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  siteId              String
-  serviceType         ServiceType
-  ore                 Float
-  spostamento         Float       @default(0)
-  oneShotCount        Float       @default(1)
-  passSettimanale     Float?
-  passMensile         Float?
-  oreVetri            Float       @default(0)
-  passVetriAnno       Float       @default(0)
-  tariffaOraria       Float       @default(25)
-  tariffaVetri        Float       @default(30)
-  tariffaConsuntivo   Float       @default(25)
-  prezzoVenduto       Float?
-  adeguamento           Float?
+  client              Client      @relation(fields: [clientId], references: [id])
+  clientId            String
+  sites               QuoteSite[]
   condizioniPagamento String?
   tipoPrestazione     String      @default("")
   status              QuoteStatus @default(IN_TRATTATIVA)
@@ -168,7 +157,31 @@ model Quote {
   createdAt           DateTime    @default(now())
   closedAt            DateTime?
 
-  @@index([siteId, status])
+  @@index([clientId, status])
+}
+
+model QuoteSite {
+  id                String      @id @default(cuid())
+  quote             Quote       @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId           String
+  site              Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId            String
+  serviceType       ServiceType
+  ore               Float
+  spostamento       Float       @default(0)
+  oneShotCount      Float       @default(1)
+  passSettimanale   Float?
+  passMensile       Float?
+  oreVetri          Float       @default(0)
+  passVetriAnno     Float       @default(0)
+  tariffaOraria     Float       @default(25)
+  tariffaVetri      Float       @default(30)
+  tariffaConsuntivo Float       @default(25)
+  prezzoVenduto     Float?
+  adeguamento       Float?
+
+  @@index([siteId])
+  @@index([quoteId])
 }
 
 model Fornitore {

@@ -425,7 +425,7 @@ export async function deleteSite(siteId: string) {
   await requireModule("clienti");
 
   const [quoteCount, shiftCount, timeEntryCount] = await Promise.all([
-    prisma.quote.count({ where: { siteId } }),
+    prisma.quoteSite.count({ where: { siteId } }),
     prisma.shift.count({ where: { siteId } }),
     prisma.timeEntry.count({ where: { siteId } }),
   ]);
@@ -447,7 +447,7 @@ export async function deleteClient(clientId: string) {
 
   const [siteCount, quoteCount, shiftCount, timeEntryCount] = await Promise.all([
     prisma.site.count({ where: { clientId } }),
-    prisma.quote.count({ where: { site: { clientId } } }),
+    prisma.quote.count({ where: { clientId } }),
     prisma.shift.count({ where: { site: { clientId } } }),
     prisma.timeEntry.count({ where: { site: { clientId } } }),
   ]);

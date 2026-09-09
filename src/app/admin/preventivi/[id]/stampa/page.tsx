@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { notFound } from "next/navigation";
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
@@ -73,7 +74,7 @@ export default async function StampaPreventivoPage({
     await Promise.all([
       prisma.quote.findUnique({
         where: { id },
-        include: { site: { include: { client: true } } },
+        include: { client: true, sites: { include: { site: true } } },
       }),
       getServiceTypeLabels(),
       getServiceTypeMostraCadenza(),
@@ -82,22 +83,38 @@ export default async function StampaPreventivoPage({
   if (!quote) notFound();
   const bancaAppoggio = formatBancaAppoggio(bankSettings);
 
-  const client = quote.site.client;
+  const client = quote.client;
   const clientName =
     client.tipo === "PERSONA_FISICA"
       ? `${client.cognome ?? ""} ${client.nome ?? ""}`.trim()
       : (client.ragioneSociale ?? client.name);
 
   const noteParagraphs = buildNoteParagraphs(quote.note);
-  const lineItem = buildLineItem(quote, serviceLabels[quote.serviceType]);
-  // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
-  const prezzoNetto = quote.adeguamento ?? quote.prezzoVenduto ?? lineItem.listPrice;
-  // Lo sconto mostrato riflette listino → netto (prima dell'adeguamento), che
-  // è un aggiustamento manuale successivo e non fa parte dello sconto.
-  const discountPct =
-    quote.prezzoVenduto != null
-      ? computeDiscountPct(lineItem.listPrice, quote.prezzoVenduto)
-      : null;
+  const multiSede = quote.sites.length > 1;
+
+  // Una riga per sede: ogni QuoteSite ha il proprio listino/sconto/netto
+  // indipendente. Tipo prestazione compare solo sulla prima riga, le note
+  // (condivise da tutto il preventivo) solo sull'ultima.
+  const siteRows = quote.sites.map((qs, i) => {
+    const lineItem = buildLineItem(qs, serviceLabels[qs.serviceType]);
+    // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
+    const prezzoNetto = qs.adeguamento ?? qs.prezzoVenduto ?? lineItem.listPrice;
+    // Lo sconto riflette listino → netto (prima dell'adeguamento manuale).
+    const discountPct =
+      qs.prezzoVenduto != null
+        ? computeDiscountPct(lineItem.listPrice, qs.prezzoVenduto)
+        : null;
+    const blocks = buildDescriptionBlocks(
+      { ...qs, tipoPrestazione: i === 0 ? quote.tipoPrestazione : null, site: qs.site },
+      serviceLabels[qs.serviceType],
+      mostraCadenzaSettings[qs.serviceType],
+      i === quote.sites.length - 1 ? noteParagraphs : []
+    );
+    return { lineItem, prezzoNetto, discountPct, blocks };
+  });
+
+  const prezzoNetto = siteRows.reduce((sum, r) => sum + r.prezzoNetto, 0);
+  const listinoTotale = siteRows.reduce((sum, r) => sum + r.lineItem.prezzoUnitario, 0);
 
   const dataDocumento = new Date().toLocaleDateString("it-IT");
   const scadenza = new Date();
@@ -171,13 +188,6 @@ export default async function StampaPreventivoPage({
     </>
   );
 
-  const blocks = buildDescriptionBlocks(
-    quote,
-    serviceLabels[quote.serviceType],
-    mostraCadenzaSettings[quote.serviceType],
-    noteParagraphs
-  );
-
   function blockClassName(type: DescriptionBlock["type"]) {
     // Niente break-inside-avoid: un paragrafo lungo (es. l'elenco di una
     // nota) deve poter proseguire da una pagina all'altra invece di saltare
@@ -221,22 +231,37 @@ export default async function StampaPreventivoPage({
     </thead>
   );
 
-  const summaryRowEl = (
-    <tr>
+  const summaryRowsEl = siteRows.map((r, i) => (
+    <tr key={i}>
       <td className="border-r border-t border-b border-zinc-300 px-2 py-2 font-semibold text-zinc-900">
-        Valore del servizio
+        {multiSede ? `Valore del servizio — ${quote.sites[i].site.name}` : "Valore del servizio"}
       </td>
       <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right">
-        {formatEuro(lineItem.prezzoUnitario)}
+        {formatEuro(r.lineItem.prezzoUnitario)}
       </td>
       <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-center">
-        {discountPct != null ? `${(discountPct * 100).toFixed(0)}%` : ""}
+        {r.discountPct != null ? `${(r.discountPct * 100).toFixed(0)}%` : ""}
       </td>
       <td className="border-t border-b border-zinc-300 px-2 py-2 text-right">
+        {formatEuro(r.prezzoNetto)}
+      </td>
+    </tr>
+  ));
+
+  const totaleComplessivoRowEl = multiSede ? (
+    <tr>
+      <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
+        Totale complessivo
+      </td>
+      <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
+        {formatEuro(listinoTotale)}
+      </td>
+      <td className="border-r border-t border-b border-zinc-300 px-2 py-2"></td>
+      <td className="border-t border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
         {formatEuro(prezzoNetto)}
       </td>
     </tr>
-  );
+  ) : null;
 
   // Un'unica tabella continua: è il browser stesso a decidere dove tagliarla
   // tra una pagina fisica e l'altra (ripetendo il <thead> automaticamente),
@@ -256,19 +281,24 @@ export default async function StampaPreventivoPage({
         {colgroupEl}
         {theadEl}
         <tbody>
-          <tr>
-            <td className="border-r border-zinc-300 px-2 py-2 align-top">
-              {blocks.map((block, i) => (
-                <p key={i} className={blockClassName(block.type)}>
-                  {block.text}
-                </p>
-              ))}
-            </td>
-            <td className="border-r border-zinc-300 px-2 py-2"></td>
-            <td className="border-r border-zinc-300 px-2 py-2"></td>
-            <td className="px-2 py-2"></td>
-          </tr>
-          {summaryRowEl}
+          {siteRows.map((r, i) => (
+            <Fragment key={i}>
+              <tr>
+                <td className="border-r border-zinc-300 px-2 py-2 align-top">
+                  {r.blocks.map((block, j) => (
+                    <p key={j} className={blockClassName(block.type)}>
+                      {block.text}
+                    </p>
+                  ))}
+                </td>
+                <td className="border-r border-zinc-300 px-2 py-2"></td>
+                <td className="border-r border-zinc-300 px-2 py-2"></td>
+                <td className="px-2 py-2"></td>
+              </tr>
+              {summaryRowsEl[i]}
+            </Fragment>
+          ))}
+          {totaleComplessivoRowEl}
         </tbody>
       </table>
     </div>

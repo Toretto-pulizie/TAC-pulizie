@@ -27,14 +27,14 @@ export default async function PreventiviPage({
         orderBy: { name: "asc" },
       }),
       prisma.quote.findMany({
-        include: { site: { include: { client: true } } },
+        include: { client: true, sites: { include: { site: true } } },
         orderBy: { createdAt: "desc" },
       }),
       prisma.quotePhrase.findMany({
         orderBy: { codice: "asc" },
       }),
       edit
-        ? prisma.quote.findUnique({ where: { id: edit }, include: { site: true } })
+        ? prisma.quote.findUnique({ where: { id: edit }, include: { sites: true } })
         : null,
       getServiceTypeLabels(),
       prisma.tipoPrestazione.findMany({
@@ -53,41 +53,84 @@ export default async function PreventiviPage({
   const editingQuote = editingQuoteRaw
     ? {
         id: editingQuoteRaw.id,
-        clientId: editingQuoteRaw.site.clientId,
-        siteId: editingQuoteRaw.siteId,
-        serviceType: editingQuoteRaw.serviceType,
-        ore: editingQuoteRaw.ore,
-        spostamento: editingQuoteRaw.spostamento,
-        oneShotCount: editingQuoteRaw.oneShotCount,
-        passSettimanale: editingQuoteRaw.passSettimanale,
-        passMensile: editingQuoteRaw.passMensile,
-        oreVetri: editingQuoteRaw.oreVetri,
-        passVetriAnno: editingQuoteRaw.passVetriAnno,
-        tariffaOraria: editingQuoteRaw.tariffaOraria,
-        tariffaVetri: editingQuoteRaw.tariffaVetri,
-        tariffaConsuntivo: editingQuoteRaw.tariffaConsuntivo,
-        prezzoVenduto: editingQuoteRaw.prezzoVenduto,
-        adeguamento: editingQuoteRaw.adeguamento,
-        condizioniPagamento: editingQuoteRaw.condizioniPagamento,
+        clientId: editingQuoteRaw.clientId,
         tipoPrestazione: editingQuoteRaw.tipoPrestazione,
+        condizioniPagamento: editingQuoteRaw.condizioniPagamento,
         note: editingQuoteRaw.note,
+        sites: editingQuoteRaw.sites.map((s) => ({
+          siteId: s.siteId,
+          serviceType: s.serviceType,
+          ore: s.ore,
+          spostamento: s.spostamento,
+          oneShotCount: s.oneShotCount,
+          passSettimanale: s.passSettimanale,
+          passMensile: s.passMensile,
+          oreVetri: s.oreVetri,
+          passVetriAnno: s.passVetriAnno,
+          tariffaOraria: s.tariffaOraria,
+          tariffaVetri: s.tariffaVetri,
+          tariffaConsuntivo: s.tariffaConsuntivo,
+          prezzoVenduto: s.prezzoVenduto,
+          adeguamento: s.adeguamento,
+        })),
       }
     : undefined;
 
   const tipiPrestazione = tipiPrestazioneRows.map((t) => t.etichetta);
 
   const rows = quotes.map((q) => {
-    const listPrice = computeListPrice(q);
-    // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
-    const prezzoFinale = q.adeguamento ?? q.prezzoVenduto;
-    // Lo sconto riflette listino → netto (prima dell'adeguamento manuale).
+    const siteRows = q.sites.map((qs) => {
+      const listPrice = computeListPrice(qs);
+      // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
+      const prezzoFinale = qs.adeguamento ?? qs.prezzoVenduto;
+      const annuo =
+        q.status === "ACCETTATO" && prezzoFinale != null
+          ? computeSoldAnnual(qs.serviceType, prezzoFinale)
+          : 0;
+      return { ...qs, listPrice, prezzoFinale, annuo };
+    });
+
+    const listPrice = siteRows.reduce((sum, s) => sum + s.listPrice, 0);
+    // Lo sconto riflette listino → netto complessivo (prima dell'adeguamento
+    // manuale), calcolato solo sulle sedi che hanno un Netto: le sedi senza
+    // Netto (prezzate solo con Adeguamento) non vanno lette come "sconto 100%".
+    const siteRowsConNetto = siteRows.filter((s) => s.prezzoVenduto != null);
     const discountPct =
-      q.prezzoVenduto != null ? computeDiscountPct(listPrice, q.prezzoVenduto) : null;
-    const annuo =
-      q.status === "ACCETTATO" && prezzoFinale != null
-        ? computeSoldAnnual(q.serviceType, prezzoFinale)
-        : 0;
-    return { ...q, listPrice, prezzoFinale, discountPct, annuo };
+      siteRowsConNetto.length > 0
+        ? computeDiscountPct(
+            siteRowsConNetto.reduce((sum, s) => sum + s.listPrice, 0),
+            siteRowsConNetto.reduce((sum, s) => sum + (s.prezzoVenduto ?? 0), 0)
+          )
+        : null;
+    const hasPrezzoFinale = siteRows.some((s) => s.prezzoFinale != null);
+    const prezzoFinale = hasPrezzoFinale
+      ? siteRows.reduce((sum, s) => sum + (s.prezzoFinale ?? 0), 0)
+      : null;
+    const annuo = siteRows.reduce((sum, s) => sum + s.annuo, 0);
+    const siteLabel = q.sites.map((s) => s.site.name).join(", ");
+    const serviceLabel = siteRows
+      .map((s) =>
+        labelWithFrequency(
+          s.serviceType,
+          serviceLabels[s.serviceType],
+          s.passSettimanale,
+          s.passMensile
+        )
+      )
+      .join(", ");
+
+    return {
+      id: q.id,
+      numeroOfferta: q.numeroOfferta,
+      status: q.status,
+      clientName: q.client.name,
+      siteLabel,
+      serviceLabel,
+      listPrice,
+      prezzoFinale,
+      discountPct,
+      annuo,
+    };
   });
 
   const inTrattativaValore = rows
@@ -152,13 +195,8 @@ export default async function PreventiviPage({
           rows={rows.map((r) => ({
             id: r.id,
             numeroOfferta: r.numeroOfferta,
-            siteLabel: `${r.site.client.name} — ${r.site.name}`,
-            serviceLabel: labelWithFrequency(
-              r.serviceType,
-              serviceLabels[r.serviceType],
-              r.passSettimanale,
-              r.passMensile
-            ),
+            siteLabel: `${r.clientName} — ${r.siteLabel}`,
+            serviceLabel: r.serviceLabel,
             listPrice: r.listPrice,
             prezzoVenduto: r.prezzoFinale,
             discountPct: r.discountPct,

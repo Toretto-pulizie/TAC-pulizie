@@ -25,7 +25,7 @@ export default async function StatistichePage() {
 
   const [
     quotesLast6Months,
-    acceptedQuotes,
+    acceptedQuoteSites,
     currentMonthEntries,
     employees,
     totClienti,
@@ -33,9 +33,12 @@ export default async function StatistichePage() {
     totCantieri,
     cantieriGeoreferenziati,
   ] = await Promise.all([
-    prisma.quote.findMany({ where: { createdAt: { gte: sixMonthsAgo } } }),
     prisma.quote.findMany({
-      where: { status: "ACCETTATO" },
+      where: { createdAt: { gte: sixMonthsAgo } },
+      include: { sites: true },
+    }),
+    prisma.quoteSite.findMany({
+      where: { quote: { status: "ACCETTATO" } },
       include: { site: { include: { client: true } } },
     }),
     prisma.timeEntry.findMany({
@@ -67,10 +70,16 @@ export default async function StatistichePage() {
     const rifiutati = inMonth.filter((q) => q.status === "RIFIUTATO");
     const decisi = accettati.length + rifiutati.length;
     const tassoConversione = decisi > 0 ? accettati.length / decisi : null;
-    const valoreVenduto = accettati.reduce((s, q) => s + (q.prezzoVenduto ?? 0), 0);
+    // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
+    const valoreVenduto = accettati.reduce(
+      (s, q) =>
+        s + q.sites.reduce((s2, qs) => s2 + (qs.adeguamento ?? qs.prezzoVenduto ?? 0), 0),
+      0
+    );
     const sconti = accettati
-      .filter((q) => q.prezzoVenduto != null)
-      .map((q) => computeDiscountPct(computeListPrice(q), q.prezzoVenduto!))
+      .flatMap((q) => q.sites)
+      .filter((qs) => qs.prezzoVenduto != null)
+      .map((qs) => computeDiscountPct(computeListPrice(qs), qs.prezzoVenduto!))
       .filter((d): d is number => d != null);
     const scontoMedio =
       sconti.length > 0 ? sconti.reduce((a, b) => a + b, 0) / sconti.length : null;
@@ -89,16 +98,16 @@ export default async function StatistichePage() {
 
   // --- Marginalità cantieri (mese corrente) ---
   const siteTotals = computeSiteTotals(currentMonthEntries);
-  const margini = acceptedQuotes
-    .map((q) => {
-      const totals = siteTotals.get(q.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
+  const margini = acceptedQuoteSites
+    .map((qs) => {
+      const totals = siteTotals.get(qs.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
       const oreLavorate = totals.workMinutes / 60;
-      const contrattoMensile = q.prezzoVenduto ?? 0;
-      const euroConsuntivo = oreLavorate * q.tariffaConsuntivo;
+      const contrattoMensile = qs.adeguamento ?? qs.prezzoVenduto ?? 0;
+      const euroConsuntivo = oreLavorate * qs.tariffaConsuntivo;
       const scostamento = euroConsuntivo - contrattoMensile;
       return {
-        id: q.id,
-        siteLabel: `${q.site.client.name} — ${q.site.name}`,
+        id: qs.id,
+        siteLabel: `${qs.site.client.name} — ${qs.site.name}`,
         contrattoMensile,
         oreLavorate,
         euroConsuntivo,

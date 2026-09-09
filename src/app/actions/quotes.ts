@@ -8,8 +8,17 @@ import { geocodeAddress } from "@/lib/geocode";
 import { computeListPrice } from "@/lib/quotes";
 import { notifyAdmins } from "@/lib/notifications";
 
-const QuoteSchema = z
+const QuoteSchema = z.object({
+  clientId: z.string().trim().min(1, "Seleziona un cliente"),
+  tipoPrestazione: z.string().trim().min(1, "Seleziona il tipo di prestazione"),
+  condizioniPagamento: z.string().trim().optional(),
+  note: z.string().trim().optional(),
+});
+
+const QuoteSiteSchema = z
   .object({
+    siteSelection: z.string().trim().min(1, "Seleziona una sede"),
+    nuovoIndirizzo: z.string().trim().optional(),
     serviceType: z.enum(["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE"]),
     ore: z.coerce.number().min(0, "Ore non valide"),
     spostamento: z.coerce.number().min(0).default(0),
@@ -24,9 +33,6 @@ const QuoteSchema = z
     prezzoVenduto: z.coerce.number().min(0).optional(),
     scontoPct: z.coerce.number().min(0).max(100).optional(),
     adeguamento: z.coerce.number().optional(),
-    condizioniPagamento: z.string().trim().optional(),
-    tipoPrestazione: z.string().trim().min(1, "Seleziona il tipo di prestazione"),
-    note: z.string().trim().optional(),
   })
   .refine(
     (data) =>
@@ -41,50 +47,54 @@ const QuoteSchema = z
     { message: "Indica gli interventi/mese" }
   );
 
-function parseQuoteFormData(formData: FormData) {
-  return QuoteSchema.safeParse({
-    serviceType: formData.get("serviceType"),
-    ore: formData.get("ore"),
-    spostamento: formData.get("spostamento") || 0,
-    oneShotCount: formData.get("oneShotCount") || 1,
-    passSettimanale: formData.get("passSettimanale") || undefined,
-    passMensile: formData.get("passMensile") || undefined,
-    oreVetri: formData.get("oreVetri") || 0,
-    passVetriAnno: formData.get("passVetriAnno") || 0,
-    tariffaOraria: formData.get("tariffaOraria"),
-    tariffaVetri: formData.get("tariffaVetri"),
-    tariffaConsuntivo: formData.get("tariffaConsuntivo"),
-    prezzoVenduto: formData.get("prezzoVenduto") || undefined,
-    scontoPct: formData.get("scontoPct") || undefined,
-    adeguamento: formData.get("adeguamento") || undefined,
-    condizioniPagamento: formData.get("condizioniPagamento") || undefined,
-    tipoPrestazione: formData.get("tipoPrestazione"),
-    note: formData.get("note") || undefined,
-  });
+// I campi di ogni sede arrivano indicizzati come "sites.<i>.<campo>": questa
+// funzione trova quali indici sono presenti nel form, in ordine.
+function collectSiteBlockIndexes(formData: FormData): number[] {
+  const indexes = new Set<number>();
+  for (const key of formData.keys()) {
+    const m = key.match(/^sites\.(\d+)\./);
+    if (m) indexes.add(Number(m[1]));
+  }
+  return Array.from(indexes).sort((a, b) => a - b);
 }
 
-async function resolveSiteId(formData: FormData): Promise<string> {
-  const clientId = formData.get("clientId");
-  const siteSelection = formData.get("siteSelection");
+function parseSiteBlockFormData(formData: FormData, i: number) {
+  const get = (field: string) => formData.get(`sites.${i}.${field}`);
+  return {
+    siteSelection: get("siteSelection"),
+    nuovoIndirizzo: get("nuovoIndirizzo") || undefined,
+    serviceType: get("serviceType"),
+    ore: get("ore"),
+    spostamento: get("spostamento") || 0,
+    oneShotCount: get("oneShotCount") || 1,
+    passSettimanale: get("passSettimanale") || undefined,
+    passMensile: get("passMensile") || undefined,
+    oreVetri: get("oreVetri") || 0,
+    passVetriAnno: get("passVetriAnno") || 0,
+    tariffaOraria: get("tariffaOraria"),
+    tariffaVetri: get("tariffaVetri"),
+    tariffaConsuntivo: get("tariffaConsuntivo"),
+    prezzoVenduto: get("prezzoVenduto") || undefined,
+    scontoPct: get("scontoPct") || undefined,
+    adeguamento: get("adeguamento") || undefined,
+  };
+}
 
-  if (typeof clientId !== "string" || !clientId) {
-    throw new Error("Seleziona un cliente");
-  }
-  if (typeof siteSelection !== "string" || !siteSelection) {
-    throw new Error("Seleziona una sede");
-  }
-
+async function resolveSiteId(
+  clientId: string,
+  siteSelection: string,
+  nuovoIndirizzo: string | undefined
+): Promise<string> {
   if (siteSelection !== "__base__" && siteSelection !== "__custom__") {
     return siteSelection;
   }
 
   let address: string;
   if (siteSelection === "__custom__") {
-    const custom = formData.get("nuovoIndirizzo");
-    if (typeof custom !== "string" || !custom.trim()) {
+    if (!nuovoIndirizzo?.trim()) {
       throw new Error("Indica il nuovo indirizzo");
     }
-    address = custom.trim();
+    address = nuovoIndirizzo.trim();
   } else {
     const client = await prisma.client.findUnique({ where: { id: clientId } });
     if (!client) throw new Error("Cliente non trovato");
@@ -115,51 +125,107 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
 
   const id = formData.get("id");
 
-  const parsed = parseQuoteFormData(formData);
+  const parsedQuote = QuoteSchema.safeParse({
+    clientId: formData.get("clientId"),
+    tipoPrestazione: formData.get("tipoPrestazione"),
+    condizioniPagamento: formData.get("condizioniPagamento") || undefined,
+    note: formData.get("note") || undefined,
+  });
+  if (!parsedQuote.success) {
+    return { error: parsedQuote.error.issues[0]?.message ?? "Dati non validi" };
+  }
+  const { clientId, tipoPrestazione, condizioniPagamento, note } = parsedQuote.data;
 
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
+  const indexes = collectSiteBlockIndexes(formData);
+  if (indexes.length === 0) {
+    return { error: "Aggiungi almeno una sede al preventivo" };
   }
 
-  let siteId: string;
-  try {
-    siteId = await resolveSiteId(formData);
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : "Errore nella sede" };
-  }
+  const siteBlocksData: {
+    siteId: string;
+    serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
+    ore: number;
+    spostamento: number;
+    oneShotCount: number;
+    passSettimanale: number | null;
+    passMensile: number | null;
+    oreVetri: number;
+    passVetriAnno: number;
+    tariffaOraria: number;
+    tariffaVetri: number;
+    tariffaConsuntivo: number;
+    prezzoVenduto: number | null;
+    adeguamento: number | null;
+  }[] = [];
 
-  const { note, condizioniPagamento, scontoPct, ...data } = parsed.data;
+  for (const i of indexes) {
+    const parsed = QuoteSiteSchema.safeParse(parseSiteBlockFormData(formData, i));
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message ?? "Dati sede non validi" };
+    }
+    const d = parsed.data;
 
-  let prezzoVenduto = data.prezzoVenduto;
-  if (scontoPct != null) {
-    const listPrice = computeListPrice({
-      serviceType: data.serviceType,
-      ore: data.ore,
-      spostamento: data.spostamento,
-      oneShotCount: data.oneShotCount,
-      passSettimanale: data.passSettimanale ?? null,
-      passMensile: data.passMensile ?? null,
-      oreVetri: data.oreVetri,
-      passVetriAnno: data.passVetriAnno,
-      tariffaOraria: data.tariffaOraria,
-      tariffaVetri: data.tariffaVetri,
+    let siteId: string;
+    try {
+      siteId = await resolveSiteId(clientId, d.siteSelection, d.nuovoIndirizzo);
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "Errore nella sede" };
+    }
+
+    let prezzoVenduto = d.prezzoVenduto ?? null;
+    if (d.scontoPct != null) {
+      const listPrice = computeListPrice({
+        serviceType: d.serviceType,
+        ore: d.ore,
+        spostamento: d.spostamento,
+        oneShotCount: d.oneShotCount,
+        passSettimanale: d.passSettimanale ?? null,
+        passMensile: d.passMensile ?? null,
+        oreVetri: d.oreVetri,
+        passVetriAnno: d.passVetriAnno,
+        tariffaOraria: d.tariffaOraria,
+        tariffaVetri: d.tariffaVetri,
+      });
+      prezzoVenduto = Math.round(listPrice * (1 - d.scontoPct / 100) * 100) / 100;
+    }
+
+    siteBlocksData.push({
+      siteId,
+      serviceType: d.serviceType,
+      ore: d.ore,
+      spostamento: d.spostamento,
+      oneShotCount: d.oneShotCount,
+      passSettimanale: d.passSettimanale ?? null,
+      passMensile: d.passMensile ?? null,
+      oreVetri: d.oreVetri,
+      passVetriAnno: d.passVetriAnno,
+      tariffaOraria: d.tariffaOraria,
+      tariffaVetri: d.tariffaVetri,
+      tariffaConsuntivo: d.tariffaConsuntivo,
+      prezzoVenduto,
+      adeguamento: d.adeguamento ?? null,
     });
-    prezzoVenduto = Math.round(listPrice * (1 - scontoPct / 100) * 100) / 100;
   }
 
-  const quoteData = {
-    ...data,
-    prezzoVenduto,
-    adeguamento: data.adeguamento ?? null,
-    siteId,
-    note: note || null,
+  const quoteBaseData = {
+    clientId,
+    tipoPrestazione,
     condizioniPagamento: condizioniPagamento || null,
+    note: note || null,
   };
 
   if (typeof id === "string" && id) {
-    await prisma.quote.update({ where: { id }, data: quoteData });
+    await prisma.$transaction([
+      prisma.quoteSite.deleteMany({ where: { quoteId: id } }),
+      prisma.quote.update({
+        where: { id },
+        data: { ...quoteBaseData, sites: { create: siteBlocksData } },
+      }),
+    ]);
   } else {
-    await prisma.quote.create({ data: quoteData });
+    await prisma.quote.create({
+      data: { ...quoteBaseData, sites: { create: siteBlocksData } },
+    });
   }
 
   revalidatePath("/admin/preventivi");
@@ -180,12 +246,13 @@ export async function setQuoteStatus(
       status,
       closedAt: status === "IN_TRATTATIVA" ? null : new Date(),
     },
-    include: { site: { include: { client: true } } },
+    include: { client: true, sites: { include: { site: true } } },
   });
 
   if (status === "ACCETTATO" || status === "RIFIUTATO") {
+    const sedi = quote.sites.map((s) => s.site.name).join(", ");
     await notifyAdmins(
-      `Preventivo ${status === "ACCETTATO" ? "accettato" : "rifiutato"}: ${quote.site.client.name} — ${quote.site.name}`,
+      `Preventivo ${status === "ACCETTATO" ? "accettato" : "rifiutato"}: ${quote.client.name} — ${sedi}`,
       "/admin/preventivi"
     );
   }
