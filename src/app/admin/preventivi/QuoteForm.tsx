@@ -3,6 +3,11 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveQuote } from "@/app/actions/quotes";
+import { computeListPrice } from "@/lib/quotes";
+
+function formatEuro(n: number) {
+  return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
+}
 
 type ServiceType = "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
 type Phrase = {
@@ -33,6 +38,7 @@ export type EditingQuote = {
   tariffaVetri: number;
   tariffaConsuntivo: number;
   prezzoVenduto: number | null;
+  adeguamento: number | null;
   condizioniPagamento: string | null;
   tipoPrestazione: string;
   note: string | null;
@@ -72,6 +78,37 @@ export function QuoteForm({
   const formRef = useRef<HTMLFormElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [totale, setTotale] = useState(0);
+
+  function recomputeTotale() {
+    if (!formRef.current) return;
+    const fd = new FormData(formRef.current);
+    const num = (name: string, fallback = 0) => {
+      const raw = fd.get(name);
+      const n = typeof raw === "string" ? parseFloat(raw) : NaN;
+      return Number.isFinite(n) ? n : fallback;
+    };
+    const st = (fd.get("serviceType") as ServiceType) || serviceType;
+    setTotale(
+      computeListPrice({
+        serviceType: st,
+        ore: num("ore"),
+        spostamento: num("spostamento"),
+        oneShotCount: num("oneShotCount", 1),
+        passSettimanale: st === "PASS_SETTIMANALE" ? num("passSettimanale") : null,
+        passMensile: st === "PASS_MENSILE" ? num("passMensile") : null,
+        oreVetri: num("oreVetri"),
+        passVetriAnno: num("passVetriAnno"),
+        tariffaOraria: num("tariffaOraria"),
+        tariffaVetri: num("tariffaVetri"),
+      })
+    );
+  }
+
+  useEffect(() => {
+    recomputeTotale();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceType]);
 
   useEffect(() => {
     if (state && "success" in state && state.success) {
@@ -83,6 +120,7 @@ export function QuoteForm({
         setSelectedPhraseIds([]);
         setSelectedClientId("");
         setSiteSelection("");
+        setTimeout(recomputeTotale, 0);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -109,6 +147,7 @@ export function QuoteForm({
     <form
       ref={formRef}
       action={action}
+      onChange={recomputeTotale}
       className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
     >
       {editingQuote && (
@@ -348,6 +387,16 @@ export function QuoteForm({
           />
         </label>
 
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3 border-t border-zinc-100 pt-3">
+        <div className="flex flex-col gap-1 text-sm">
+          Totale
+          <div className="w-28 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 font-medium text-zinc-900">
+            {formatEuro(totale)}
+          </div>
+        </div>
+
         <label className="flex flex-col gap-1 text-sm">
           Sconto % (opzionale)
           <input
@@ -362,7 +411,7 @@ export function QuoteForm({
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
-          Prezzo venduto (se noto)
+          Netto (se noto)
           <input
             type="number"
             step="0.5"
@@ -372,6 +421,21 @@ export function QuoteForm({
           />
         </label>
 
+        <label className="flex flex-col gap-1 text-sm">
+          Adeguamento € (opzionale)
+          <input
+            type="number"
+            step="0.5"
+            name="adeguamento"
+            placeholder="Es. 150"
+            defaultValue={editingQuote?.adeguamento ?? undefined}
+            className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
+            title="Se compilato, sostituisce il Netto come prezzo venduto finale"
+          />
+        </label>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3 border-t border-zinc-100 pt-3">
         <label className="flex flex-col gap-1 text-sm">
           Condizioni di pagamento
           <input

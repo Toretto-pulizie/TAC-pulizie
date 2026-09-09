@@ -67,6 +67,7 @@ export default async function PreventiviPage({
         tariffaVetri: editingQuoteRaw.tariffaVetri,
         tariffaConsuntivo: editingQuoteRaw.tariffaConsuntivo,
         prezzoVenduto: editingQuoteRaw.prezzoVenduto,
+        adeguamento: editingQuoteRaw.adeguamento,
         condizioniPagamento: editingQuoteRaw.condizioniPagamento,
         tipoPrestazione: editingQuoteRaw.tipoPrestazione,
         note: editingQuoteRaw.note,
@@ -77,13 +78,16 @@ export default async function PreventiviPage({
 
   const rows = quotes.map((q) => {
     const listPrice = computeListPrice(q);
+    // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
+    const prezzoFinale = q.adeguamento ?? q.prezzoVenduto;
+    // Lo sconto riflette listino → netto (prima dell'adeguamento manuale).
     const discountPct =
       q.prezzoVenduto != null ? computeDiscountPct(listPrice, q.prezzoVenduto) : null;
     const annuo =
-      q.status === "ACCETTATO" && q.prezzoVenduto != null
-        ? computeSoldAnnual(q.serviceType, q.prezzoVenduto)
+      q.status === "ACCETTATO" && prezzoFinale != null
+        ? computeSoldAnnual(q.serviceType, prezzoFinale)
         : 0;
-    return { ...q, listPrice, discountPct, annuo };
+    return { ...q, listPrice, prezzoFinale, discountPct, annuo };
   });
 
   const inTrattativaValore = rows
@@ -91,7 +95,7 @@ export default async function PreventiviPage({
     .reduce((sum, r) => sum + r.listPrice, 0);
   const mensileAccettato = rows
     .filter((r) => r.status === "ACCETTATO")
-    .reduce((sum, r) => sum + (r.prezzoVenduto ?? 0), 0);
+    .reduce((sum, r) => sum + (r.prezzoFinale ?? 0), 0);
   const annuoAccettato = rows.reduce((sum, r) => sum + r.annuo, 0);
 
   return (
@@ -156,7 +160,7 @@ export default async function PreventiviPage({
               r.passMensile
             ),
             listPrice: r.listPrice,
-            prezzoVenduto: r.prezzoVenduto,
+            prezzoVenduto: r.prezzoFinale,
             discountPct: r.discountPct,
             status: r.status,
           }))}

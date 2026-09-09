@@ -23,6 +23,7 @@ const QuoteSchema = z
     tariffaConsuntivo: z.coerce.number().min(0),
     prezzoVenduto: z.coerce.number().min(0).optional(),
     scontoPct: z.coerce.number().min(0).max(100).optional(),
+    adeguamento: z.coerce.number().optional(),
     condizioniPagamento: z.string().trim().optional(),
     tipoPrestazione: z.string().trim().min(1, "Seleziona il tipo di prestazione"),
     note: z.string().trim().optional(),
@@ -55,6 +56,7 @@ function parseQuoteFormData(formData: FormData) {
     tariffaConsuntivo: formData.get("tariffaConsuntivo"),
     prezzoVenduto: formData.get("prezzoVenduto") || undefined,
     scontoPct: formData.get("scontoPct") || undefined,
+    adeguamento: formData.get("adeguamento") || undefined,
     condizioniPagamento: formData.get("condizioniPagamento") || undefined,
     tipoPrestazione: formData.get("tipoPrestazione"),
     note: formData.get("note") || undefined,
@@ -148,6 +150,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
   const quoteData = {
     ...data,
     prezzoVenduto,
+    adeguamento: data.adeguamento ?? null,
     siteId,
     note: note || null,
     condizioniPagamento: condizioniPagamento || null,

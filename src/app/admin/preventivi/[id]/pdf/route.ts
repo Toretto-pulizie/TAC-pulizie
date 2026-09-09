@@ -55,7 +55,8 @@ export async function GET(
   const isPersonaFisica = client.tipo === "PERSONA_FISICA";
 
   const lineItem = buildLineItem(quote, serviceLabels[quote.serviceType]);
-  const prezzoNetto = quote.prezzoVenduto ?? lineItem.listPrice;
+  // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
+  const prezzoNetto = quote.adeguamento ?? quote.prezzoVenduto ?? lineItem.listPrice;
   const totaleIva = isPersonaFisica ? prezzoNetto * ALIQUOTA_IVA : 0;
   const totaleConIva = prezzoNetto + totaleIva;
 

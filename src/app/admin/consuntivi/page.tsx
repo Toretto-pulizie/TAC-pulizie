@@ -37,7 +37,7 @@ export default async function ConsuntiviPage({
 
   const rows = quotes.map((q) => {
     const totals = siteTotals.get(q.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
-    const contrattoMensile = q.prezzoVenduto ?? 0;
+    const contrattoMensile = q.adeguamento ?? q.prezzoVenduto ?? 0;
     const oreLavorate = totals.workMinutes / 60;
     const oreSpostamento = totals.travelMinutes / 60;
     const euroConsuntivo = oreLavorate * q.tariffaConsuntivo;

@@ -160,6 +160,7 @@ model Quote {
   tariffaVetri        Float       @default(30)
   tariffaConsuntivo   Float       @default(25)
   prezzoVenduto       Float?
+  adeguamento           Float?
   condizioniPagamento String?
   tipoPrestazione     String      @default("")
   status              QuoteStatus @default(IN_TRATTATIVA)

@@ -90,7 +90,10 @@ export default async function StampaPreventivoPage({
 
   const noteParagraphs = buildNoteParagraphs(quote.note);
   const lineItem = buildLineItem(quote, serviceLabels[quote.serviceType]);
-  const prezzoNetto = quote.prezzoVenduto ?? lineItem.listPrice;
+  // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
+  const prezzoNetto = quote.adeguamento ?? quote.prezzoVenduto ?? lineItem.listPrice;
+  // Lo sconto mostrato riflette listino → netto (prima dell'adeguamento), che
+  // è un aggiustamento manuale successivo e non fa parte dello sconto.
   const discountPct =
     quote.prezzoVenduto != null
       ? computeDiscountPct(lineItem.listPrice, quote.prezzoVenduto)
