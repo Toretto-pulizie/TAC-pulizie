@@ -20,7 +20,7 @@ export default async function AdminPermessiPage() {
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
-        <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+        <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white [contain:inline-size]">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
               <tr>

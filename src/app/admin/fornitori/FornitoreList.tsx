@@ -54,7 +54,7 @@ export function FornitoreList({ fornitori }: { fornitori: Fornitore[] }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+      <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white [contain:inline-size]">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
             <tr>

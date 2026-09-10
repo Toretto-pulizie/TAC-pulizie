@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { TopBar } from "./TopBar";
 import { PageHeader } from "./PageHeader";
@@ -28,14 +28,30 @@ export function AdminShell({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Su mobile il menu è un drawer sovrapposto: di default resta chiuso per
+  // non coprire subito il contenuto (su desktop invece parte aperto).
+  useEffect(() => {
+    if (window.innerWidth < 640) setSidebarOpen(false);
+  }, []);
+
   return (
     <div className="flex min-h-screen">
       {sidebarOpen && (
-        <AdminSidebar
-          groups={groups}
-          showImpostazioni={showImpostazioni}
-          isAdmin={isAdmin}
-        />
+        <>
+          <div
+            role="presentation"
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 z-30 bg-black/40 sm:hidden"
+          />
+          <AdminSidebar
+            groups={groups}
+            showImpostazioni={showImpostazioni}
+            isAdmin={isAdmin}
+            onNavigate={() => {
+              if (window.innerWidth < 640) setSidebarOpen(false);
+            }}
+          />
+        </>
       )}
       <div className="flex min-h-screen flex-1 flex-col">
         <TopBar

@@ -91,10 +91,9 @@ export default async function StampaPreventivoPage({
 
   const multiSede = quote.sites.length > 1;
 
-  // Una riga per sede: ogni QuoteSite ha il proprio listino/sconto/netto e
-  // le proprie note, del tutto indipendenti. Tipo prestazione compare solo
-  // sulla prima riga (è unico per l'intero documento).
-  const siteRows = quote.sites.map((qs, i) => {
+  // Una riga per sede: ogni QuoteSite ha il proprio listino/sconto/netto, le
+  // proprie note e il proprio Tipo prestazione, del tutto indipendenti.
+  const siteRows = quote.sites.map((qs) => {
     const lineItem = buildLineItem(qs, serviceLabels[qs.serviceType]);
     // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
     const prezzoNetto = qs.adeguamento ?? qs.prezzoVenduto ?? lineItem.listPrice;
@@ -105,7 +104,7 @@ export default async function StampaPreventivoPage({
         : null;
     const noteParagraphs = buildNoteParagraphs(qs.note);
     const blocks = buildDescriptionBlocks(
-      { ...qs, tipoPrestazione: i === 0 ? quote.tipoPrestazione : null, site: qs.site },
+      { ...qs, tipoPrestazione: quote.tipoPrestazione, site: qs.site },
       serviceLabels[qs.serviceType],
       mostraCadenzaSettings[qs.serviceType],
       noteParagraphs
@@ -192,10 +191,34 @@ export default async function StampaPreventivoPage({
     // Niente break-inside-avoid: un paragrafo lungo (es. l'elenco di una
     // nota) deve poter proseguire da una pagina all'altra invece di saltare
     // per intero alla pagina successiva lasciando spazio vuoto dietro di sé.
-    if (type === "tipo") return "break-words whitespace-pre-line uppercase";
-    if (type === "address") return "mt-1 break-words whitespace-pre-line uppercase text-zinc-600";
+    if (type === "address") return "break-words whitespace-pre-line uppercase text-zinc-600";
+    if (type === "tipo") return "mt-1 break-words whitespace-pre-line uppercase font-bold";
     if (type === "note") return "mt-3 break-words whitespace-pre-line text-zinc-700";
+    if (type === "note-title") return "mt-3 break-words whitespace-pre-line text-zinc-900 font-bold";
     return "mt-1 break-words whitespace-pre-line uppercase text-zinc-700";
+  }
+
+  // Titoli/etichette in neretto, valori (indirizzo, resto della cadenza) in
+  // testo normale: solo "tipo" e "note-title" sono interamente in grassetto
+  // (gestito da blockClassName), gli altri tipi mescolano le due cose sulla
+  // stessa riga.
+  function blockContent(block: DescriptionBlock) {
+    if (block.type === "address")
+      return (
+        <>
+          <span className="font-bold text-zinc-900">{block.label}</span> {block.value}
+        </>
+      );
+    if (block.type === "line")
+      return (
+        <>
+          <span className="font-bold text-zinc-900">
+            {block.label} {block.boldValue}
+          </span>
+          {block.rest}
+        </>
+      );
+    return block.text;
   }
 
   const colgroupEl = (
@@ -287,7 +310,7 @@ export default async function StampaPreventivoPage({
                 <td className="border-r border-zinc-300 px-2 py-2 align-top">
                   {r.blocks.map((block, j) => (
                     <p key={j} className={blockClassName(block.type)}>
-                      {block.text}
+                      {blockContent(block)}
                     </p>
                   ))}
                 </td>

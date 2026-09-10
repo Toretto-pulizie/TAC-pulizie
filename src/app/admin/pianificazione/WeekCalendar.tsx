@@ -75,7 +75,7 @@ export function WeekCalendar({
   const totalHeight = (endHour - startHour) * ROW_HEIGHT;
 
   return (
-    <div className="flex overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+    <div className="flex overflow-x-auto rounded-xl border border-zinc-200 bg-white [contain:inline-size]">
       <div className="flex w-14 shrink-0 flex-col border-r border-zinc-200">
         <div className="h-12 shrink-0 border-b border-zinc-200" />
         <div className="relative" style={{ height: totalHeight }}>

@@ -11,10 +11,12 @@ export function AdminSidebar({
   groups,
   showImpostazioni,
   isAdmin,
+  onNavigate,
 }: {
   groups: NavGroup[];
   showImpostazioni: boolean;
   isAdmin: boolean;
+  onNavigate?: () => void;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -28,8 +30,8 @@ export function AdminSidebar({
   };
 
   return (
-    <nav className="sticky top-0 flex h-screen w-56 shrink-0 flex-col gap-6 overflow-y-auto border-r border-zinc-200 bg-zinc-50/60 p-4">
-      <Link href={isAdmin ? "/admin" : "/dipendente"} className="px-1">
+    <nav className="fixed inset-y-0 left-0 z-40 flex h-screen w-64 flex-col gap-6 overflow-y-auto border-r border-zinc-200 bg-zinc-50 p-4 shadow-xl sm:sticky sm:top-0 sm:z-auto sm:w-56 sm:shrink-0 sm:bg-zinc-50/60 sm:shadow-none">
+      <Link href={isAdmin ? "/admin" : "/dipendente"} className="px-1" onClick={onNavigate}>
         <Image
           src="/logo.png"
           alt="Toretto"
@@ -52,6 +54,7 @@ export function AdminSidebar({
                   key={key}
                   href={MODULE_HREFS[key]}
                   className={linkClass(MODULE_HREFS[key])}
+                  onClick={onNavigate}
                 >
                   {MODULE_LABELS[key]}
                 </Link>
@@ -63,7 +66,7 @@ export function AdminSidebar({
 
       <div className="flex flex-col gap-1 border-t border-zinc-200 pt-4">
         {!isAdmin && (
-          <Link href="/dipendente" className={linkClass("/dipendente")}>
+          <Link href="/dipendente" className={linkClass("/dipendente")} onClick={onNavigate}>
             La mia area
           </Link>
         )}
@@ -71,6 +74,7 @@ export function AdminSidebar({
           <Link
             href="/admin/impostazioni"
             className={linkClass("/admin/impostazioni")}
+            onClick={onNavigate}
           >
             Impostazioni
           </Link>

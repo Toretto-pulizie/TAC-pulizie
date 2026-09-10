@@ -140,7 +140,7 @@ export default async function StatistichePage() {
           <h1 className="text-lg font-semibold text-zinc-900">
             Andamento preventivi (ultimi 6 mesi)
           </h1>
-          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white [contain:inline-size]">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
                 <tr>
@@ -196,7 +196,7 @@ export default async function StatistichePage() {
               mensile venduto. In rosso i cantieri da tenere d&apos;occhio.
             </p>
           </div>
-          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white [contain:inline-size]">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
                 <tr>
@@ -247,7 +247,7 @@ export default async function StatistichePage() {
           <h1 className="text-lg font-semibold text-zinc-900">
             Ore lavorate per collaboratore — mese corrente
           </h1>
-          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white [contain:inline-size]">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
                 <tr>
