@@ -70,7 +70,10 @@ In fondo al menu resta solo **Impostazioni** (solo titolare) — **Utenti** ed *
 Ogni azione di eliminazione (o "Annulla" per le richieste di permesso) chiede conferma prima di procedere.
 
 ### Timbrature (`/admin/timbrature`)
-Elenco delle timbrature registrate, filtrabile per **Da**/**A** (intervallo di date) e **Collaboratore**. Mostra per ciascun collaboratore le ore totali di lavoro e spostamento nel periodo, e la tabella dettagliata delle sessioni (collaboratore, cliente/cantiere, inizio, fine, se georeferenziata).
+Elenco delle timbrature registrate, filtrabile per **Da**/**A** (intervallo di date) e **Collaboratore**. Mostra per ciascun collaboratore le ore totali di lavoro e spostamento nel periodo, e una griglia dati con Collaboratore, Cliente, Sede, Data, Inizio, Fine, Ore lavoro, Spostamento, GPS e Note.
+- **Raggruppa per** Dipendente / Cliente / Sede: le stesse sessioni vengono organizzate per gruppo invece che in un unico elenco.
+- **Modifica diretta in cella**: un clic su Inizio, Fine, Ore lavoro, Spostamento o Note li rende editabili sul posto — Invio conferma, Esc annulla. Modificare Ore lavoro sposta automaticamente l'orario di Fine; modificare Spostamento crea, aggiorna o rimuove la relativa timbratura di viaggio (mettendolo a 0 la elimina). Una sessione "In corso" (senza Fine) può essere chiusa impostando direttamente Fine oppure Ore lavoro.
+- **"+ Aggiungi timbratura manuale"**: apre un modulo per inserire una sessione da zero (Collaboratore, Sede, Data, Inizio, Fine, Spostamento opzionale, Note) — per i casi in cui il collaboratore non abbia timbrato dall'app. Non ha coordinate GPS (colonna GPS vuota).
 
 ### Pianificazione (`/admin/pianificazione`)
 Calendario settimanale dei turni assegnati, navigabile con "← Settimana precedente" / "Settimana successiva →". Modulo per assegnare un turno: **Collaboratore**, **Cliente/cantiere**, **Data**, **Dalle**, **Alle**, **Note**. Se il cantiere ha una **capienza** massima impostata, il modulo mostra quante persone sono già assegnate quel giorno e avvisa (senza bloccare) se il limite è superato.

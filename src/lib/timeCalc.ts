@@ -114,6 +114,7 @@ export function computeSiteTotals(entries: SiteEntry[]): Map<string, UserTotals>
 }
 
 type RawSessionEntry<TSite, TUser> = {
+  id: string;
   userId: string;
   user: TUser;
   siteId: string | null;
@@ -122,15 +123,21 @@ type RawSessionEntry<TSite, TUser> = {
   timestamp: Date;
   lat: number | null;
   lng: number | null;
+  note: string | null;
 };
 
 export type WorkSession<TSite, TUser> = {
+  startId: string;
+  endId: string | null;
+  travelId: string | null;
   user: TUser;
   site: TSite | null;
   start: Date;
   end: Date | null;
   lat: number | null;
   lng: number | null;
+  note: string | null;
+  travelMinutes: number;
 };
 
 export function pairSessions<TSite, TUser>(
@@ -148,34 +155,56 @@ export function pairSessions<TSite, TUser>(
   for (const list of byUser.values()) {
     list.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
+    let pendingTravel: { id: string; time: Date } | null = null;
+    let pendingTravelId: string | null = null;
+    let pendingTravelMinutes = 0;
     let pendingWork: RawSessionEntry<TSite, TUser> | null = null;
 
     for (const e of list) {
-      if (e.type === "WORK_START") {
+      if (e.type === "TRAVEL_START") {
+        pendingTravel = { id: e.id, time: e.timestamp };
+      } else if (e.type === "WORK_START") {
+        pendingTravelMinutes = pendingTravel
+          ? Math.round((e.timestamp.getTime() - pendingTravel.time.getTime()) / 60000)
+          : 0;
+        pendingTravelId = pendingTravel?.id ?? null;
+        pendingTravel = null;
         pendingWork = e;
       } else if (e.type === "WORK_END") {
         if (pendingWork) {
           sessions.push({
+            startId: pendingWork.id,
+            endId: e.id,
+            travelId: pendingTravelId,
             user: pendingWork.user,
             site: pendingWork.site,
             start: pendingWork.timestamp,
             end: e.timestamp,
             lat: pendingWork.lat,
             lng: pendingWork.lng,
+            note: pendingWork.note,
+            travelMinutes: pendingTravelMinutes,
           });
           pendingWork = null;
+          pendingTravelMinutes = 0;
+          pendingTravelId = null;
         }
       }
     }
 
     if (pendingWork) {
       sessions.push({
+        startId: pendingWork.id,
+        endId: null,
+        travelId: pendingTravelId,
         user: pendingWork.user,
         site: pendingWork.site,
         start: pendingWork.timestamp,
         end: null,
         lat: pendingWork.lat,
         lng: pendingWork.lng,
+        note: pendingWork.note,
+        travelMinutes: pendingTravelMinutes,
       });
     }
   }
