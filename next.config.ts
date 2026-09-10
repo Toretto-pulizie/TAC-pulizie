@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/admin/preventivi/\\[id\\]/pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "16mb",
+    },
+  },
 };
 
 export default nextConfig;

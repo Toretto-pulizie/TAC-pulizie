@@ -150,6 +150,7 @@ model Quote {
   client              Client      @relation(fields: [clientId], references: [id])
   clientId            String
   sites               QuoteSite[]
+  attachments         QuoteAttachment[]
   condizioniPagamento String?
   status              QuoteStatus @default(IN_TRATTATIVA)
   createdAt           DateTime    @default(now())
@@ -257,6 +258,29 @@ model BankSettings {
   iban         String  @default("")
   intestatario String  @default("")
   swiftBic     String  @default("")
+}
+
+model Attachment {
+  id        String            @id @default(cuid())
+  nome      String
+  fileName  String
+  mimeType  String
+  data      Bytes
+  createdAt DateTime          @default(now())
+  quotes    QuoteAttachment[]
+}
+
+model QuoteAttachment {
+  id           String     @id @default(cuid())
+  quote        Quote      @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId      String
+  attachment   Attachment @relation(fields: [attachmentId], references: [id])
+  attachmentId String
+  ordine       Int        @default(0)
+
+  @@unique([quoteId, attachmentId])
+  @@index([quoteId])
+  @@index([attachmentId])
 }
 
 model Shift {

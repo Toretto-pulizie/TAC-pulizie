@@ -180,7 +180,7 @@ export default async function AdminHomePage() {
     showTotalePreventivi
       ? prisma.quoteSite.findMany({
           where: { quote: { status: "ACCETTATO" } },
-          select: { prezzoVenduto: true, adeguamento: true },
+          select: { prezzoVenduto: true, adeguamento: true, serviceType: true },
         })
       : Promise.resolve([]),
     showTotaleConsuntivi
@@ -211,8 +211,11 @@ export default async function AdminHomePage() {
   ]);
 
   // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
+  // Una tantum non è un canone ricorrente: va escluso da questo totale
+  // mensile, pur restando conteggiato nel valore complessivo del documento.
   const totalePreventiviAccettati = acceptedQuotes.reduce(
-    (sum, qs) => sum + (qs.adeguamento ?? qs.prezzoVenduto ?? 0),
+    (sum, qs) =>
+      sum + (qs.serviceType === "ONE_SHOT" ? 0 : (qs.adeguamento ?? qs.prezzoVenduto ?? 0)),
     0
   );
 

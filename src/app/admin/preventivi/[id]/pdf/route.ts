@@ -34,7 +34,11 @@ export async function GET(
     await Promise.all([
       prisma.quote.findUnique({
         where: { id },
-        include: { client: true, sites: true },
+        include: {
+          client: true,
+          sites: true,
+          attachments: { include: { attachment: true }, orderBy: { ordine: "asc" } },
+        },
       }),
       getServiceTypeLabels(),
       getServiceTypeMostraCadenza(),
@@ -143,13 +147,14 @@ export async function GET(
     const segueDoc = await PDFDocument.load(segueBuf);
     const totalPages = segueDoc.getPageCount();
 
-    let finalBuf: Uint8Array;
+    let finalDoc: PDFDocument;
     if (totalPages <= 1) {
-      finalBuf = await renderPdf(formatEuro(prezzoNetto));
+      const realBuf = await renderPdf(formatEuro(prezzoNetto));
+      finalDoc = await PDFDocument.load(realBuf);
     } else {
       const realBuf = await renderPdf(formatEuro(prezzoNetto));
       const realDoc = await PDFDocument.load(realBuf);
-      const finalDoc = await PDFDocument.create();
+      finalDoc = await PDFDocument.create();
       const seguePages = await finalDoc.copyPages(
         segueDoc,
         Array.from({ length: totalPages - 1 }, (_, i) => i)
@@ -157,8 +162,38 @@ export async function GET(
       seguePages.forEach((p) => finalDoc.addPage(p));
       const [lastPage] = await finalDoc.copyPages(realDoc, [totalPages - 1]);
       finalDoc.addPage(lastPage);
-      finalBuf = await finalDoc.save();
     }
+
+    // Allegati (PDF/PNG/JPG caricati in Impostazioni, es. clausole
+    // contrattuali): vengono accodati così come sono stati creati, senza
+    // rielaborarne il contenuto — restano "a parte" rispetto al preventivo.
+    // Un PDF viene copiato pagina per pagina; un'immagine diventa una
+    // singola pagina a sé, dimensionata sull'immagine stessa.
+    for (const qa of quote.attachments) {
+      const { mimeType, data } = qa.attachment;
+      if (mimeType === "application/pdf") {
+        const attachmentDoc = await PDFDocument.load(data);
+        const pages = await finalDoc.copyPages(
+          attachmentDoc,
+          attachmentDoc.getPageIndices()
+        );
+        pages.forEach((p) => finalDoc.addPage(p));
+      } else {
+        const image =
+          mimeType === "image/png"
+            ? await finalDoc.embedPng(data)
+            : await finalDoc.embedJpg(data);
+        const page = finalDoc.addPage([image.width, image.height]);
+        page.drawImage(image, {
+          x: 0,
+          y: 0,
+          width: image.width,
+          height: image.height,
+        });
+      }
+    }
+
+    const finalBuf = await finalDoc.save();
 
     return new NextResponse(Buffer.from(finalBuf), {
       headers: {

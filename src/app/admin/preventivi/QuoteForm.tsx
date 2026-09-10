@@ -20,19 +20,24 @@ export type EditingQuote = {
   clientId: string;
   condizioniPagamento: string | null;
   sites: SiteBlockInitial[];
+  attachmentIds: string[];
 };
+
+export type AttachmentOption = { id: string; nome: string };
 
 export function QuoteForm({
   clients,
   phrases,
   serviceLabels,
   tipiPrestazione,
+  attachments,
   editingQuote,
 }: {
   clients: ClientOption[];
   phrases: Phrase[];
   serviceLabels: Record<ServiceType, string>;
   tipiPrestazione: string[];
+  attachments: AttachmentOption[];
   editingQuote?: EditingQuote;
 }) {
   const router = useRouter();
@@ -165,6 +170,33 @@ export function QuoteForm({
           />
         </label>
       </div>
+
+      {attachments.length > 0 && (
+        <div className="flex flex-col gap-2 border-t border-zinc-100 pt-3 text-sm">
+          <p className="text-zinc-700">Allegati</p>
+          <div className="flex flex-col gap-1.5">
+            {attachments.map((a) => (
+              <label key={a.id} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="attachmentIds"
+                  value={a.id}
+                  defaultChecked={editingQuote?.attachmentIds.includes(a.id)}
+                />
+                {a.nome}
+                <a
+                  href={`/admin/allegati/${a.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-zinc-500 underline"
+                >
+                  anteprima
+                </a>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end gap-3 border-t border-zinc-100 pt-3">
         {editingQuote && (

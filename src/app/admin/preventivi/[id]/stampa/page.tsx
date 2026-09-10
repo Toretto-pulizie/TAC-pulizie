@@ -74,7 +74,11 @@ export default async function StampaPreventivoPage({
     await Promise.all([
       prisma.quote.findUnique({
         where: { id },
-        include: { client: true, sites: { include: { site: true } } },
+        include: {
+          client: true,
+          sites: { include: { site: true } },
+          attachments: { include: { attachment: true }, orderBy: { ordine: "asc" } },
+        },
       }),
       getServiceTypeLabels(),
       getServiceTypeMostraCadenza(),
@@ -393,6 +397,32 @@ export default async function StampaPreventivoPage({
 
   const legalNote = isPersonaFisica ? NOTA_IVA_PRIVATI : NOTA_REVERSE_CHARGE;
 
+  // Gli allegati (PDF caricati in Impostazioni) non vengono renderizzati
+  // qui: restano invariati con la propria formattazione e sono uniti al PDF
+  // finale come pagine a parte da pdf/route.ts. Qui si mostra solo un
+  // richiamo/anteprima, utile nella pagina di anteprima a schermo.
+  const allegatiSection = quote.attachments.length > 0 && (
+    <div className="rounded-lg border border-zinc-300 p-3 text-[10px] text-zinc-700">
+      <p className="mb-1 font-semibold uppercase tracking-wide text-zinc-500">
+        Allegati inclusi in stampa
+      </p>
+      <ul className="flex flex-col gap-1">
+        {quote.attachments.map((qa) => (
+          <li key={qa.id}>
+            <a
+              href={`/admin/allegati/${qa.attachment.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="underline"
+            >
+              {qa.attachment.nome} ↗
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
   if (isPdfMode) {
     return (
       <div className="bg-white p-0 text-zinc-900">
@@ -437,6 +467,10 @@ export default async function StampaPreventivoPage({
           </p>
         </div>
       </div>
+
+      {allegatiSection && (
+        <div className="mt-4 print:hidden">{allegatiSection}</div>
+      )}
     </div>
   );
 }

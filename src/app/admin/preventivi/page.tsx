@@ -28,6 +28,7 @@ export default async function PreventiviPage({
     serviceLabels,
     serviceAbbreviazioni,
     tipiPrestazioneRows,
+    attachments,
   ] = await Promise.all([
       prisma.client.findMany({
         include: { sites: true },
@@ -41,13 +42,17 @@ export default async function PreventiviPage({
         orderBy: { codice: "asc" },
       }),
       edit
-        ? prisma.quote.findUnique({ where: { id: edit }, include: { sites: true } })
+        ? prisma.quote.findUnique({
+            where: { id: edit },
+            include: { sites: true, attachments: { orderBy: { ordine: "asc" } } },
+          })
         : null,
       getServiceTypeLabels(),
       getServiceTypeAbbreviazioni(),
       prisma.tipoPrestazione.findMany({
         orderBy: [{ ordine: "asc" }, { etichetta: "asc" }],
       }),
+      prisma.attachment.findMany({ orderBy: { createdAt: "asc" } }),
     ]);
 
   const clients = clientsRaw.map((c) => ({
@@ -63,6 +68,7 @@ export default async function PreventiviPage({
         id: editingQuoteRaw.id,
         clientId: editingQuoteRaw.clientId,
         condizioniPagamento: editingQuoteRaw.condizioniPagamento,
+        attachmentIds: editingQuoteRaw.attachments.map((a) => a.attachmentId),
         sites: editingQuoteRaw.sites.map((s) => ({
           siteId: s.siteId,
           tipoPrestazione: s.tipoPrestazione,
@@ -100,14 +106,19 @@ export default async function PreventiviPage({
       // sconto. Vendita: l'Adeguamento se presente, altrimenti il Netto.
       const netto = qs.prezzoVenduto ?? listPrice;
       const vendita = qs.adeguamento ?? netto;
+      // Una tantum non è un canone che si ripete ogni mese: va escluso dal
+      // monitoraggio mensile ("Contratti accettati / mese"), pur restando
+      // conteggiato nella Vendita complessiva del documento.
+      const venditaRicorrente = qs.serviceType === "ONE_SHOT" ? 0 : vendita;
       const annuo =
         q.status === "ACCETTATO" ? computeSoldAnnual(qs.serviceType, vendita) : 0;
-      return { ...qs, listPrice, netto, vendita, annuo };
+      return { ...qs, listPrice, netto, vendita, venditaRicorrente, annuo };
     });
 
     const listPrice = siteRows.reduce((sum, s) => sum + s.listPrice, 0);
     const netto = siteRows.reduce((sum, s) => sum + s.netto, 0);
     const vendita = siteRows.reduce((sum, s) => sum + s.vendita, 0);
+    const venditaRicorrente = siteRows.reduce((sum, s) => sum + s.venditaRicorrente, 0);
     // Lo sconto riflette listino → netto complessivo (prima dell'adeguamento
     // manuale).
     const discountPct = computeDiscountPct(listPrice, netto);
@@ -157,6 +168,7 @@ export default async function PreventiviPage({
       listPrice,
       netto,
       vendita,
+      venditaRicorrente,
       discountPct,
       annuo,
     };
@@ -167,7 +179,7 @@ export default async function PreventiviPage({
     .reduce((sum, r) => sum + r.listPrice, 0);
   const mensileAccettato = rows
     .filter((r) => r.status === "ACCETTATO")
-    .reduce((sum, r) => sum + r.vendita, 0);
+    .reduce((sum, r) => sum + r.venditaRicorrente, 0);
   const annuoAccettato = rows.reduce((sum, r) => sum + r.annuo, 0);
 
   return (
@@ -209,6 +221,7 @@ export default async function PreventiviPage({
               }))}
               serviceLabels={serviceLabels}
               tipiPrestazione={tipiPrestazione}
+              attachments={attachments.map((a) => ({ id: a.id, nome: a.nome }))}
               editingQuote={editingQuote}
             />
           </CollapsibleForm>

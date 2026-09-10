@@ -218,17 +218,35 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
     condizioniPagamento: condizioniPagamento || null,
   };
 
+  // Allegati selezionati (checkbox "attachmentIds"): salvati nell'ordine in
+  // cui compaiono nell'elenco (l'ordine di visualizzazione, non quello di
+  // selezione dell'utente).
+  const attachmentIds = formData.getAll("attachmentIds").map(String);
+  const attachmentsData = attachmentIds.map((attachmentId, ordine) => ({
+    attachmentId,
+    ordine,
+  }));
+
   if (typeof id === "string" && id) {
     await prisma.$transaction([
       prisma.quoteSite.deleteMany({ where: { quoteId: id } }),
+      prisma.quoteAttachment.deleteMany({ where: { quoteId: id } }),
       prisma.quote.update({
         where: { id },
-        data: { ...quoteBaseData, sites: { create: siteBlocksData } },
+        data: {
+          ...quoteBaseData,
+          sites: { create: siteBlocksData },
+          attachments: { create: attachmentsData },
+        },
       }),
     ]);
   } else {
     await prisma.quote.create({
-      data: { ...quoteBaseData, sites: { create: siteBlocksData } },
+      data: {
+        ...quoteBaseData,
+        sites: { create: siteBlocksData },
+        attachments: { create: attachmentsData },
+      },
     });
   }
 

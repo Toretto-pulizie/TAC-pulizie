@@ -12,6 +12,8 @@ import { TipoPrestazioneForm } from "./TipoPrestazioneForm";
 import { TipoPrestazioneRow } from "./TipoPrestazioneRow";
 import { HomeSettingsForm } from "./HomeSettingsForm";
 import { BankSettingsForm } from "./BankSettingsForm";
+import { AttachmentForm } from "./AttachmentForm";
+import { AttachmentRow } from "./AttachmentRow";
 import { ImpostazioniTabs } from "./ImpostazioniTabs";
 import { PhraseForm } from "@/app/admin/preventivi/frasi/PhraseForm";
 import { PhraseRow } from "@/app/admin/preventivi/frasi/PhraseRow";
@@ -27,6 +29,7 @@ export default async function ImpostazioniPage() {
     tipiPrestazione,
     homeSettings,
     bankSettings,
+    attachments,
     phrases,
   ] = await Promise.all([
     getServiceTypeLabels(),
@@ -35,6 +38,7 @@ export default async function ImpostazioniPage() {
     prisma.tipoPrestazione.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
     getHomeSettings(),
     getBankSettings(),
+    prisma.attachment.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.quotePhrase.findMany({ orderBy: [{ ordine: "asc" }, { titolo: "asc" }] }),
   ]);
 
@@ -151,6 +155,43 @@ export default async function ImpostazioniPage() {
                     swiftBic: bankSettings.swiftBic,
                   }}
                 />
+              </section>
+            ),
+          },
+          {
+            id: "allegati",
+            label: "Allegati",
+            content: (
+              <section className="flex flex-col gap-3">
+                <div>
+                  <h1 className="text-lg font-semibold text-zinc-900">
+                    Allegati
+                  </h1>
+                  <p className="text-sm text-zinc-500">
+                    Documenti PDF, PNG o JPG (es. clausole contrattuali,
+                    condizioni generali) da poter allegare ai preventivi.
+                    Restano invariati, con la formattazione con cui sono
+                    stati creati, e vengono aggiunti come pagine finali del
+                    PDF — a parte rispetto al contenuto del preventivo. Si
+                    scelgono da un elenco direttamente nel modulo preventivo.
+                  </p>
+                </div>
+                <AttachmentForm />
+                <ul className="flex flex-col gap-2">
+                  {attachments.map((a) => (
+                    <AttachmentRow
+                      key={a.id}
+                      id={a.id}
+                      nome={a.nome}
+                      fileName={a.fileName}
+                    />
+                  ))}
+                </ul>
+                {attachments.length === 0 && (
+                  <p className="text-sm text-zinc-400">
+                    Nessun allegato ancora caricato.
+                  </p>
+                )}
               </section>
             ),
           },
