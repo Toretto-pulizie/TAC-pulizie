@@ -153,7 +153,6 @@ model Quote {
   condizioniPagamento String?
   tipoPrestazione     String      @default("")
   status              QuoteStatus @default(IN_TRATTATIVA)
-  note                String?
   createdAt           DateTime    @default(now())
   closedAt            DateTime?
 
@@ -180,6 +179,7 @@ model QuoteSite {
   scontoPct         Float?
   prezzoVenduto     Float?
   adeguamento       Float?
+  note              String?
 
   @@index([siteId])
   @@index([quoteId])

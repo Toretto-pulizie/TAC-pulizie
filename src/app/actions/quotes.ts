@@ -12,7 +12,6 @@ const QuoteSchema = z.object({
   clientId: z.string().trim().min(1, "Seleziona un cliente"),
   tipoPrestazione: z.string().trim().min(1, "Seleziona il tipo di prestazione"),
   condizioniPagamento: z.string().trim().optional(),
-  note: z.string().trim().optional(),
 });
 
 const QuoteSiteSchema = z
@@ -33,6 +32,7 @@ const QuoteSiteSchema = z
     prezzoVenduto: z.coerce.number().min(0).optional(),
     scontoPct: z.coerce.number().min(0).max(100).optional(),
     adeguamento: z.coerce.number().optional(),
+    note: z.string().trim().optional(),
   })
   .refine(
     (data) =>
@@ -77,6 +77,7 @@ function parseSiteBlockFormData(formData: FormData, i: number) {
     prezzoVenduto: get("prezzoVenduto") || undefined,
     scontoPct: get("scontoPct") || undefined,
     adeguamento: get("adeguamento") || undefined,
+    note: get("note") || undefined,
   };
 }
 
@@ -129,12 +130,11 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
     clientId: formData.get("clientId"),
     tipoPrestazione: formData.get("tipoPrestazione"),
     condizioniPagamento: formData.get("condizioniPagamento") || undefined,
-    note: formData.get("note") || undefined,
   });
   if (!parsedQuote.success) {
     return { error: parsedQuote.error.issues[0]?.message ?? "Dati non validi" };
   }
-  const { clientId, tipoPrestazione, condizioniPagamento, note } = parsedQuote.data;
+  const { clientId, tipoPrestazione, condizioniPagamento } = parsedQuote.data;
 
   const indexes = collectSiteBlockIndexes(formData);
   if (indexes.length === 0) {
@@ -157,6 +157,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
     scontoPct: number | null;
     prezzoVenduto: number | null;
     adeguamento: number | null;
+    note: string | null;
   }[] = [];
 
   for (const i of indexes) {
@@ -206,6 +207,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
       scontoPct: d.scontoPct ?? null,
       prezzoVenduto,
       adeguamento: d.adeguamento ?? null,
+      note: d.note ?? null,
     });
   }
 
@@ -213,7 +215,6 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
     clientId,
     tipoPrestazione,
     condizioniPagamento: condizioniPagamento || null,
-    note: note || null,
   };
 
   if (typeof id === "string" && id) {

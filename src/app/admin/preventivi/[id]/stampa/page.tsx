@@ -89,12 +89,11 @@ export default async function StampaPreventivoPage({
       ? `${client.cognome ?? ""} ${client.nome ?? ""}`.trim()
       : (client.ragioneSociale ?? client.name);
 
-  const noteParagraphs = buildNoteParagraphs(quote.note);
   const multiSede = quote.sites.length > 1;
 
-  // Una riga per sede: ogni QuoteSite ha il proprio listino/sconto/netto
-  // indipendente. Tipo prestazione compare solo sulla prima riga, le note
-  // (condivise da tutto il preventivo) solo sull'ultima.
+  // Una riga per sede: ogni QuoteSite ha il proprio listino/sconto/netto e
+  // le proprie note, del tutto indipendenti. Tipo prestazione compare solo
+  // sulla prima riga (è unico per l'intero documento).
   const siteRows = quote.sites.map((qs, i) => {
     const lineItem = buildLineItem(qs, serviceLabels[qs.serviceType]);
     // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
@@ -104,11 +103,12 @@ export default async function StampaPreventivoPage({
       qs.prezzoVenduto != null
         ? computeDiscountPct(lineItem.listPrice, qs.prezzoVenduto)
         : null;
+    const noteParagraphs = buildNoteParagraphs(qs.note);
     const blocks = buildDescriptionBlocks(
       { ...qs, tipoPrestazione: i === 0 ? quote.tipoPrestazione : null, site: qs.site },
       serviceLabels[qs.serviceType],
       mostraCadenzaSettings[qs.serviceType],
-      i === quote.sites.length - 1 ? noteParagraphs : []
+      noteParagraphs
     );
     return { lineItem, prezzoNetto, discountPct, blocks };
   });

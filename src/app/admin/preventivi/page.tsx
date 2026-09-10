@@ -56,7 +56,6 @@ export default async function PreventiviPage({
         clientId: editingQuoteRaw.clientId,
         tipoPrestazione: editingQuoteRaw.tipoPrestazione,
         condizioniPagamento: editingQuoteRaw.condizioniPagamento,
-        note: editingQuoteRaw.note,
         sites: editingQuoteRaw.sites.map((s) => ({
           siteId: s.siteId,
           serviceType: s.serviceType,
@@ -73,6 +72,7 @@ export default async function PreventiviPage({
           scontoPct: s.scontoPct,
           prezzoVenduto: s.prezzoVenduto,
           adeguamento: s.adeguamento,
+          note: s.note,
         })),
       }
     : undefined;

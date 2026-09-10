@@ -28,10 +28,27 @@ export type SiteBlockInitial = {
   scontoPct: number | null;
   prezzoVenduto: number | null;
   adeguamento: number | null;
+  note: string | null;
+};
+
+export type Phrase = {
+  id: string;
+  codice: number;
+  titolo: string;
+  testo: string;
 };
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
+}
+
+// Accetta sia "150.5" che "150,5" che "150,50 €"; torna null se non è un
+// numero valido o il campo è vuoto.
+function parseEuroInput(raw: string): number | null {
+  const cleaned = raw.replace(/[€\s]/g, "").replace(",", ".").trim();
+  if (cleaned === "") return null;
+  const n = parseFloat(cleaned);
+  return Number.isFinite(n) ? n : null;
 }
 
 export function QuoteSiteFieldset({
@@ -42,6 +59,7 @@ export function QuoteSiteFieldset({
   onRemove,
   onTotaleChange,
   serviceLabels,
+  phrases,
 }: {
   index: number;
   selectedClient: ClientOption | undefined;
@@ -50,6 +68,7 @@ export function QuoteSiteFieldset({
   onRemove: () => void;
   onTotaleChange: (index: number, totale: number) => void;
   serviceLabels: Record<ServiceType, string>;
+  phrases: Phrase[];
 }) {
   const [serviceType, setServiceType] = useState<ServiceType>(
     initial?.serviceType ?? "PASS_SETTIMANALE"
@@ -57,10 +76,21 @@ export function QuoteSiteFieldset({
   const [siteSelection, setSiteSelection] = useState(initial?.siteId ?? "");
   const [totale, setTotale] = useState(0);
   const [netto, setNetto] = useState(0);
+  const [adeguamentoDisplay, setAdeguamentoDisplay] = useState(
+    initial?.adeguamento != null ? formatEuro(initial.adeguamento) : ""
+  );
   const [showSupplementi, setShowSupplementi] = useState(
     () => !!initial && ((initial.oreVetri ?? 0) > 0 || (initial.passVetriAnno ?? 0) > 0)
   );
+  const [selectedPhraseIds, setSelectedPhraseIds] = useState<string[]>([]);
+  const [previewPhrase, setPreviewPhrase] = useState<{
+    testo: string;
+    top: number;
+    left: number;
+  } | null>(null);
   const blockRef = useRef<HTMLDivElement>(null);
+  const noteRef = useRef<HTMLTextAreaElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   const name = (field: string) => `sites.${index}.${field}`;
 
@@ -112,6 +142,23 @@ export function QuoteSiteFieldset({
     recomputeTotale();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceType]);
+
+  function togglePhrase(id: string) {
+    setSelectedPhraseIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
+
+  function insertSelectedPhrases() {
+    const testi = phrases
+      .filter((p) => selectedPhraseIds.includes(p.id))
+      .map((p) => p.testo);
+    if (testi.length > 0 && noteRef.current) {
+      const current = noteRef.current.value.trim();
+      noteRef.current.value = [current, ...testi].filter(Boolean).join("\n\n");
+    }
+    dialogRef.current?.close();
+  }
 
   return (
     <div
@@ -360,17 +407,141 @@ export function QuoteSiteFieldset({
         </div>
 
         <label className="flex flex-col gap-1 text-sm">
-          Adeguamento € (opzionale)
+          Adeguamento (opzionale)
           <input
-            type="number"
-            step="0.01"
+            type="hidden"
             name={name("adeguamento")}
-            placeholder="Es. 150"
-            defaultValue={initial?.adeguamento ?? undefined}
-            className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
+            readOnly
+            value={parseEuroInput(adeguamentoDisplay) ?? ""}
+          />
+          <input
+            type="text"
+            inputMode="decimal"
+            value={adeguamentoDisplay}
+            onChange={(e) => setAdeguamentoDisplay(e.target.value)}
+            onBlur={() => {
+              const n = parseEuroInput(adeguamentoDisplay);
+              setAdeguamentoDisplay(n != null ? formatEuro(n) : "");
+            }}
+            placeholder="Es. 150,00 €"
+            className="w-32 rounded-lg border border-zinc-300 px-3 py-2"
             title="Se compilato, sostituisce il Netto come prezzo venduto finale"
           />
         </label>
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-zinc-200 pt-3">
+        <label className="flex flex-col gap-1 text-sm">
+          Note
+          <textarea
+            ref={noteRef}
+            name={name("note")}
+            rows={10}
+            defaultValue={initial?.note ?? ""}
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+
+        {phrases.length > 0 && (
+          <div>
+            <button
+              type="button"
+              onClick={() => dialogRef.current?.showModal()}
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700"
+            >
+              Scegli frasi preimpostate
+              {selectedPhraseIds.length > 0 ? ` (${selectedPhraseIds.length})` : ""}
+            </button>
+
+            <dialog
+              ref={dialogRef}
+              onClick={(e) => {
+                if (e.target === dialogRef.current) dialogRef.current.close();
+              }}
+              className="w-full max-w-lg rounded-xl border border-zinc-200 p-0 backdrop:bg-black/40"
+            >
+              <div className="flex max-h-[80vh] flex-col">
+                <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
+                  <p className="text-sm font-semibold text-zinc-900">
+                    Frasi preimpostate
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => dialogRef.current?.close()}
+                    className="text-sm text-zinc-500"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-2 overflow-y-auto px-4 py-3">
+                  {phrases.map((p) => (
+                    <label
+                      key={p.id}
+                      className="flex items-start gap-2 rounded-lg border border-zinc-200 p-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedPhraseIds.includes(p.id)}
+                        onChange={() => togglePhrase(p.id)}
+                        className="mt-1"
+                      />
+                      <span
+                        className="flex items-baseline gap-1.5"
+                        onMouseEnter={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const dialogRect = dialogRef.current?.getBoundingClientRect();
+                          const placeRight =
+                            !dialogRect || dialogRect.right + 320 <= window.innerWidth;
+                          setPreviewPhrase({
+                            testo: p.testo,
+                            top: rect.top,
+                            left: placeRight
+                              ? (dialogRect?.right ?? rect.right) + 8
+                              : (dialogRect?.left ?? rect.left) - 8 - 320,
+                          });
+                        }}
+                        onMouseLeave={() => setPreviewPhrase(null)}
+                      >
+                        <span className="font-mono text-xs text-zinc-400">
+                          #{String(p.codice).padStart(3, "0")}
+                        </span>
+                        <span className="font-medium text-zinc-900">{p.titolo}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+
+                {previewPhrase && (
+                  <div
+                    className="pointer-events-none fixed z-50 w-80 whitespace-pre-wrap rounded-md bg-zinc-900 px-3 py-2 text-xs text-white shadow-lg"
+                    style={{ top: previewPhrase.top, left: previewPhrase.left }}
+                  >
+                    {previewPhrase.testo}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 border-t border-zinc-200 px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => dialogRef.current?.close()}
+                    className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700"
+                  >
+                    Annulla
+                  </button>
+                  <button
+                    type="button"
+                    onClick={insertSelectedPhrases}
+                    disabled={selectedPhraseIds.length === 0}
+                    className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  >
+                    Inserisci nelle note
+                  </button>
+                </div>
+              </div>
+            </dialog>
+          </div>
+        )}
       </div>
     </div>
   );
