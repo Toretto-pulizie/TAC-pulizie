@@ -18,6 +18,29 @@ export function labelWithFrequency(
   return label;
 }
 
+// La sola cadenza (senza il nome della frequenza), per colonne che la
+// mostrano separatamente dalla Frequenza, es. l'elenco Preventivi.
+export function cadenzaLabel(
+  serviceType: ServiceType,
+  oneShotCount: number,
+  passSettimanale: number | null,
+  passMensile: number | null
+) {
+  if (serviceType === "ONE_SHOT") {
+    const n = oneShotCount;
+    return `${n} intervent${n === 1 ? "o" : "i"}`;
+  }
+  if (serviceType === "PASS_SETTIMANALE") {
+    const n = passSettimanale ?? 0;
+    return `${n} intervent${n === 1 ? "o" : "i"}/settimana`;
+  }
+  if (serviceType === "PASS_MENSILE") {
+    const n = passMensile ?? 0;
+    return `${n} intervent${n === 1 ? "o" : "i"}/mese`;
+  }
+  return "";
+}
+
 export function buildNoteParagraphs(note?: string | null) {
   if (!note) return [];
   return note

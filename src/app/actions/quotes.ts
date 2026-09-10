@@ -10,7 +10,7 @@ import { notifyAdmins } from "@/lib/notifications";
 
 const QuoteSchema = z.object({
   clientId: z.string().trim().min(1, "Seleziona un cliente"),
-  tipoPrestazione: z.string().trim().min(1, "Seleziona il tipo di prestazione"),
+  tipoPrestazione: z.string().trim().min(1, "Seleziona il tipo di servizio"),
   condizioniPagamento: z.string().trim().optional(),
 });
 

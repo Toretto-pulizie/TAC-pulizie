@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/dal";
 const ServiceTypeLabelSchema = z.object({
   tipo: z.enum(["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE"]),
   etichetta: z.string().trim().min(1, "Il nome non può essere vuoto"),
+  abbreviazione: z.string().trim().optional(),
   mostraCadenza: z.boolean(),
 });
 
@@ -20,6 +21,7 @@ export async function updateServiceTypeLabel(
   const parsed = ServiceTypeLabelSchema.safeParse({
     tipo: formData.get("tipo"),
     etichetta: formData.get("etichetta"),
+    abbreviazione: formData.get("abbreviazione") || undefined,
     mostraCadenza: formData.get("mostraCadenza") === "on",
   });
 
@@ -27,13 +29,17 @@ export async function updateServiceTypeLabel(
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
+  const data = {
+    tipo: parsed.data.tipo,
+    etichetta: parsed.data.etichetta,
+    abbreviazione: parsed.data.abbreviazione ?? null,
+    mostraCadenza: parsed.data.mostraCadenza,
+  };
+
   await prisma.serviceTypeLabel.upsert({
     where: { tipo: parsed.data.tipo },
-    update: {
-      etichetta: parsed.data.etichetta,
-      mostraCadenza: parsed.data.mostraCadenza,
-    },
-    create: parsed.data,
+    update: data,
+    create: data,
   });
 
   revalidatePath("/admin/impostazioni");

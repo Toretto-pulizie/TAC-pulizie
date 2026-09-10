@@ -2,8 +2,8 @@ import Link from "next/link";
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeListPrice, computeSoldAnnual, computeDiscountPct } from "@/lib/quotes";
-import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
-import { labelWithFrequency } from "@/lib/quotePrint";
+import { getServiceTypeLabels, getServiceTypeAbbreviazioni } from "@/lib/serviceTypeLabels";
+import { formatSedeAddress } from "@/lib/quotePrint";
 import { QuoteForm } from "./QuoteForm";
 import { CollapsibleForm } from "@/app/CollapsibleForm";
 import { QuoteList } from "./QuoteList";
@@ -20,8 +20,15 @@ export default async function PreventiviPage({
   await requireModule("preventivi");
   const { edit } = await searchParams;
 
-  const [clientsRaw, quotes, phrases, editingQuoteRaw, serviceLabels, tipiPrestazioneRows] =
-    await Promise.all([
+  const [
+    clientsRaw,
+    quotes,
+    phrases,
+    editingQuoteRaw,
+    serviceLabels,
+    serviceAbbreviazioni,
+    tipiPrestazioneRows,
+  ] = await Promise.all([
       prisma.client.findMany({
         include: { sites: true },
         orderBy: { name: "asc" },
@@ -37,6 +44,7 @@ export default async function PreventiviPage({
         ? prisma.quote.findUnique({ where: { id: edit }, include: { sites: true } })
         : null,
       getServiceTypeLabels(),
+      getServiceTypeAbbreviazioni(),
       prisma.tipoPrestazione.findMany({
         orderBy: [{ ordine: "asc" }, { etichetta: "asc" }],
       }),
@@ -78,57 +86,75 @@ export default async function PreventiviPage({
     : undefined;
 
   const tipiPrestazione = tipiPrestazioneRows.map((t) => t.etichetta);
+  // Nell'elenco preventivi si mostra l'Abbreviazione al posto del testo
+  // completo, per non appesantire la colonna; se non impostata (o se il
+  // testo non corrisponde più a nessuna voce) si mostra il testo per intero.
+  const abbreviazioniPerEtichetta = new Map(
+    tipiPrestazioneRows.map((t) => [t.etichetta, t.abbreviazione])
+  );
 
   const rows = quotes.map((q) => {
     const siteRows = q.sites.map((qs) => {
       const listPrice = computeListPrice(qs);
-      // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
-      const prezzoFinale = qs.adeguamento ?? qs.prezzoVenduto;
+      // Netto: il prezzo salvato (Totale - Sconto), o il listino se non c'è
+      // sconto. Vendita: l'Adeguamento se presente, altrimenti il Netto.
+      const netto = qs.prezzoVenduto ?? listPrice;
+      const vendita = qs.adeguamento ?? netto;
       const annuo =
-        q.status === "ACCETTATO" && prezzoFinale != null
-          ? computeSoldAnnual(qs.serviceType, prezzoFinale)
-          : 0;
-      return { ...qs, listPrice, prezzoFinale, annuo };
+        q.status === "ACCETTATO" ? computeSoldAnnual(qs.serviceType, vendita) : 0;
+      return { ...qs, listPrice, netto, vendita, annuo };
     });
 
     const listPrice = siteRows.reduce((sum, s) => sum + s.listPrice, 0);
+    const netto = siteRows.reduce((sum, s) => sum + s.netto, 0);
+    const vendita = siteRows.reduce((sum, s) => sum + s.vendita, 0);
     // Lo sconto riflette listino → netto complessivo (prima dell'adeguamento
-    // manuale), calcolato solo sulle sedi che hanno un Netto: le sedi senza
-    // Netto (prezzate solo con Adeguamento) non vanno lette come "sconto 100%".
-    const siteRowsConNetto = siteRows.filter((s) => s.prezzoVenduto != null);
-    const discountPct =
-      siteRowsConNetto.length > 0
-        ? computeDiscountPct(
-            siteRowsConNetto.reduce((sum, s) => sum + s.listPrice, 0),
-            siteRowsConNetto.reduce((sum, s) => sum + (s.prezzoVenduto ?? 0), 0)
-          )
-        : null;
-    const hasPrezzoFinale = siteRows.some((s) => s.prezzoFinale != null);
-    const prezzoFinale = hasPrezzoFinale
-      ? siteRows.reduce((sum, s) => sum + (s.prezzoFinale ?? 0), 0)
-      : null;
+    // manuale).
+    const discountPct = computeDiscountPct(listPrice, netto);
     const annuo = siteRows.reduce((sum, s) => sum + s.annuo, 0);
-    const siteLabel = q.sites.map((s) => s.site.name).join(", ");
-    const serviceLabel = siteRows
-      .map((s) =>
-        labelWithFrequency(
-          s.serviceType,
-          serviceLabels[s.serviceType],
-          s.passSettimanale,
-          s.passMensile
-        )
-      )
-      .join(", ");
+    const siteCount = q.sites.length;
+    // Dettaglio per sede: usato dal pannello "a grappolo" per mostrare gli
+    // importi di ciascuna sede (quasi sempre diversi anche a parità di
+    // frequenza/cadenza), invece di doverli ripetere nella riga di riepilogo.
+    const perSite = siteRows.map((s, i) => {
+      // Cadenza compatta: solo l'Abbreviazione della frequenza (o
+      // l'etichetta per intero, se non impostata) e il numero inserito —
+      // es. "PS 1" — per distinguere a colpo d'occhio le sedi con
+      // frequenze diverse senza appesantire la colonna.
+      const freqLabel = serviceAbbreviazioni[s.serviceType] || serviceLabels[s.serviceType];
+      const n =
+        s.serviceType === "ONE_SHOT"
+          ? s.oneShotCount
+          : s.serviceType === "PASS_SETTIMANALE"
+            ? (s.passSettimanale ?? 0)
+            : (s.passMensile ?? 0);
+      return {
+        siteAddress: formatSedeAddress(q.sites[i].site.address),
+        cadenza: `${freqLabel} ${n}`,
+        listPrice: s.listPrice,
+        discountPct: computeDiscountPct(s.listPrice, s.netto),
+        netto: s.netto,
+        vendita: s.vendita,
+      };
+    });
+    const cadenza = perSite.every((s) => s.cadenza === perSite[0].cadenza)
+      ? perSite[0].cadenza
+      : null;
 
     return {
       id: q.id,
       numeroOfferta: q.numeroOfferta,
       status: q.status,
       clientName: q.client.name,
-      siteLabel,
-      serviceLabel,
+      // Tipo servizio è comune a tutto il preventivo (non varia per sede);
+      // in elenco si preferisce l'Abbreviazione, se impostata.
+      tipoServizio: abbreviazioniPerEtichetta.get(q.tipoPrestazione) || q.tipoPrestazione,
+      siteCount,
+      perSite,
+      cadenza,
       listPrice,
-      prezzoFinale,
+      netto,
+      vendita,
       discountPct,
       annuo,
     };
@@ -139,7 +165,7 @@ export default async function PreventiviPage({
     .reduce((sum, r) => sum + r.listPrice, 0);
   const mensileAccettato = rows
     .filter((r) => r.status === "ACCETTATO")
-    .reduce((sum, r) => sum + (r.prezzoFinale ?? 0), 0);
+    .reduce((sum, r) => sum + r.vendita, 0);
   const annuoAccettato = rows.reduce((sum, r) => sum + r.annuo, 0);
 
   return (
@@ -196,10 +222,14 @@ export default async function PreventiviPage({
           rows={rows.map((r) => ({
             id: r.id,
             numeroOfferta: r.numeroOfferta,
-            siteLabel: `${r.clientName} — ${r.siteLabel}`,
-            serviceLabel: r.serviceLabel,
+            clientName: r.clientName,
+            siteCount: r.siteCount,
+            perSite: r.perSite,
+            tipoServizio: r.tipoServizio,
+            cadenza: r.cadenza,
             listPrice: r.listPrice,
-            prezzoVenduto: r.prezzoFinale,
+            netto: r.netto,
+            vendita: r.vendita,
             discountPct: r.discountPct,
             status: r.status,
           }))}

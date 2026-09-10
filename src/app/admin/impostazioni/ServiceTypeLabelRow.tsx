@@ -7,10 +7,12 @@ import { Toggle } from "@/app/Toggle";
 export function ServiceTypeLabelRow({
   tipo,
   etichetta,
+  abbreviazione,
   mostraCadenza,
 }: {
   tipo: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
   etichetta: string;
+  abbreviazione: string | null;
   mostraCadenza: boolean;
 }) {
   const [state, action, pending] = useActionState(updateServiceTypeLabel, undefined);
@@ -23,8 +25,17 @@ export function ServiceTypeLabelRow({
     >
       <input type="hidden" name="tipo" value={tipo} />
       <input type="hidden" name="mostraCadenza" value={checked ? "on" : "off"} />
+      <label className="flex w-28 flex-col gap-1 text-sm">
+        Abbreviazione
+        <input
+          name="abbreviazione"
+          defaultValue={abbreviazione ?? ""}
+          required
+          className="rounded-lg border border-zinc-300 px-3 py-2"
+        />
+      </label>
       <label className="flex flex-1 min-w-[12rem] flex-col gap-1 text-sm">
-        {tipo}
+        Etichetta
         <input
           name="etichetta"
           defaultValue={etichetta}

@@ -2,6 +2,7 @@ import { requireAdmin } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import {
   getServiceTypeLabels,
+  getServiceTypeAbbreviazioni,
   getServiceTypeMostraCadenza,
 } from "@/lib/serviceTypeLabels";
 import { getHomeSettings } from "@/lib/homeSettings";
@@ -21,6 +22,7 @@ export default async function ImpostazioniPage() {
   await requireAdmin();
   const [
     labels,
+    abbreviazioni,
     mostraCadenzaSettings,
     tipiPrestazione,
     homeSettings,
@@ -28,6 +30,7 @@ export default async function ImpostazioniPage() {
     phrases,
   ] = await Promise.all([
     getServiceTypeLabels(),
+    getServiceTypeAbbreviazioni(),
     getServiceTypeMostraCadenza(),
     prisma.tipoPrestazione.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
     getHomeSettings(),
@@ -41,17 +44,17 @@ export default async function ImpostazioniPage() {
         tabs={[
           {
             id: "servizio",
-            label: "Tipi di servizio",
+            label: "Frequenza",
             content: (
               <section className="flex flex-col gap-3">
                 <div>
                   <h1 className="text-lg font-semibold text-zinc-900">
-                    Tipi di servizio
+                    Frequenza
                   </h1>
                   <p className="text-sm text-zinc-500">
-                    Rinomina come vuoi i tipi di servizio usati nei
-                    preventivi. Il calcolo del prezzo resta invariato, cambia
-                    solo il nome mostrato.
+                    Rinomina come vuoi le frequenze usate nei preventivi. Il
+                    calcolo del prezzo resta invariato, cambia solo il nome
+                    mostrato.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2">
@@ -60,6 +63,7 @@ export default async function ImpostazioniPage() {
                       key={tipo}
                       tipo={tipo}
                       etichetta={labels[tipo]}
+                      abbreviazione={abbreviazioni[tipo]}
                       mostraCadenza={mostraCadenzaSettings[tipo]}
                     />
                   ))}
@@ -69,18 +73,20 @@ export default async function ImpostazioniPage() {
           },
           {
             id: "prestazione",
-            label: "Tipo di prestazione",
+            label: "Tipo servizio",
             content: (
               <section className="flex flex-col gap-3">
                 <div>
                   <h1 className="text-lg font-semibold text-zinc-900">
-                    Tipo di prestazione
+                    Tipo servizio
                   </h1>
                   <p className="text-sm text-zinc-500">
                     Le voci che compaiono come prima riga della descrizione
                     nei preventivi (es. "PRESTAZIONE ORDINARIA DI PULIZIA
                     UFFICI"). Modificare o eliminare una voce non cambia i
-                    preventivi già creati con quel testo.
+                    preventivi già creati con quel testo. L'Abbreviazione è
+                    quella mostrata nella colonna "Tipo servizio" dell'elenco
+                    preventivi, per non appesantirlo col testo completo.
                   </p>
                 </div>
                 <TipoPrestazioneForm />
@@ -90,6 +96,7 @@ export default async function ImpostazioniPage() {
                       key={t.id}
                       id={t.id}
                       etichetta={t.etichetta}
+                      abbreviazione={t.abbreviazione}
                     />
                   ))}
                   {tipiPrestazione.length === 0 && (

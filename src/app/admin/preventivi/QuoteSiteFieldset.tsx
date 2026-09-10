@@ -221,7 +221,7 @@ export function QuoteSiteFieldset({
         )}
 
         <label className="flex flex-col gap-1 text-sm">
-          Tipo di servizio
+          Frequenza
           <select
             name={name("serviceType")}
             value={serviceType}

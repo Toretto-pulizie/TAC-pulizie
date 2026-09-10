@@ -25,6 +25,23 @@ export async function getServiceTypeLabels(): Promise<Record<ServiceType, string
   return labels;
 }
 
+// Nessuna abbreviazione di default: finché non viene impostata in
+// Impostazioni, l'elenco Preventivi mostra l'etichetta per intero.
+export async function getServiceTypeAbbreviazioni(): Promise<
+  Record<ServiceType, string | null>
+> {
+  const rows = await prisma.serviceTypeLabel.findMany();
+  const abbreviazioni: Record<ServiceType, string | null> = {
+    ONE_SHOT: null,
+    PASS_SETTIMANALE: null,
+    PASS_MENSILE: null,
+  };
+  for (const row of rows) {
+    abbreviazioni[row.tipo] = row.abbreviazione;
+  }
+  return abbreviazioni;
+}
+
 export async function getServiceTypeMostraCadenza(): Promise<
   Record<ServiceType, boolean>
 > {

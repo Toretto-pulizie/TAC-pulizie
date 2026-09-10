@@ -6,9 +6,11 @@ import { updateTipoPrestazione, deleteTipoPrestazione } from "@/app/actions/tipi
 export function TipoPrestazioneRow({
   id,
   etichetta,
+  abbreviazione,
 }: {
   id: string;
   etichetta: string;
+  abbreviazione: string | null;
 }) {
   const [editing, setEditing] = useState(false);
   const [state, action, pending] = useActionState(updateTipoPrestazione, undefined);
@@ -27,6 +29,15 @@ export function TipoPrestazioneRow({
         className="flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 p-3"
       >
         <input type="hidden" name="id" value={id} />
+        <label className="flex w-32 flex-col gap-1 text-sm">
+          Abbreviazione
+          <input
+            name="abbreviazione"
+            defaultValue={abbreviazione ?? ""}
+            required
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
         <label className="flex flex-1 min-w-[16rem] flex-col gap-1 text-sm">
           Testo
           <input
@@ -59,7 +70,16 @@ export function TipoPrestazioneRow({
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 p-3">
-      <p className="text-sm text-zinc-900">{etichetta}</p>
+      <div className="flex items-center gap-2">
+        {abbreviazione ? (
+          <span className="rounded-full bg-zinc-100 px-2 py-0.5 font-mono text-xs text-zinc-500">
+            {abbreviazione}
+          </span>
+        ) : (
+          <span className="text-xs text-amber-600">Nessuna abbreviazione</span>
+        )}
+        <p className="text-sm text-zinc-900">{etichetta}</p>
+      </div>
       <div className="flex shrink-0 gap-3 text-sm">
         <button
           type="button"

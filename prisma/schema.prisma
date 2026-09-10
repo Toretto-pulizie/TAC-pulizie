@@ -214,10 +214,11 @@ model Collaboratore {
 }
 
 model TipoPrestazione {
-  id        String   @id @default(cuid())
-  etichetta String
-  ordine    Int      @default(0)
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  etichetta     String
+  abbreviazione String?
+  ordine        Int      @default(0)
+  createdAt     DateTime @default(now())
 }
 
 model QuotePhrase {
@@ -232,6 +233,7 @@ model QuotePhrase {
 model ServiceTypeLabel {
   tipo          ServiceType @id
   etichetta     String
+  abbreviazione String?
   mostraCadenza Boolean     @default(true)
 }
 

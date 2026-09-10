@@ -19,6 +19,15 @@ export function TipoPrestazioneForm() {
       action={action}
       className="flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 p-3"
     >
+      <label className="flex w-32 flex-col gap-1 text-sm">
+        Abbreviazione
+        <input
+          name="abbreviazione"
+          required
+          placeholder="Es. PU"
+          className="rounded-lg border border-zinc-300 px-3 py-2"
+        />
+      </label>
       <label className="flex flex-1 min-w-[16rem] flex-col gap-1 text-sm">
         Nuova voce
         <input

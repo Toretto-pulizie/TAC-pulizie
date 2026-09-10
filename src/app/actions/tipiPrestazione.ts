@@ -7,6 +7,7 @@ import { requireModule } from "@/lib/dal";
 
 const TipoPrestazioneSchema = z.object({
   etichetta: z.string().trim().min(1, "Il testo non può essere vuoto"),
+  abbreviazione: z.string().trim().optional(),
 });
 
 export async function createTipoPrestazione(
@@ -17,13 +18,16 @@ export async function createTipoPrestazione(
 
   const parsed = TipoPrestazioneSchema.safeParse({
     etichetta: formData.get("etichetta"),
+    abbreviazione: formData.get("abbreviazione") || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  await prisma.tipoPrestazione.create({ data: parsed.data });
+  await prisma.tipoPrestazione.create({
+    data: { etichetta: parsed.data.etichetta, abbreviazione: parsed.data.abbreviazione ?? null },
+  });
   revalidatePath("/admin/impostazioni");
   revalidatePath("/admin/preventivi");
   return { success: true };
@@ -42,14 +46,18 @@ export async function updateTipoPrestazione(
   const parsed = UpdateTipoPrestazioneSchema.safeParse({
     id: formData.get("id"),
     etichetta: formData.get("etichetta"),
+    abbreviazione: formData.get("abbreviazione") || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  const { id, etichetta } = parsed.data;
-  await prisma.tipoPrestazione.update({ where: { id }, data: { etichetta } });
+  const { id, etichetta, abbreviazione } = parsed.data;
+  await prisma.tipoPrestazione.update({
+    where: { id },
+    data: { etichetta, abbreviazione: abbreviazione ?? null },
+  });
 
   revalidatePath("/admin/impostazioni");
   revalidatePath("/admin/preventivi");

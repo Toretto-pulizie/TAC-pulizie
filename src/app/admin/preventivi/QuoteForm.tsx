@@ -118,7 +118,7 @@ export function QuoteForm({
         </label>
 
         <label className="flex min-w-[16rem] flex-col gap-1 text-sm">
-          Tipo di prestazione
+          Tipo servizio
           <select
             name="tipoPrestazione"
             required
