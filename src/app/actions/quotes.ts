@@ -10,7 +10,6 @@ import { notifyAdmins } from "@/lib/notifications";
 
 const QuoteSchema = z.object({
   clientId: z.string().trim().min(1, "Seleziona un cliente"),
-  tipoPrestazione: z.string().trim().min(1, "Seleziona il tipo di servizio"),
   condizioniPagamento: z.string().trim().optional(),
 });
 
@@ -18,6 +17,7 @@ const QuoteSiteSchema = z
   .object({
     siteSelection: z.string().trim().min(1, "Seleziona una sede"),
     nuovoIndirizzo: z.string().trim().optional(),
+    tipoPrestazione: z.string().trim().min(1, "Seleziona il tipo di servizio"),
     serviceType: z.enum(["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE"]),
     ore: z.coerce.number().min(0, "Ore non valide"),
     spostamento: z.coerce.number().min(0).default(0),
@@ -63,6 +63,7 @@ function parseSiteBlockFormData(formData: FormData, i: number) {
   return {
     siteSelection: get("siteSelection"),
     nuovoIndirizzo: get("nuovoIndirizzo") || undefined,
+    tipoPrestazione: get("tipoPrestazione"),
     serviceType: get("serviceType"),
     ore: get("ore"),
     spostamento: get("spostamento") || 0,
@@ -128,13 +129,12 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
 
   const parsedQuote = QuoteSchema.safeParse({
     clientId: formData.get("clientId"),
-    tipoPrestazione: formData.get("tipoPrestazione"),
     condizioniPagamento: formData.get("condizioniPagamento") || undefined,
   });
   if (!parsedQuote.success) {
     return { error: parsedQuote.error.issues[0]?.message ?? "Dati non validi" };
   }
-  const { clientId, tipoPrestazione, condizioniPagamento } = parsedQuote.data;
+  const { clientId, condizioniPagamento } = parsedQuote.data;
 
   const indexes = collectSiteBlockIndexes(formData);
   if (indexes.length === 0) {
@@ -143,6 +143,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
 
   const siteBlocksData: {
     siteId: string;
+    tipoPrestazione: string;
     serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
     ore: number;
     spostamento: number;
@@ -193,6 +194,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
 
     siteBlocksData.push({
       siteId,
+      tipoPrestazione: d.tipoPrestazione,
       serviceType: d.serviceType,
       ore: d.ore,
       spostamento: d.spostamento,
@@ -213,7 +215,6 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
 
   const quoteBaseData = {
     clientId,
-    tipoPrestazione,
     condizioniPagamento: condizioniPagamento || null,
   };
 

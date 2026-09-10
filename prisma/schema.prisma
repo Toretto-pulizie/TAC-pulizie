@@ -151,7 +151,6 @@ model Quote {
   clientId            String
   sites               QuoteSite[]
   condizioniPagamento String?
-  tipoPrestazione     String      @default("")
   status              QuoteStatus @default(IN_TRATTATIVA)
   createdAt           DateTime    @default(now())
   closedAt            DateTime?
@@ -165,6 +164,7 @@ model QuoteSite {
   quoteId           String
   site              Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
   siteId            String
+  tipoPrestazione   String      @default("")
   serviceType       ServiceType
   ore               Float
   spostamento       Float       @default(0)

@@ -18,6 +18,7 @@ const statusClasses: Record<string, string> = {
 
 type PerSite = {
   siteAddress: string;
+  tipoServizio: string;
   cadenza: string;
   listPrice: number;
   discountPct: number | null;
@@ -44,7 +45,7 @@ export function QuoteRow({
 }: {
   id: string;
   clientName: string;
-  tipoServizio: string;
+  tipoServizio: string | null;
   siteCount: number;
   perSite: PerSite[];
   cadenza: string | null;
@@ -80,7 +81,7 @@ export function QuoteRow({
             siteCount
           )}
         </td>
-        <td className="px-4 py-3 text-zinc-500">{tipoServizio}</td>
+        <td className="px-4 py-3 text-zinc-500">{tipoServizio ?? "Vario"}</td>
         <td className="px-4 py-3 text-zinc-500">{cadenza ?? "Vario"}</td>
         <td className="px-4 py-3 text-zinc-500">{formatEuro(listPrice)}</td>
         <td className="px-4 py-3 text-zinc-500">
@@ -155,7 +156,7 @@ export function QuoteRow({
           <tr key={i} className="border-b border-zinc-100 bg-zinc-50/60 last:border-0">
             <td className="px-4 py-3"></td>
             <td className="px-4 py-3 text-zinc-500">{s.siteAddress}</td>
-            <td className="px-4 py-3 text-zinc-500">{tipoServizio}</td>
+            <td className="px-4 py-3 text-zinc-500">{s.tipoServizio}</td>
             <td className="px-4 py-3 text-zinc-500">{s.cadenza}</td>
             <td className="px-4 py-3 text-zinc-500">{formatEuro(s.listPrice)}</td>
             <td className="px-4 py-3 text-zinc-500">

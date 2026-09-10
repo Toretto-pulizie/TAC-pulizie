@@ -92,7 +92,7 @@ export default async function StampaPreventivoPage({
   const multiSede = quote.sites.length > 1;
 
   // Una riga per sede: ogni QuoteSite ha il proprio listino/sconto/netto, le
-  // proprie note e il proprio Tipo prestazione, del tutto indipendenti.
+  // proprie note e il proprio Tipo servizio, del tutto indipendenti.
   const siteRows = quote.sites.map((qs) => {
     const lineItem = buildLineItem(qs, serviceLabels[qs.serviceType]);
     // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
@@ -104,7 +104,7 @@ export default async function StampaPreventivoPage({
         : null;
     const noteParagraphs = buildNoteParagraphs(qs.note);
     const blocks = buildDescriptionBlocks(
-      { ...qs, tipoPrestazione: quote.tipoPrestazione, site: qs.site },
+      { ...qs, site: qs.site },
       serviceLabels[qs.serviceType],
       mostraCadenzaSettings[qs.serviceType],
       noteParagraphs

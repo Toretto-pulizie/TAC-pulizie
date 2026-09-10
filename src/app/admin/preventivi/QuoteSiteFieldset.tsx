@@ -14,6 +14,7 @@ export type ClientOption = {
 
 export type SiteBlockInitial = {
   siteId: string;
+  tipoPrestazione: string;
   serviceType: ServiceType;
   ore: number;
   spostamento: number;
@@ -60,6 +61,7 @@ export function QuoteSiteFieldset({
   onTotaleChange,
   serviceLabels,
   phrases,
+  tipiPrestazione,
 }: {
   index: number;
   selectedClient: ClientOption | undefined;
@@ -69,6 +71,7 @@ export function QuoteSiteFieldset({
   onTotaleChange: (index: number, totale: number) => void;
   serviceLabels: Record<ServiceType, string>;
   phrases: Phrase[];
+  tipiPrestazione: string[];
 }) {
   const [serviceType, setServiceType] = useState<ServiceType>(
     initial?.serviceType ?? "PASS_SETTIMANALE"
@@ -219,6 +222,29 @@ export function QuoteSiteFieldset({
             />
           </label>
         )}
+
+        <label className="flex min-w-[14rem] flex-col gap-1 text-sm">
+          Tipo servizio
+          <select
+            name={name("tipoPrestazione")}
+            required
+            defaultValue={initial?.tipoPrestazione ?? ""}
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          >
+            <option value="">Seleziona...</option>
+            {initial?.tipoPrestazione &&
+              !tipiPrestazione.includes(initial.tipoPrestazione) && (
+                <option value={initial.tipoPrestazione}>
+                  {initial.tipoPrestazione}
+                </option>
+              )}
+            {tipiPrestazione.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <label className="flex flex-col gap-1 text-sm">
           Frequenza

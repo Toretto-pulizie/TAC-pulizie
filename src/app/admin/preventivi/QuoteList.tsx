@@ -8,6 +8,7 @@ import { compareValues } from "@/lib/sort";
 
 type PerSite = {
   siteAddress: string;
+  tipoServizio: string;
   cadenza: string;
   listPrice: number;
   discountPct: number | null;
@@ -19,13 +20,12 @@ type QuoteRowData = {
   id: string;
   numeroOfferta: number;
   clientName: string;
-  // Comune a tutto il preventivo, non varia per sede.
-  tipoServizio: string;
   siteCount: number;
   perSite: PerSite[];
-  // null quando le sedi non condividono la stessa cadenza: in quel caso la
-  // riga mostra "Vario" invece di ripetere e andare a capo con tutti i
-  // valori in una cella (il dettaglio per sede si vede espandendo).
+  // null quando le sedi non condividono lo stesso Tipo servizio/Cadenza: in
+  // quel caso la riga mostra "Vario" invece di ripetere e andare a capo con
+  // tutti i valori in una cella (il dettaglio per sede si vede espandendo).
+  tipoServizio: string | null;
   cadenza: string | null;
   listPrice: number;
   netto: number;
@@ -55,6 +55,7 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
     ...r,
     statusLabel: statusLabels[r.status],
     siteCountLabel: String(r.siteCount),
+    tipoServizioLabel: r.tipoServizio ?? "Vario",
     cadenzaLabel: r.cadenza ?? "Vario",
     listPriceLabel: formatEuro(r.listPrice),
     nettoLabel: formatEuro(r.netto),
@@ -91,7 +92,7 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
             <tr>
               <ExcelHeader label="Cliente" active={filters.clientName} onFilterChange={(v) => handleFilterChange("clientName", v)} sortDir={sortDirFor("clientName")} onSort={(d) => handleSort("clientName", d)} />
               <ExcelHeader label="N° sedi/cantieri" active={filters.siteCountLabel} onFilterChange={(v) => handleFilterChange("siteCountLabel", v)} sortDir={sortDirFor("siteCount")} onSort={(d) => handleSort("siteCount", d)} />
-              <ExcelHeader label="Tipo servizio" active={filters.tipoServizio} onFilterChange={(v) => handleFilterChange("tipoServizio", v)} sortDir={sortDirFor("tipoServizio")} onSort={(d) => handleSort("tipoServizio", d)} />
+              <ExcelHeader label="Tipo servizio" active={filters.tipoServizioLabel} onFilterChange={(v) => handleFilterChange("tipoServizioLabel", v)} sortDir={sortDirFor("tipoServizioLabel")} onSort={(d) => handleSort("tipoServizioLabel", d)} />
               <ExcelHeader label="Cadenza" active={filters.cadenzaLabel} onFilterChange={(v) => handleFilterChange("cadenzaLabel", v)} sortDir={sortDirFor("cadenzaLabel")} onSort={(d) => handleSort("cadenzaLabel", d)} />
               <ExcelHeader label="Listino" active={filters.listPriceLabel} onFilterChange={(v) => handleFilterChange("listPriceLabel", v)} sortDir={sortDirFor("listPrice")} onSort={(d) => handleSort("listPrice", d)} />
               <ExcelHeader label="Sconto" active={filters.discountLabel} onFilterChange={(v) => handleFilterChange("discountLabel", v)} sortDir={sortDirFor("discountPct")} onSort={(d) => handleSort("discountPct", d)} />

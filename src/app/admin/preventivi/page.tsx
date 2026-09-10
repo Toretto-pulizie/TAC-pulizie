@@ -62,10 +62,10 @@ export default async function PreventiviPage({
     ? {
         id: editingQuoteRaw.id,
         clientId: editingQuoteRaw.clientId,
-        tipoPrestazione: editingQuoteRaw.tipoPrestazione,
         condizioniPagamento: editingQuoteRaw.condizioniPagamento,
         sites: editingQuoteRaw.sites.map((s) => ({
           siteId: s.siteId,
+          tipoPrestazione: s.tipoPrestazione,
           serviceType: s.serviceType,
           ore: s.ore,
           spostamento: s.spostamento,
@@ -114,8 +114,8 @@ export default async function PreventiviPage({
     const annuo = siteRows.reduce((sum, s) => sum + s.annuo, 0);
     const siteCount = q.sites.length;
     // Dettaglio per sede: usato dal pannello "a grappolo" per mostrare gli
-    // importi di ciascuna sede (quasi sempre diversi anche a parità di
-    // frequenza/cadenza), invece di doverli ripetere nella riga di riepilogo.
+    // importi (e ora anche il Tipo servizio) di ciascuna sede — possono
+    // differire da un cantiere all'altro anche nello stesso preventivo.
     const perSite = siteRows.map((s, i) => {
       // Cadenza compatta: solo l'Abbreviazione della frequenza (o
       // l'etichetta per intero, se non impostata) e il numero inserito —
@@ -130,6 +130,7 @@ export default async function PreventiviPage({
             : (s.passMensile ?? 0);
       return {
         siteAddress: formatSedeAddress(q.sites[i].site.address),
+        tipoServizio: abbreviazioniPerEtichetta.get(s.tipoPrestazione) || s.tipoPrestazione,
         cadenza: `${freqLabel} ${n}`,
         listPrice: s.listPrice,
         discountPct: computeDiscountPct(s.listPrice, s.netto),
@@ -137,6 +138,9 @@ export default async function PreventiviPage({
         vendita: s.vendita,
       };
     });
+    const tipoServizio = perSite.every((s) => s.tipoServizio === perSite[0].tipoServizio)
+      ? perSite[0].tipoServizio
+      : null;
     const cadenza = perSite.every((s) => s.cadenza === perSite[0].cadenza)
       ? perSite[0].cadenza
       : null;
@@ -146,9 +150,7 @@ export default async function PreventiviPage({
       numeroOfferta: q.numeroOfferta,
       status: q.status,
       clientName: q.client.name,
-      // Tipo servizio è comune a tutto il preventivo (non varia per sede);
-      // in elenco si preferisce l'Abbreviazione, se impostata.
-      tipoServizio: abbreviazioniPerEtichetta.get(q.tipoPrestazione) || q.tipoPrestazione,
+      tipoServizio,
       siteCount,
       perSite,
       cadenza,

@@ -18,7 +18,6 @@ function formatEuro(n: number) {
 export type EditingQuote = {
   id: string;
   clientId: string;
-  tipoPrestazione: string;
   condizioniPagamento: string | null;
   sites: SiteBlockInitial[];
 };
@@ -116,29 +115,6 @@ export function QuoteForm({
             ))}
           </select>
         </label>
-
-        <label className="flex min-w-[16rem] flex-col gap-1 text-sm">
-          Tipo servizio
-          <select
-            name="tipoPrestazione"
-            required
-            defaultValue={editingQuote?.tipoPrestazione ?? ""}
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          >
-            <option value="">Seleziona...</option>
-            {editingQuote?.tipoPrestazione &&
-              !tipiPrestazione.includes(editingQuote.tipoPrestazione) && (
-                <option value={editingQuote.tipoPrestazione}>
-                  {editingQuote.tipoPrestazione}
-                </option>
-              )}
-            {tipiPrestazione.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -155,6 +131,7 @@ export function QuoteForm({
             }
             serviceLabels={serviceLabels}
             phrases={phrases}
+            tipiPrestazione={tipiPrestazione}
           />
         ))}
       </div>
