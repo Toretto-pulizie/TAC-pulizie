@@ -70,6 +70,7 @@ export default async function PreventiviPage({
           tariffaOraria: s.tariffaOraria,
           tariffaVetri: s.tariffaVetri,
           tariffaConsuntivo: s.tariffaConsuntivo,
+          scontoPct: s.scontoPct,
           prezzoVenduto: s.prezzoVenduto,
           adeguamento: s.adeguamento,
         })),

@@ -177,6 +177,7 @@ model QuoteSite {
   tariffaOraria     Float       @default(25)
   tariffaVetri      Float       @default(30)
   tariffaConsuntivo Float       @default(25)
+  scontoPct         Float?
   prezzoVenduto     Float?
   adeguamento       Float?
 

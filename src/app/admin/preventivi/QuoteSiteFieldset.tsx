@@ -25,6 +25,7 @@ export type SiteBlockInitial = {
   tariffaOraria: number;
   tariffaVetri: number;
   tariffaConsuntivo: number;
+  scontoPct: number | null;
   prezzoVenduto: number | null;
   adeguamento: number | null;
 };
@@ -55,6 +56,7 @@ export function QuoteSiteFieldset({
   );
   const [siteSelection, setSiteSelection] = useState(initial?.siteId ?? "");
   const [totale, setTotale] = useState(0);
+  const [netto, setNetto] = useState(0);
   const [showSupplementi, setShowSupplementi] = useState(
     () => !!initial && ((initial.oreVetri ?? 0) > 0 || (initial.passVetriAnno ?? 0) > 0)
   );
@@ -89,6 +91,21 @@ export function QuoteSiteFieldset({
     });
     setTotale(t);
     onTotaleChange(index, t);
+
+    // Il Netto segue il Totale finché non si imposta uno Sconto %; a quel
+    // punto è Totale - Sconto. Fuori dall'edit, senza Netto salvato in
+    // precedenza, parte sempre dal Totale.
+    const scontoRaw = get("scontoPct");
+    const scontoNum = scontoRaw.trim() === "" ? null : parseFloat(scontoRaw);
+    const n =
+      scontoNum != null && Number.isFinite(scontoNum)
+        ? Math.round(t * (1 - scontoNum / 100) * 100) / 100
+        : (initial?.prezzoVenduto ?? t);
+    setNetto(n);
+    const hiddenNetto = blockRef.current!.querySelector<HTMLInputElement>(
+      `[name="${name("prezzoVenduto")}"]`
+    );
+    if (hiddenNetto) hiddenNetto.value = String(n);
   }
 
   useEffect(() => {
@@ -329,20 +346,18 @@ export function QuoteSiteFieldset({
             max="100"
             name={name("scontoPct")}
             placeholder="Es. 10"
+            defaultValue={initial?.scontoPct ?? undefined}
             className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm">
-          Netto (se noto)
-          <input
-            type="number"
-            step="0.01"
-            name={name("prezzoVenduto")}
-            defaultValue={initial?.prezzoVenduto ?? undefined}
-            className="w-32 rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
+        <div className="flex flex-col gap-1 text-sm">
+          Netto
+          <input type="hidden" name={name("prezzoVenduto")} defaultValue={netto} />
+          <div className="w-32 rounded-lg border border-zinc-200 bg-white px-3 py-2 font-medium text-zinc-900">
+            {formatEuro(netto)}
+          </div>
+        </div>
 
         <label className="flex flex-col gap-1 text-sm">
           Adeguamento € (opzionale)

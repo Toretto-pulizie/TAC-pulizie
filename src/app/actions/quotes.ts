@@ -154,6 +154,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
     tariffaOraria: number;
     tariffaVetri: number;
     tariffaConsuntivo: number;
+    scontoPct: number | null;
     prezzoVenduto: number | null;
     adeguamento: number | null;
   }[] = [];
@@ -202,6 +203,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
       tariffaOraria: d.tariffaOraria,
       tariffaVetri: d.tariffaVetri,
       tariffaConsuntivo: d.tariffaConsuntivo,
+      scontoPct: d.scontoPct ?? null,
       prezzoVenduto,
       adeguamento: d.adeguamento ?? null,
     });
