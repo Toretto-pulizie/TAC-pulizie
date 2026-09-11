@@ -2,15 +2,18 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { updateSessionTime, createManualSession } from "@/app/actions/timeEntries";
+import { updateSessionTime, createManualSession, deleteSession } from "@/app/actions/timeEntries";
 
 export type SessionRow = {
   startId: string;
   endId: string | null;
   travelId: string | null;
+  userId: string;
+  siteId: string | null;
   userName: string;
   clientName: string | null;
   siteName: string | null;
+  dateValue: string;
   dateLabel: string;
   startTime: string;
   endTime: string | null;
@@ -92,7 +95,19 @@ function addMinutesToTime(hhmm: string, minutes: number): string {
   return `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`;
 }
 
-type EditingField = "start" | "end" | "work" | "travel" | "note";
+type EditingField =
+  | "start"
+  | "end"
+  | "work"
+  | "travel"
+  | "note"
+  | "userId"
+  | "siteId"
+  // Stesso effetto di "siteId" (cambia la stessa sede/cliente): un field
+  // separato serve solo a distinguere quale delle due celle (Cliente o
+  // Sede) ha aperto la tendina, evitando che si aprano entrambe insieme.
+  | "clienteSite"
+  | "date";
 type EditingState = { startId: string; field: EditingField; value: string } | null;
 
 export function TimbratureGrid({
@@ -134,14 +149,24 @@ export function TimbratureGrid({
             ? (s.workMinutes != null ? minutesToHM(s.workMinutes) : "")
             : field === "travel"
               ? (s.travelMinutes ? String(s.travelMinutes) : "")
-              : s.note;
+              : field === "userId"
+                ? s.userId
+                : field === "siteId" || field === "clienteSite"
+                  ? (s.siteId ?? "")
+                  : field === "date"
+                    ? s.dateValue
+                    : s.note;
     setEditing({ startId: s.startId, field, value });
   }
 
-  function commitEdit(s: SessionRow) {
-    if (!editing || editing.startId !== s.startId) return;
-    const field = editing.field;
-    const value = editing.value;
+  // Per le celle a tendina (Collaboratore/Sede) il commit avviene subito al
+  // cambio, senza aspettare un blur: passando field/value direttamente si
+  // evita di dover leggere lo stato "editing" appena aggiornato (asincrono).
+  function commitEdit(s: SessionRow, override?: { field: EditingField; value: string }) {
+    const current = override ?? (editing && editing.startId === s.startId ? editing : null);
+    if (!current) return;
+    const field = current.field;
+    const value = current.value;
     setEditing(null);
 
     // Lasciare vuota una cella Inizio/Fine mostrata come "—" (stimata) è
@@ -154,10 +179,16 @@ export function TimbratureGrid({
     let endTime = s.endTime;
     let travelMinutes = s.travelMinutes;
     let note = s.note;
+    let userId = s.userId;
+    let siteId = s.siteId;
+    let date = s.dateValue;
 
     if (field === "start") startTime = value;
     if (field === "end") endTime = value || null;
     if (field === "note") note = value;
+    if (field === "userId") userId = value;
+    if (field === "siteId" || field === "clienteSite") siteId = value;
+    if (field === "date") date = value;
     if (field === "work") {
       const mins = parseHoursInput(value);
       if (mins == null) {
@@ -183,9 +214,17 @@ export function TimbratureGrid({
       endTime === s.endTime &&
       travelMinutes === s.travelMinutes &&
       note === s.note &&
+      userId === s.userId &&
+      siteId === s.siteId &&
+      date === s.dateValue &&
       !(startTimeIsLiteral && s.startEstimated) &&
       !(endTimeIsLiteral && s.endEstimated)
     ) {
+      return;
+    }
+
+    if (!siteId) {
+      setError("Seleziona una sede");
       return;
     }
 
@@ -194,6 +233,9 @@ export function TimbratureGrid({
         startId: s.startId,
         endId: s.endId,
         travelId: s.travelId,
+        userId,
+        siteId,
+        date,
         startTime,
         endTime,
         travelMinutes,
@@ -206,6 +248,18 @@ export function TimbratureGrid({
       } else {
         router.refresh();
       }
+    });
+  }
+
+  function handleDelete(s: SessionRow) {
+    if (!confirm("Eliminare questa timbratura? L'operazione non è reversibile.")) return;
+    startTransition(async () => {
+      await deleteSession({
+        startId: s.startId,
+        endId: s.endId,
+        travelId: s.travelId,
+      });
+      router.refresh();
     });
   }
 
@@ -285,6 +339,7 @@ export function TimbratureGrid({
                 "Spost.",
                 "GPS",
                 "Note",
+                "",
               ].map((h) => (
                 <th key={h} className="border-r border-zinc-200 px-2.5 py-1.5 font-semibold last:border-r-0">
                   {h}
@@ -298,16 +353,19 @@ export function TimbratureGrid({
                 key={key}
                 groupKey={key}
                 rows={rows}
+                employees={employees}
+                sites={sites}
                 editing={editing}
                 onOpenEdit={openEdit}
                 onChangeEdit={(v) => setEditing((prev) => (prev ? { ...prev, value: v } : prev))}
                 onCommit={commitEdit}
                 onCancel={() => setEditing(null)}
+                onDelete={handleDelete}
               />
             ))}
             {sessions.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-6 text-center text-zinc-400">
+                <td colSpan={11} className="px-4 py-6 text-center text-zinc-400">
                   Nessuna timbratura nel periodo selezionato.
                 </td>
               </tr>
@@ -475,21 +533,27 @@ function ManualSessionForm({
 function GroupBlock({
   groupKey,
   rows,
+  employees,
+  sites,
   editing,
   onOpenEdit,
   onChangeEdit,
   onCommit,
   onCancel,
+  onDelete,
 }: {
   groupKey: string;
   rows: SessionRow[];
+  employees: { id: string; name: string }[];
+  sites: { id: string; label: string }[];
   editing: EditingState;
   onOpenEdit: (s: SessionRow, field: EditingField) => void;
   onChangeEdit: (value: string) => void;
-  onCommit: (s: SessionRow) => void;
+  onCommit: (s: SessionRow, override?: { field: EditingField; value: string }) => void;
   onCancel: () => void;
+  onDelete: (s: SessionRow) => void;
 }) {
-  function editableCell(s: SessionRow, field: EditingField, display: React.ReactNode, inputType: "time" | "text" = "text", width = "w-[76px]") {
+  function editableCell(s: SessionRow, field: EditingField, display: React.ReactNode, inputType: "time" | "text" | "date" = "text", width = "w-[76px]") {
     const isEditing = editing?.startId === s.startId && editing.field === field;
     if (isEditing) {
       return (
@@ -517,10 +581,47 @@ function GroupBlock({
     );
   }
 
+  // Collaboratore/Sede: tendina che applica subito la modifica al cambio,
+  // invece di aspettare un blur come per i campi di testo/orario.
+  function editableSelectCell(
+    s: SessionRow,
+    field: "userId" | "siteId" | "clienteSite",
+    display: React.ReactNode,
+    options: { value: string; label: string }[],
+    width = "w-[9rem]"
+  ) {
+    const isEditing = editing?.startId === s.startId && editing.field === field;
+    if (isEditing) {
+      return (
+        <select
+          autoFocus
+          value={editing!.value}
+          onChange={(e) => onCommit(s, { field, value: e.target.value })}
+          onBlur={onCancel}
+          className={`${width} rounded border border-blue-400 px-1 py-0.5 text-xs`}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    return (
+      <span
+        onClick={() => onOpenEdit(s, field)}
+        className="-mx-1 cursor-text rounded px-1 hover:border hover:border-zinc-300"
+      >
+        {display}
+      </span>
+    );
+  }
+
   return (
     <>
       <tr className="bg-zinc-50">
-        <td colSpan={10} className="border-b border-t border-zinc-300 px-2.5 py-1.5 text-[11px] font-bold text-zinc-700">
+        <td colSpan={11} className="border-b border-t border-zinc-300 px-2.5 py-1.5 text-[11px] font-bold text-zinc-700">
           {groupKey}{" "}
           <span className="font-normal text-zinc-400">
             — {rows.length} {rows.length === 1 ? "sessione" : "sessioni"}
@@ -532,15 +633,34 @@ function GroupBlock({
         return (
           <tr key={s.startId} className="border-b border-zinc-100 last:border-0 even:bg-zinc-50/50 hover:bg-blue-50/40">
             <td className="border-r border-zinc-100 px-2.5 py-1.5 font-semibold text-zinc-900">
-              {s.userName}
+              {editableSelectCell(
+                s,
+                "userId",
+                s.userName,
+                employees.map((e) => ({ value: e.id, label: e.name }))
+              )}
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">
-              {s.clientName ?? "—"}
+              {editableSelectCell(
+                s,
+                "clienteSite",
+                s.clientName ?? "—",
+                sites.map((site) => ({ value: site.id, label: site.label })),
+                "w-[14rem]"
+              )}
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">
-              {s.siteName ?? "—"}
+              {editableSelectCell(
+                s,
+                "siteId",
+                s.siteName ?? "—",
+                sites.map((site) => ({ value: site.id, label: site.label })),
+                "w-[14rem]"
+              )}
             </td>
-            <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">{s.dateLabel}</td>
+            <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">
+              {editableCell(s, "date", s.dateLabel, "date", "w-[9rem]")}
+            </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5">
               {editableCell(s, "start", s.startEstimated ? "—" : s.startTime, "time")}
             </td>
@@ -596,6 +716,16 @@ function GroupBlock({
                   {s.note || "—"}
                 </span>
               )}
+            </td>
+            <td className="px-2.5 py-1.5">
+              <button
+                type="button"
+                onClick={() => onDelete(s)}
+                className="text-zinc-400 hover:text-red-600"
+                title="Elimina timbratura"
+              >
+                ✕
+              </button>
             </td>
           </tr>
         );

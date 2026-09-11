@@ -38,24 +38,28 @@ export async function getTodayEntries(userId: string) {
   });
 }
 
-function combineDateTime(original: Date, hhmm: string): Date {
-  const [h, m] = hhmm.split(":").map(Number);
-  const d = new Date(original);
-  d.setHours(h, m, 0, 0);
-  return d;
+function combineDate(dateStr: string, hhmm: string): Date {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const [h, mi] = hhmm.split(":").map(Number);
+  return new Date(y, m - 1, d, h, mi, 0, 0);
 }
 
-// Modifica orario di inizio/fine, spostamento e nota di una sessione di
-// lavoro già timbrata. La sessione è la coppia di TimeEntry
-// WORK_START/WORK_END (più un eventuale TRAVEL_START per lo spostamento):
-// se manca la WORK_END (sessione in corso) o il TRAVEL_START (nessuno
-// spostamento registrato) e viene indicato un valore, li crea al volo
-// invece di aggiornarli; se lo spostamento viene azzerato e un
-// TRAVEL_START esisteva, lo elimina.
+// Modifica qualsiasi aspetto di una sessione già timbrata: Collaboratore,
+// Sede, Data, orario di inizio/fine, spostamento e nota. La sessione è la
+// coppia di TimeEntry WORK_START/WORK_END (più un eventuale TRAVEL_START per
+// lo spostamento): se manca la WORK_END (sessione in corso) o il
+// TRAVEL_START (nessuno spostamento registrato) e viene indicato un valore,
+// li crea al volo invece di aggiornarli; se lo spostamento viene azzerato e
+// un TRAVEL_START esisteva, lo elimina. Collaboratore/Sede/Data vanno sempre
+// inviati (anche quando si sta modificando solo l'orario): rappresentano lo
+// stato corrente della riga, non solo il campo appena toccato.
 export async function updateSessionTime(input: {
   startId: string;
   endId: string | null;
   travelId: string | null;
+  userId: string;
+  siteId: string;
+  date: string;
   startTime: string;
   endTime: string | null;
   travelMinutes: number;
@@ -76,10 +80,8 @@ export async function updateSessionTime(input: {
     return { error: "Voce non valida" };
   }
 
-  const newStart = combineDateTime(startEntry.timestamp, input.startTime);
-  const newEnd = input.endTime
-    ? combineDateTime(startEntry.timestamp, input.endTime)
-    : null;
+  const newStart = combineDate(input.date, input.startTime);
+  const newEnd = input.endTime ? combineDate(input.date, input.endTime) : null;
   if (newEnd && newEnd <= newStart) {
     return { error: "L'orario di fine deve essere dopo l'inizio" };
   }
@@ -88,6 +90,8 @@ export async function updateSessionTime(input: {
     where: { id: input.startId },
     data: {
       timestamp: newStart,
+      userId: input.userId,
+      siteId: input.siteId,
       note: input.note.trim() || null,
       ...(input.startTimeIsLiteral ? { orarioStimato: false } : {}),
     },
@@ -99,14 +103,16 @@ export async function updateSessionTime(input: {
         where: { id: input.endId },
         data: {
           timestamp: newEnd,
+          userId: input.userId,
+          siteId: input.siteId,
           ...(input.endTimeIsLiteral ? { orarioStimato: false } : {}),
         },
       });
     } else {
       await prisma.timeEntry.create({
         data: {
-          userId: startEntry.userId,
-          siteId: startEntry.siteId,
+          userId: input.userId,
+          siteId: input.siteId,
           type: "WORK_END",
           timestamp: newEnd,
           orarioStimato: !input.endTimeIsLiteral,
@@ -123,13 +129,13 @@ export async function updateSessionTime(input: {
     if (input.travelId) {
       await prisma.timeEntry.update({
         where: { id: input.travelId },
-        data: { timestamp: newTravelStart },
+        data: { timestamp: newTravelStart, userId: input.userId, siteId: input.siteId },
       });
     } else {
       await prisma.timeEntry.create({
         data: {
-          userId: startEntry.userId,
-          siteId: startEntry.siteId,
+          userId: input.userId,
+          siteId: input.siteId,
           type: "TRAVEL_START",
           timestamp: newTravelStart,
         },
@@ -138,6 +144,25 @@ export async function updateSessionTime(input: {
   } else if (input.travelId) {
     await prisma.timeEntry.delete({ where: { id: input.travelId } });
   }
+
+  revalidatePath("/admin/timbrature");
+  revalidatePath("/admin/consuntivi");
+  revalidatePath("/admin/statistiche");
+  return { success: true };
+}
+
+// Elimina un'intera sessione (Inizio/Fine/eventuale Spostamento).
+export async function deleteSession(input: {
+  startId: string;
+  endId: string | null;
+  travelId: string | null;
+}) {
+  await requireModule("timbrature");
+
+  const ids = [input.startId, input.endId, input.travelId].filter(
+    (id): id is string => id != null
+  );
+  await prisma.timeEntry.deleteMany({ where: { id: { in: ids } } });
 
   revalidatePath("/admin/timbrature");
   revalidatePath("/admin/consuntivi");

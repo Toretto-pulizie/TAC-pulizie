@@ -49,9 +49,12 @@ export default async function TimbraturePage({
     startId: s.startId,
     endId: s.endId,
     travelId: s.travelId,
+    userId: s.user.id,
+    siteId: s.site?.id ?? null,
     userName: s.user.name,
     clientName: s.site ? clientDisplayName(s.site.client) : null,
     siteName: s.site?.name ?? null,
+    dateValue: toDateInputValue(s.start),
     dateLabel: s.start.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }),
     startTime: s.start.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }),
     endTime: s.end
