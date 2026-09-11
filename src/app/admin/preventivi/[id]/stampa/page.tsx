@@ -6,7 +6,6 @@ import { computeDiscountPct } from "@/lib/quotes";
 import {
   buildDescriptionBlocks,
   buildLineItem,
-  buildNoteParagraphs,
   type DescriptionBlock,
 } from "@/lib/quotePrint";
 import {
@@ -106,12 +105,10 @@ export default async function StampaPreventivoPage({
       qs.prezzoVenduto != null
         ? computeDiscountPct(lineItem.listPrice, qs.prezzoVenduto)
         : null;
-    const noteParagraphs = buildNoteParagraphs(qs.note);
     const blocks = buildDescriptionBlocks(
       { ...qs, site: qs.site },
       serviceLabels[qs.serviceType],
-      mostraCadenzaSettings[qs.serviceType],
-      noteParagraphs
+      mostraCadenzaSettings[qs.serviceType]
     );
     return { lineItem, prezzoNetto, discountPct, blocks };
   });
@@ -199,14 +196,17 @@ export default async function StampaPreventivoPage({
     if (type === "tipo") return "mt-1 break-words whitespace-pre-line uppercase font-bold";
     if (type === "note") return "mt-3 break-words whitespace-pre-line text-zinc-700";
     if (type === "note-title") return "mt-3 break-words whitespace-pre-line text-zinc-900 font-bold";
+    if (type === "note-html")
+      return "mt-3 break-words text-zinc-700 [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline";
     return "mt-1 break-words whitespace-pre-line uppercase text-zinc-700";
   }
 
   // Titoli/etichette in neretto, valori (indirizzo, resto della cadenza) in
   // testo normale: solo "tipo" e "note-title" sono interamente in grassetto
   // (gestito da blockClassName), gli altri tipi mescolano le due cose sulla
-  // stessa riga.
-  function blockContent(block: DescriptionBlock) {
+  // stessa riga. "note-html" ha un rendering a parte (dangerouslySetInnerHTML)
+  // perché contiene già la propria formattazione inline.
+  function blockContent(block: Exclude<DescriptionBlock, { type: "note-html" }>) {
     if (block.type === "address")
       return (
         <>
@@ -312,11 +312,19 @@ export default async function StampaPreventivoPage({
             <Fragment key={i}>
               <tr>
                 <td className="border-r border-zinc-300 px-2 py-2 align-top">
-                  {r.blocks.map((block, j) => (
-                    <p key={j} className={blockClassName(block.type)}>
-                      {blockContent(block)}
-                    </p>
-                  ))}
+                  {r.blocks.map((block, j) =>
+                    block.type === "note-html" ? (
+                      <div
+                        key={j}
+                        className={blockClassName(block.type)}
+                        dangerouslySetInnerHTML={{ __html: block.html }}
+                      />
+                    ) : (
+                      <p key={j} className={blockClassName(block.type)}>
+                        {blockContent(block)}
+                      </p>
+                    )
+                  )}
                 </td>
                 <td className="border-r border-zinc-300 px-2 py-2"></td>
                 <td className="border-r border-zinc-300 px-2 py-2"></td>

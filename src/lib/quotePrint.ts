@@ -79,7 +79,8 @@ export type DescriptionBlock =
   | { type: "line"; label: string; boldValue: string; rest: string }
   | { type: "line-plain"; text: string }
   | { type: "note"; text: string }
-  | { type: "note-title"; text: string };
+  | { type: "note-title"; text: string }
+  | { type: "note-html"; html: string };
 
 type StructuredLine = { label: string; boldValue: string; rest: string };
 
@@ -140,11 +141,22 @@ function isNoteTitle(paragraph: string): boolean {
   return !paragraph.includes("\n") && /:\s*$/.test(paragraph.trim());
 }
 
+// Le note create con il vecchio campo di testo semplice restano testo puro;
+// quelle create con l'editor formattato (grassetto/corsivo/sottolineato)
+// sono salvate come HTML — le distinguiamo così, senza bisogno di un flag a
+// parte nel database.
+export function isHtmlContent(raw: string): boolean {
+  return /<[a-z][\s\S]*>/i.test(raw);
+}
+
 export function buildDescriptionBlocks(
-  q: QuotePricingInput & { tipoPrestazione?: string | null; site: { address: string } },
+  q: QuotePricingInput & {
+    tipoPrestazione?: string | null;
+    site: { address: string };
+    note?: string | null;
+  },
   serviceLabel: string,
-  mostraCadenza: boolean,
-  noteParagraphs: string[]
+  mostraCadenza: boolean
 ): DescriptionBlock[] {
   const blocks: DescriptionBlock[] = [];
   blocks.push({
@@ -167,13 +179,19 @@ export function buildDescriptionBlocks(
   } else {
     blocks.push({ type: "line-plain", text: normalizeLineEndings(serviceLabel) });
   }
-  for (const paragraph of noteParagraphs) {
-    const normalized = normalizeLineEndings(paragraph);
-    blocks.push(
-      isNoteTitle(normalized)
-        ? { type: "note-title", text: normalized }
-        : { type: "note", text: normalized }
-    );
+  if (q.note) {
+    if (isHtmlContent(q.note)) {
+      blocks.push({ type: "note-html", html: q.note });
+    } else {
+      for (const paragraph of buildNoteParagraphs(q.note)) {
+        const normalized = normalizeLineEndings(paragraph);
+        blocks.push(
+          isNoteTitle(normalized)
+            ? { type: "note-title", text: normalized }
+            : { type: "note", text: normalized }
+        );
+      }
+    }
   }
   return blocks;
 }

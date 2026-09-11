@@ -52,6 +52,24 @@ function parseEuroInput(raw: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Converte un testo semplice (a capo con "\n", "\r\n" o "\r") in HTML con
+// <br> per gli a capo, per inserirlo/mostrarlo nell'editor delle note.
+function plainTextToHtml(raw: string): string {
+  return escapeHtml(raw.replace(/\r\n|\r/g, "\n")).replace(/\n/g, "<br>");
+}
+
+// Le note esistenti sono testo semplice; quelle create con l'editor sono
+// già HTML. Le distinguiamo cercando un tag: se non ce n'è, convertiamo gli
+// a capo in <br> così l'editor le mostra allo stesso modo di prima.
+function noteToEditableHtml(raw: string): string {
+  if (/<[a-z][\s\S]*>/i.test(raw)) return raw;
+  return plainTextToHtml(raw);
+}
+
 export function QuoteSiteFieldset({
   index,
   selectedClient,
@@ -93,6 +111,7 @@ export function QuoteSiteFieldset({
   } | null>(null);
   const blockRef = useRef<HTMLDivElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
+  const noteEditableRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const name = (field: string) => `sites.${index}.${field}`;
@@ -110,30 +129,38 @@ export function QuoteSiteFieldset({
       return Number.isFinite(n) ? n : fallback;
     };
     const st = (get("serviceType") as ServiceType) || serviceType;
-    const t = computeListPrice({
-      serviceType: st,
-      ore: num("ore"),
-      spostamento: num("spostamento"),
-      oneShotCount: num("oneShotCount", 1),
-      passSettimanale: st === "PASS_SETTIMANALE" ? num("passSettimanale") : null,
-      passMensile: st === "PASS_MENSILE" ? num("passMensile") : null,
-      oreVetri: num("oreVetri"),
-      passVetriAnno: num("passVetriAnno"),
-      tariffaOraria: num("tariffaOraria"),
-      tariffaVetri: num("tariffaVetri"),
-    });
+    // Arrotondato al centesimo subito dopo il calcolo: con tariffe con i
+    // centesimi (es. 25,13) i prodotti intermedi possono avere residui di
+    // virgola mobile (es. 62,824999999999996 invece di 62,83).
+    const t =
+      Math.round(
+        computeListPrice({
+          serviceType: st,
+          ore: num("ore"),
+          spostamento: num("spostamento"),
+          oneShotCount: num("oneShotCount", 1),
+          passSettimanale: st === "PASS_SETTIMANALE" ? num("passSettimanale") : null,
+          passMensile: st === "PASS_MENSILE" ? num("passMensile") : null,
+          oreVetri: num("oreVetri"),
+          passVetriAnno: num("passVetriAnno"),
+          tariffaOraria: num("tariffaOraria"),
+          tariffaVetri: num("tariffaVetri"),
+        }) * 100
+      ) / 100;
     setTotale(t);
     onTotaleChange(index, t);
 
-    // Il Netto segue il Totale finché non si imposta uno Sconto %; a quel
-    // punto è Totale - Sconto. Fuori dall'edit, senza Netto salvato in
-    // precedenza, parte sempre dal Totale.
+    // Il Netto segue sempre il Totale corrente (ricalcolato da ore/tariffe)
+    // finché non si imposta uno Sconto %; a quel punto è Totale - Sconto.
+    // Non deve mai restare fermo su un Netto salvato in precedenza: se si
+    // modificano ore/tariffe di una sede già esistente senza toccare lo
+    // sconto, il Netto deve seguire il nuovo Totale.
     const scontoRaw = get("scontoPct");
     const scontoNum = scontoRaw.trim() === "" ? null : parseFloat(scontoRaw);
     const n =
       scontoNum != null && Number.isFinite(scontoNum)
         ? Math.round(t * (1 - scontoNum / 100) * 100) / 100
-        : (initial?.prezzoVenduto ?? t);
+        : t;
     setNetto(n);
     const hiddenNetto = blockRef.current!.querySelector<HTMLInputElement>(
       `[name="${name("prezzoVenduto")}"]`
@@ -146,6 +173,38 @@ export function QuoteSiteFieldset({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceType]);
 
+  // L'editor delle Note è un contentEditable non controllato (come una
+  // textarea con defaultValue): il contenuto iniziale si imposta una sola
+  // volta al mount, poi resta il DOM stesso la fonte di verità fino
+  // all'invio del modulo.
+  useEffect(() => {
+    const html = noteToEditableHtml(initial?.note ?? "");
+    if (noteEditableRef.current) noteEditableRef.current.innerHTML = html;
+    if (noteRef.current) noteRef.current.value = html;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function syncNoteValue() {
+    if (noteRef.current && noteEditableRef.current) {
+      noteRef.current.value = noteEditableRef.current.innerHTML;
+    }
+  }
+
+  function applyFormat(command: "bold" | "italic" | "underline") {
+    noteEditableRef.current?.focus();
+    document.execCommand(command);
+    syncNoteValue();
+  }
+
+  // Solo testo semplice in incolla: evita di importare markup/stili
+  // indesiderati copiando da Word o da una pagina web.
+  function handleNotePaste(e: React.ClipboardEvent<HTMLDivElement>) {
+    e.preventDefault();
+    const text = e.clipboardData.getData("text/plain");
+    document.execCommand("insertText", false, text);
+    syncNoteValue();
+  }
+
   function togglePhrase(id: string) {
     setSelectedPhraseIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -156,9 +215,13 @@ export function QuoteSiteFieldset({
     const testi = phrases
       .filter((p) => selectedPhraseIds.includes(p.id))
       .map((p) => p.testo);
-    if (testi.length > 0 && noteRef.current) {
-      const current = noteRef.current.value.trim();
-      noteRef.current.value = [current, ...testi].filter(Boolean).join("\n\n");
+    if (testi.length > 0 && noteEditableRef.current) {
+      const current = noteEditableRef.current.innerHTML.trim();
+      const htmlToInsert = testi.map(plainTextToHtml).join("<br><br>");
+      noteEditableRef.current.innerHTML = current
+        ? `${current}<br><br>${htmlToInsert}`
+        : htmlToInsert;
+      syncNoteValue();
     }
     dialogRef.current?.close();
   }
@@ -376,7 +439,7 @@ export function QuoteSiteFieldset({
               Tariffa vetri €/h
               <input
                 type="number"
-                step="0.5"
+                step="0.01"
                 name={name("tariffaVetri")}
                 defaultValue={initial?.tariffaVetri ?? 30}
                 className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
@@ -391,7 +454,7 @@ export function QuoteSiteFieldset({
           Tariffa oraria €/h
           <input
             type="number"
-            step="0.5"
+            step="0.01"
             name={name("tariffaOraria")}
             defaultValue={initial?.tariffaOraria ?? 25}
             required
@@ -403,7 +466,7 @@ export function QuoteSiteFieldset({
           Tariffa consuntivo €/h
           <input
             type="number"
-            step="0.5"
+            step="0.01"
             name={name("tariffaConsuntivo")}
             defaultValue={initial?.tariffaConsuntivo ?? 25}
             required
@@ -467,16 +530,47 @@ export function QuoteSiteFieldset({
       </div>
 
       <div className="flex flex-col gap-3 border-t border-zinc-200 pt-3">
-        <label className="flex flex-col gap-1 text-sm">
+        <div className="flex flex-col gap-1 text-sm">
           Note
-          <textarea
-            ref={noteRef}
-            name={name("note")}
-            rows={10}
-            defaultValue={initial?.note ?? ""}
-            className="rounded-lg border border-zinc-300 px-3 py-2"
+          <div className="flex gap-1 rounded-t-lg border border-b-0 border-zinc-300 bg-zinc-50 p-1">
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => applyFormat("bold")}
+              className="w-7 rounded px-2 py-1 text-xs font-bold text-zinc-700 hover:bg-zinc-200"
+              title="Grassetto"
+            >
+              B
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => applyFormat("italic")}
+              className="w-7 rounded px-2 py-1 text-xs italic text-zinc-700 hover:bg-zinc-200"
+              title="Corsivo"
+            >
+              I
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => applyFormat("underline")}
+              className="w-7 rounded px-2 py-1 text-xs underline text-zinc-700 hover:bg-zinc-200"
+              title="Sottolineato"
+            >
+              U
+            </button>
+          </div>
+          <div
+            ref={noteEditableRef}
+            contentEditable
+            suppressContentEditableWarning
+            onInput={syncNoteValue}
+            onPaste={handleNotePaste}
+            className="min-h-[220px] rounded-b-lg border border-zinc-300 px-3 py-2 focus:outline-none"
           />
-        </label>
+          <textarea ref={noteRef} name={name("note")} hidden readOnly />
+        </div>
 
         {phrases.length > 0 && (
           <div>

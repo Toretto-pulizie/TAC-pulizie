@@ -198,7 +198,7 @@ export async function GET(
     return new NextResponse(Buffer.from(finalBuf), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="preventivo-${quote.numeroOfferta}.pdf"`,
+        "Content-Disposition": `inline; filename="OFFERTA N. ${quote.numeroOfferta}.pdf"`,
         "Cache-Control": "no-store",
       },
     });
