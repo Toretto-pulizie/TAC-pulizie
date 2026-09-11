@@ -98,9 +98,11 @@ export default async function StampaPreventivoPage({
   // proprie note e il proprio Tipo servizio, del tutto indipendenti.
   const siteRows = quote.sites.map((qs) => {
     const lineItem = buildLineItem(qs, serviceLabels[qs.serviceType]);
-    // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
-    const prezzoNetto = qs.adeguamento ?? qs.prezzoVenduto ?? lineItem.listPrice;
-    // Lo sconto riflette listino → netto (prima dell'adeguamento manuale).
+    // Netto "puro": listino → sconto, senza l'Adeguamento — è il valore
+    // coerente con la percentuale di Sconto mostrata accanto.
+    const netto = qs.prezzoVenduto ?? lineItem.listPrice;
+    // Prezzo finale: l'Adeguamento, se presente, sostituisce il Netto.
+    const prezzoFinale = qs.adeguamento ?? netto;
     const discountPct =
       qs.prezzoVenduto != null
         ? computeDiscountPct(lineItem.listPrice, qs.prezzoVenduto)
@@ -110,10 +112,12 @@ export default async function StampaPreventivoPage({
       serviceLabels[qs.serviceType],
       mostraCadenzaSettings[qs.serviceType]
     );
-    return { lineItem, prezzoNetto, discountPct, blocks };
+    return { lineItem, netto, prezzoFinale, adeguamento: qs.adeguamento, discountPct, blocks };
   });
 
-  const prezzoNetto = siteRows.reduce((sum, r) => sum + r.prezzoNetto, 0);
+  const anySiteHasAdeguamento = siteRows.some((r) => r.adeguamento != null);
+  const prezzoNetto = siteRows.reduce((sum, r) => sum + r.prezzoFinale, 0);
+  const nettoTotale = siteRows.reduce((sum, r) => sum + r.netto, 0);
   const listinoTotale = siteRows.reduce((sum, r) => sum + r.lineItem.prezzoUnitario, 0);
 
   const dataDocumento = new Date().toLocaleDateString("it-IT");
@@ -270,10 +274,28 @@ export default async function StampaPreventivoPage({
         {r.discountPct != null ? `${(r.discountPct * 100).toFixed(0)}%` : ""}
       </td>
       <td className="border-t border-b border-zinc-300 px-2 py-2 text-right">
-        {formatEuro(r.prezzoNetto)}
+        {formatEuro(r.netto)}
       </td>
     </tr>
   ));
+
+  // Riga a parte per l'Adeguamento (solo quando presente): tiene lo Sconto%
+  // sempre coerente col Netto sulla riga sopra, ed espone comunque per
+  // intero il prezzo finale concordato.
+  const adeguamentoRowsEl = siteRows.map((r, i) =>
+    r.adeguamento != null ? (
+      <tr key={`adeg-${i}`}>
+        <td className="border-r border-b border-zinc-300 px-2 py-2 text-zinc-700">
+          {multiSede ? `Adeguamento — ${quote.sites[i].site.name}` : "Adeguamento"}
+        </td>
+        <td className="border-r border-b border-zinc-300 px-2 py-2"></td>
+        <td className="border-r border-b border-zinc-300 px-2 py-2"></td>
+        <td className="border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
+          {formatEuro(r.prezzoFinale)}
+        </td>
+      </tr>
+    ) : null
+  );
 
   const totaleComplessivoRowEl = multiSede ? (
     <tr>
@@ -285,10 +307,26 @@ export default async function StampaPreventivoPage({
       </td>
       <td className="border-r border-t border-b border-zinc-300 px-2 py-2"></td>
       <td className="border-t border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
-        {formatEuro(prezzoNetto)}
+        {formatEuro(nettoTotale)}
       </td>
     </tr>
   ) : null;
+
+  // Come per la singola sede: se almeno una sede ha un Adeguamento, il
+  // totale complessivo "puro" sopra va corretto con una riga finale a parte.
+  const adeguamentoComplessivoRowEl =
+    multiSede && anySiteHasAdeguamento ? (
+      <tr>
+        <td className="border-r border-b border-zinc-300 px-2 py-2 text-right text-zinc-700">
+          Adeguamento complessivo
+        </td>
+        <td className="border-r border-b border-zinc-300 px-2 py-2"></td>
+        <td className="border-r border-b border-zinc-300 px-2 py-2"></td>
+        <td className="border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
+          {formatEuro(prezzoNetto)}
+        </td>
+      </tr>
+    ) : null;
 
   // Un'unica tabella continua: è il browser stesso a decidere dove tagliarla
   // tra una pagina fisica e l'altra (ripetendo il <thead> automaticamente),
@@ -331,9 +369,11 @@ export default async function StampaPreventivoPage({
                 <td className="px-2 py-2"></td>
               </tr>
               {summaryRowsEl[i]}
+              {adeguamentoRowsEl[i]}
             </Fragment>
           ))}
           {totaleComplessivoRowEl}
+          {adeguamentoComplessivoRowEl}
         </tbody>
       </table>
     </div>
