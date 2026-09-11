@@ -14,6 +14,7 @@ import {
 import { TIPO_LABELS } from "@/lib/leaveRequests";
 import { isModuleKey } from "@/lib/modules";
 import { getHomeSettings } from "@/lib/homeSettings";
+import { clientDisplayName } from "@/lib/clients";
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
@@ -312,7 +313,7 @@ export default async function AdminHomePage() {
                             {s.user.name}
                           </p>
                           <p className="text-zinc-500">
-                            {s.site.client.name} — {s.site.name}
+                            {clientDisplayName(s.site.client)} — {s.site.name}
                           </p>
                         </div>
                         <p className="shrink-0 text-zinc-500">

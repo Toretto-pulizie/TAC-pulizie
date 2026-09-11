@@ -2,6 +2,7 @@ import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeTotals, pairSessions } from "@/lib/timeCalc";
 import { toDateInputValue } from "@/lib/dates";
+import { clientDisplayName } from "@/lib/clients";
 import { TimbratureGrid, type SessionRow, type EmployeeTotal } from "./TimbratureGrid";
 
 export default async function TimbraturePage({
@@ -49,7 +50,7 @@ export default async function TimbraturePage({
     endId: s.endId,
     travelId: s.travelId,
     userName: s.user.name,
-    clientName: s.site?.client.name ?? null,
+    clientName: s.site ? clientDisplayName(s.site.client) : null,
     siteName: s.site?.name ?? null,
     dateLabel: s.start.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }),
     startTime: s.start.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }),
@@ -112,7 +113,9 @@ export default async function TimbraturePage({
         sessions={sessionRows}
         employeeTotals={employeeTotals}
         employees={employees.map((e) => ({ id: e.id, name: e.name }))}
-        sites={sites.map((s) => ({ id: s.id, label: `${s.client.name} — ${s.name}` }))}
+        sites={sites
+          .map((s) => ({ id: s.id, label: `${clientDisplayName(s.client)} — ${s.name}` }))
+          .sort((a, b) => a.label.localeCompare(b.label, "it"))}
       />
     </div>
   );

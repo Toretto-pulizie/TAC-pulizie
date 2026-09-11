@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getTodayEntries } from "@/app/actions/timeEntries";
 import { currentStatus } from "@/lib/timeCalc";
 import { startOfDay, addDays, formatDateLabel, formatTime } from "@/lib/dates";
+import { clientDisplayName } from "@/lib/clients";
 import { ClockPanel } from "../ClockPanel";
 
 const typeLabels: Record<string, string> = {
@@ -20,7 +21,6 @@ export default async function TimbraturaPage() {
   const [sites, entries, upcomingShifts] = await Promise.all([
     prisma.site.findMany({
       include: { client: true },
-      orderBy: [{ client: { name: "asc" } }, { name: "asc" }],
     }),
     getTodayEntries(session.userId),
     prisma.shift.findMany({
@@ -32,6 +32,11 @@ export default async function TimbraturaPage() {
       orderBy: { start: "asc" },
     }),
   ]);
+
+  sites.sort((a, b) => {
+    const byClient = clientDisplayName(a.client).localeCompare(clientDisplayName(b.client), "it");
+    return byClient !== 0 ? byClient : a.name.localeCompare(b.name, "it");
+  });
 
   const status = currentStatus(entries);
 
@@ -60,7 +65,7 @@ export default async function TimbraturaPage() {
                   {formatTime(s.end)}
                 </p>
                 <p className="text-zinc-500">
-                  {s.site.client.name} — {s.site.name}
+                  {clientDisplayName(s.site.client)} — {s.site.name}
                 </p>
                 {s.notes && <p className="text-zinc-400">{s.notes}</p>}
               </li>
@@ -72,11 +77,11 @@ export default async function TimbraturaPage() {
       <ClockPanel
         sites={sites.map((s) => ({
           id: s.id,
-          label: `${s.client.name} — ${s.name}`,
+          label: `${clientDisplayName(s.client)} — ${s.name}`,
         }))}
         status={status.status}
         currentSiteLabel={
-          status.site ? `${status.site.client.name} — ${status.site.name}` : null
+          status.site ? `${clientDisplayName(status.site.client)} — ${status.site.name}` : null
         }
       />
 
@@ -97,7 +102,7 @@ export default async function TimbraturaPage() {
                 </p>
                 {e.site && (
                   <p className="text-zinc-500">
-                    {e.site.client.name} — {e.site.name}
+                    {clientDisplayName(e.site.client)} — {e.site.name}
                   </p>
                 )}
               </div>

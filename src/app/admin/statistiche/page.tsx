@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { computeListPrice, computeDiscountPct } from "@/lib/quotes";
 import { computeSiteTotals, computeTotals } from "@/lib/timeCalc";
 import { monthRange, MONTH_LABELS } from "@/lib/dates";
+import { clientDisplayName } from "@/lib/clients";
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
@@ -107,7 +108,7 @@ export default async function StatistichePage() {
       const scostamento = euroConsuntivo - contrattoMensile;
       return {
         id: qs.id,
-        siteLabel: `${qs.site.client.name} — ${qs.site.name}`,
+        siteLabel: `${clientDisplayName(qs.site.client)} — ${qs.site.name}`,
         contrattoMensile,
         oreLavorate,
         euroConsuntivo,

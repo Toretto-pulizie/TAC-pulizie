@@ -9,6 +9,7 @@ import {
   toDateInputValue,
 } from "@/lib/dates";
 import { cadenzaLabel } from "@/lib/quotePrint";
+import { clientDisplayName } from "@/lib/clients";
 import { ShiftForm } from "./ShiftForm";
 import { WeekCalendar } from "./WeekCalendar";
 import { ShiftPlanForm } from "./ShiftPlanForm";
@@ -36,7 +37,6 @@ export default async function PianificazionePage({
       }),
       prisma.site.findMany({
         include: { client: true },
-        orderBy: [{ client: { name: "asc" } }, { name: "asc" }],
       }),
       prisma.shift.findMany({
         where: { start: { gte: weekStart, lte: weekEnd } },
@@ -53,9 +53,13 @@ export default async function PianificazionePage({
           serviceType: { not: "ONE_SHOT" },
         },
         include: { site: { include: { client: true } } },
-        orderBy: { site: { client: { name: "asc" } } },
       }),
     ]);
+
+  sites.sort((a, b) => {
+    const byClient = clientDisplayName(a.client).localeCompare(clientDisplayName(b.client), "it");
+    return byClient !== 0 ? byClient : a.name.localeCompare(b.name, "it");
+  });
 
   const shiftsByDay = days.map((day) =>
     shifts
@@ -66,7 +70,7 @@ export default async function PianificazionePage({
         end: s.end,
         userId: s.userId,
         employeeName: s.user.name,
-        siteLabel: `${s.site.client.name} — ${s.site.name}`,
+        siteLabel: `${clientDisplayName(s.site.client)} — ${s.site.name}`,
         notes: s.notes,
       }))
   );
@@ -104,7 +108,7 @@ export default async function PianificazionePage({
   const shiftPlanItems = shiftPlans.map((p) => ({
     id: p.id,
     employeeName: p.user.name,
-    siteLabel: `${p.site.client.name} — ${p.site.name}`,
+    siteLabel: `${clientDisplayName(p.site.client)} — ${p.site.name}`,
     daysOfWeek: p.daysOfWeek,
     intervalWeeks: p.intervalWeeks,
     startTime: p.startTime,
@@ -113,12 +117,14 @@ export default async function PianificazionePage({
     dataFineLabel: p.dataFine ? p.dataFine.toLocaleDateString("it-IT") : null,
   }));
 
-  const quoteSiteOptions = continuativeQuoteSites.map((qs) => ({
-    id: qs.id,
-    siteId: qs.siteId,
-    serviceType: qs.serviceType,
-    label: `${qs.site.client.name} — ${qs.site.name} (${cadenzaLabel(qs.serviceType, qs.oneShotCount, qs.passSettimanale, qs.passMensile)})`,
-  }));
+  const quoteSiteOptions = continuativeQuoteSites
+    .map((qs) => ({
+      id: qs.id,
+      siteId: qs.siteId,
+      serviceType: qs.serviceType,
+      label: `${clientDisplayName(qs.site.client)} — ${qs.site.name} (${cadenzaLabel(qs.serviceType, qs.oneShotCount, qs.passSettimanale, qs.passMensile)})`,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, "it"));
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
@@ -127,7 +133,7 @@ export default async function PianificazionePage({
             employees={employees.map((e) => ({ id: e.id, name: e.name }))}
             sites={sites.map((s) => ({
               id: s.id,
-              label: `${s.client.name} — ${s.name}`,
+              label: `${clientDisplayName(s.client)} — ${s.name}`,
             }))}
             quoteSites={quoteSiteOptions}
           />
@@ -150,7 +156,7 @@ export default async function PianificazionePage({
           employees={employees.map((e) => ({ id: e.id, name: e.name }))}
           sites={sites.map((s) => ({
             id: s.id,
-            label: `${s.client.name} — ${s.name}`,
+            label: `${clientDisplayName(s.client)} — ${s.name}`,
             capienza: s.capienza,
           }))}
           occupancy={occupancy}

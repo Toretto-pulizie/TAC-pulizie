@@ -2,6 +2,7 @@ import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeSiteTotals } from "@/lib/timeCalc";
 import { MONTH_LABELS, monthRange } from "@/lib/dates";
+import { clientDisplayName } from "@/lib/clients";
 import { ConsuntiviList } from "./ConsuntiviList";
 
 function formatEuro(n: number) {
@@ -25,7 +26,6 @@ export default async function ConsuntiviPage({
     prisma.quoteSite.findMany({
       where: { quote: { status: "ACCETTATO" } },
       include: { site: { include: { client: true } } },
-      orderBy: [{ site: { client: { name: "asc" } } }],
     }),
     prisma.timeEntry.findMany({
       where: { timestamp: { gte: start, lte: end } },
@@ -38,26 +38,28 @@ export default async function ConsuntiviPage({
   // Ogni sede di un preventivo accettato è una riga indipendente: ognuna ha
   // il proprio contratto (Netto o Adeguamento, se presente) confrontato con
   // le ore effettivamente lavorate su quella sede.
-  const rows = quoteSites.map((qs) => {
-    const totals = siteTotals.get(qs.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
-    const contrattoMensile = qs.adeguamento ?? qs.prezzoVenduto ?? 0;
-    const oreLavorate = totals.workMinutes / 60;
-    const oreSpostamento = totals.travelMinutes / 60;
-    const euroConsuntivo = oreLavorate * qs.tariffaConsuntivo;
-    const scostamento = euroConsuntivo - contrattoMensile;
-    const scostamentoPct = contrattoMensile !== 0 ? scostamento / contrattoMensile : null;
-    return {
-      id: qs.id,
-      siteLabel: `${qs.site.client.name} — ${qs.site.name}`,
-      contrattoMensile,
-      oreLavorate,
-      oreSpostamento,
-      tariffaConsuntivo: qs.tariffaConsuntivo,
-      euroConsuntivo,
-      scostamento,
-      scostamentoPct,
-    };
-  });
+  const rows = quoteSites
+    .map((qs) => {
+      const totals = siteTotals.get(qs.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
+      const contrattoMensile = qs.adeguamento ?? qs.prezzoVenduto ?? 0;
+      const oreLavorate = totals.workMinutes / 60;
+      const oreSpostamento = totals.travelMinutes / 60;
+      const euroConsuntivo = oreLavorate * qs.tariffaConsuntivo;
+      const scostamento = euroConsuntivo - contrattoMensile;
+      const scostamentoPct = contrattoMensile !== 0 ? scostamento / contrattoMensile : null;
+      return {
+        id: qs.id,
+        siteLabel: `${clientDisplayName(qs.site.client)} — ${qs.site.name}`,
+        contrattoMensile,
+        oreLavorate,
+        oreSpostamento,
+        tariffaConsuntivo: qs.tariffaConsuntivo,
+        euroConsuntivo,
+        scostamento,
+        scostamentoPct,
+      };
+    })
+    .sort((a, b) => a.siteLabel.localeCompare(b.siteLabel, "it"));
 
   const totContratto = rows.reduce((s, r) => s + r.contrattoMensile, 0);
   const totConsuntivo = rows.reduce((s, r) => s + r.euroConsuntivo, 0);

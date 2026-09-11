@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { EditSiteForm } from "./EditSiteForm";
+import { clientDisplayName } from "@/lib/clients";
 
 export default async function EditSitePage({
   params,
@@ -22,7 +23,7 @@ export default async function EditSitePage({
       <h1 className="text-lg font-semibold text-zinc-900">
         Modifica cantiere
       </h1>
-      <p className="-mt-4 text-sm text-zinc-500">Cliente: {site.client.name}</p>
+      <p className="-mt-4 text-sm text-zinc-500">Cliente: {clientDisplayName(site.client)}</p>
       <EditSiteForm
         id={site.id}
         name={site.name}

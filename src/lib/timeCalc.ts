@@ -234,7 +234,17 @@ export function startOfToday() {
 
 type EntryWithSite = {
   type: EntryType;
-  site: { id: string; name: string; client: { name: string } } | null;
+  site: {
+    id: string;
+    name: string;
+    client: {
+      tipo: string;
+      nome: string | null;
+      cognome: string | null;
+      ragioneSociale: string | null;
+      name: string;
+    };
+  } | null;
 };
 
 export function currentStatus<T extends EntryWithSite>(entries: T[]) {

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { computeListPrice, computeSoldAnnual, computeDiscountPct } from "@/lib/quotes";
 import { getServiceTypeLabels, getServiceTypeAbbreviazioni } from "@/lib/serviceTypeLabels";
 import { formatSedeAddress } from "@/lib/quotePrint";
+import { clientDisplayName } from "@/lib/clients";
 import { QuoteForm } from "./QuoteForm";
 import { CollapsibleForm } from "@/app/CollapsibleForm";
 import { QuoteList } from "./QuoteList";
@@ -32,7 +33,6 @@ export default async function PreventiviPage({
   ] = await Promise.all([
       prisma.client.findMany({
         include: { sites: true },
-        orderBy: { name: "asc" },
       }),
       prisma.quote.findMany({
         include: { client: true, sites: { include: { site: true } } },
@@ -55,13 +55,18 @@ export default async function PreventiviPage({
       prisma.attachment.findMany({ orderBy: { createdAt: "asc" } }),
     ]);
 
-  const clients = clientsRaw.map((c) => ({
-    id: c.id,
-    name: c.name,
-    baseAddress:
-      [c.indirizzo, c.cap, c.citta, c.provincia].filter(Boolean).join(", ") || null,
-    sites: c.sites.map((s) => ({ id: s.id, name: s.name, address: s.address })),
-  }));
+  // Per i Privati la denominazione mostrata (e l'ordinamento) è sempre
+  // "Cognome Nome", coerente con l'elenco Clienti — indipendentemente da come
+  // è stato salvato in origine il campo name.
+  const clients = clientsRaw
+    .map((c) => ({
+      id: c.id,
+      name: clientDisplayName(c),
+      baseAddress:
+        [c.indirizzo, c.cap, c.citta, c.provincia].filter(Boolean).join(", ") || null,
+      sites: c.sites.map((s) => ({ id: s.id, name: s.name, address: s.address })),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "it"));
 
   const editingQuote = editingQuoteRaw
     ? {
@@ -160,7 +165,7 @@ export default async function PreventiviPage({
       id: q.id,
       numeroOfferta: q.numeroOfferta,
       status: q.status,
-      clientName: q.client.name,
+      clientName: clientDisplayName(q.client),
       tipoServizio,
       siteCount,
       perSite,

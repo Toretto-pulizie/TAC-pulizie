@@ -7,6 +7,7 @@ import { requireModule } from "@/lib/dal";
 import { geocodeAddress } from "@/lib/geocode";
 import { computeListPrice } from "@/lib/quotes";
 import { notifyAdmins } from "@/lib/notifications";
+import { clientDisplayName } from "@/lib/clients";
 
 const QuoteSchema = z.object({
   clientId: z.string().trim().min(1, "Seleziona un cliente"),
@@ -280,7 +281,7 @@ export async function setQuoteStatus(
   if (status === "ACCETTATO" || status === "RIFIUTATO") {
     const sedi = quote.sites.map((s) => s.site.name).join(", ");
     await notifyAdmins(
-      `Preventivo ${status === "ACCETTATO" ? "accettato" : "rifiutato"}: ${quote.client.name} — ${sedi}`,
+      `Preventivo ${status === "ACCETTATO" ? "accettato" : "rifiutato"}: ${clientDisplayName(quote.client)} — ${sedi}`,
       "/admin/preventivi"
     );
   }
