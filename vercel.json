@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/genera-turni",
+      "schedule": "0 4 * * *"
+    }
+  ]
+}

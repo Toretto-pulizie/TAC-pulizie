@@ -74,6 +74,7 @@ model User {
   createdAt    DateTime    @default(now())
   timeEntries  TimeEntry[]
   shifts       Shift[]
+  shiftPlans   ShiftPlan[]
   leaveRequests LeaveRequest[]
   notifications Notification[]
 }
@@ -141,6 +142,7 @@ model Site {
   createdAt   DateTime    @default(now())
   timeEntries TimeEntry[]
   shifts      Shift[]
+  shiftPlans  ShiftPlan[]
   quoteSites  QuoteSite[]
 }
 
@@ -181,6 +183,7 @@ model QuoteSite {
   prezzoVenduto     Float?
   adeguamento       Float?
   note              String?
+  shiftPlans        ShiftPlan[]
 
   @@index([siteId])
   @@index([quoteId])
@@ -284,18 +287,49 @@ model QuoteAttachment {
 }
 
 model Shift {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String     @id @default(cuid())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  site      Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
   siteId    String
+  plan      ShiftPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  planId    String?
   start     DateTime
   end       DateTime
   notes     String?
-  createdAt DateTime @default(now())
+  createdAt DateTime   @default(now())
 
+  @@unique([planId, start])
   @@index([userId, start])
   @@index([siteId, start])
+}
+
+// Regola di ricorrenza per generare automaticamente i turni di un servizio
+// continuativo (Passaggio settimanale/mensile). Un job pianificato (vedi
+// src/app/api/cron/genera-turni) materializza i singoli Shift a partire da
+// questa regola; modificare/eliminare un singolo Shift generato non tocca
+// il piano, che continua a generarne altri in futuro.
+model ShiftPlan {
+  id            String     @id @default(cuid())
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  site          Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId        String
+  quoteSite     QuoteSite? @relation(fields: [quoteSiteId], references: [id], onDelete: SetNull)
+  quoteSiteId   String?
+  daysOfWeek    Int[]
+  intervalWeeks Int        @default(1)
+  startTime     String
+  endTime       String
+  dataInizio    DateTime
+  dataFine      DateTime?
+  note          String?
+  createdAt     DateTime   @default(now())
+  shifts        Shift[]
+
+  @@index([siteId])
+  @@index([userId])
+  @@index([quoteSiteId])
 }
 
 model TimeEntry {

@@ -8,8 +8,12 @@ import {
   startOfWeek,
   toDateInputValue,
 } from "@/lib/dates";
+import { cadenzaLabel } from "@/lib/quotePrint";
 import { ShiftForm } from "./ShiftForm";
 import { WeekCalendar } from "./WeekCalendar";
+import { ShiftPlanForm } from "./ShiftPlanForm";
+import { ShiftPlanRow } from "./ShiftPlanRow";
+import { CollapsibleForm } from "@/app/CollapsibleForm";
 
 export default async function PianificazionePage({
   searchParams,
@@ -24,21 +28,34 @@ export default async function PianificazionePage({
   const weekEnd = endOfDay(addDays(weekStart, 6));
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  const [employees, sites, shifts] = await Promise.all([
-    prisma.user.findMany({
-      where: { active: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.site.findMany({
-      include: { client: true },
-      orderBy: [{ client: { name: "asc" } }, { name: "asc" }],
-    }),
-    prisma.shift.findMany({
-      where: { start: { gte: weekStart, lte: weekEnd } },
-      include: { user: true, site: { include: { client: true } } },
-      orderBy: { start: "asc" },
-    }),
-  ]);
+  const [employees, sites, shifts, shiftPlans, continuativeQuoteSites] =
+    await Promise.all([
+      prisma.user.findMany({
+        where: { active: true },
+        orderBy: { name: "asc" },
+      }),
+      prisma.site.findMany({
+        include: { client: true },
+        orderBy: [{ client: { name: "asc" } }, { name: "asc" }],
+      }),
+      prisma.shift.findMany({
+        where: { start: { gte: weekStart, lte: weekEnd } },
+        include: { user: true, site: { include: { client: true } } },
+        orderBy: { start: "asc" },
+      }),
+      prisma.shiftPlan.findMany({
+        include: { user: true, site: { include: { client: true } } },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.quoteSite.findMany({
+        where: {
+          quote: { status: "ACCETTATO" },
+          serviceType: { not: "ONE_SHOT" },
+        },
+        include: { site: { include: { client: true } } },
+        orderBy: { site: { client: { name: "asc" } } },
+      }),
+    ]);
 
   const shiftsByDay = days.map((day) =>
     shifts
@@ -84,8 +101,51 @@ export default async function PianificazionePage({
     }
   }
 
+  const shiftPlanItems = shiftPlans.map((p) => ({
+    id: p.id,
+    employeeName: p.user.name,
+    siteLabel: `${p.site.client.name} — ${p.site.name}`,
+    daysOfWeek: p.daysOfWeek,
+    intervalWeeks: p.intervalWeeks,
+    startTime: p.startTime,
+    endTime: p.endTime,
+    dataInizioLabel: p.dataInizio.toLocaleDateString("it-IT"),
+    dataFineLabel: p.dataFine ? p.dataFine.toLocaleDateString("it-IT") : null,
+  }));
+
+  const quoteSiteOptions = continuativeQuoteSites.map((qs) => ({
+    id: qs.id,
+    siteId: qs.siteId,
+    serviceType: qs.serviceType,
+    label: `${qs.site.client.name} — ${qs.site.name} (${cadenzaLabel(qs.serviceType, qs.oneShotCount, qs.passSettimanale, qs.passMensile)})`,
+  }));
+
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
+        <CollapsibleForm label="Nuovo turno ricorrente">
+          <ShiftPlanForm
+            employees={employees.map((e) => ({ id: e.id, name: e.name }))}
+            sites={sites.map((s) => ({
+              id: s.id,
+              label: `${s.client.name} — ${s.name}`,
+            }))}
+            quoteSites={quoteSiteOptions}
+          />
+        </CollapsibleForm>
+
+        {shiftPlanItems.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-zinc-700">
+              Turni ricorrenti attivi
+            </p>
+            <ul className="flex flex-col gap-2">
+              {shiftPlanItems.map((p) => (
+                <ShiftPlanRow key={p.id} plan={p} />
+              ))}
+            </ul>
+          </div>
+        )}
+
         <ShiftForm
           employees={employees.map((e) => ({ id: e.id, name: e.name }))}
           sites={sites.map((s) => ({

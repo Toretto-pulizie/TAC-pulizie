@@ -306,13 +306,29 @@ function ManualSessionForm({
     const siteId = String(formData.get("siteId") || "");
     const date = String(formData.get("date") || "");
     const startTime = String(formData.get("startTime") || "");
-    const endTime = String(formData.get("endTime") || "");
+    const oreLavorate = String(formData.get("oreLavorate") || "").trim();
+    let endTime = String(formData.get("endTime") || "").trim();
     const travelMinutes = Number(formData.get("travelMinutes") || 0);
     const note = String(formData.get("note") || "");
 
-    if (!userId || !siteId || !date || !startTime || !endTime) {
-      setError("Compila collaboratore, sede, data e orari");
+    if (!userId || !siteId || !date || !startTime) {
+      setError("Compila collaboratore, sede, data e inizio");
       return;
+    }
+
+    // Se non si conosce l'orario di fine esatto, basta indicare le ore
+    // lavorate: la fine si calcola da sola a partire dall'inizio.
+    if (!endTime) {
+      if (!oreLavorate) {
+        setError("Indica l'orario di fine oppure le ore lavorate");
+        return;
+      }
+      const mins = parseDurationMinutes(oreLavorate);
+      if (mins == null || mins <= 0) {
+        setError("Ore lavorate non valide (usa es. 2:30 oppure 150)");
+        return;
+      }
+      endTime = addMinutesToTime(startTime, mins);
     }
 
     startTransition(async () => {
@@ -369,8 +385,17 @@ function ManualSessionForm({
         <input type="time" name="startTime" required className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
       </label>
       <label className="flex flex-col gap-1 text-xs">
-        Fine
-        <input type="time" name="endTime" required className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+        Fine (se nota)
+        <input type="time" name="endTime" className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+      </label>
+      <label className="flex flex-col gap-1 text-xs">
+        oppure Ore lavorate
+        <input
+          type="text"
+          name="oreLavorate"
+          placeholder="es. 2:30 o 150"
+          className="w-28 rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
+        />
       </label>
       <label className="flex flex-col gap-1 text-xs">
         Spostamento (min)
