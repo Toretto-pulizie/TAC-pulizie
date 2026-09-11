@@ -340,6 +340,10 @@ model TimeEntry {
   siteId    String?
   type      EntryType
   timestamp DateTime  @default(now())
+  // Vero quando questo orario è solo un segnaposto (inserimento manuale con
+  // sole "Ore lavorate", senza Inizio/Fine noti): in griglia va mostrato
+  // vuoto finché non viene impostato esplicitamente un orario reale.
+  orarioStimato Boolean @default(false)
   lat       Float?
   lng       Float?
   note      String?

@@ -206,21 +206,31 @@ export function QuoteSiteFieldset({
                   Usa indirizzo cliente: {selectedClient.baseAddress}
                 </option>
               )}
-              <option value="__custom__">Altro (nuovo indirizzo)</option>
+              <option value="__custom__">Altro (nuova sede)</option>
             </select>
           </label>
         )}
 
         {siteSelection === "__custom__" && (
-          <label className="flex flex-col gap-1 text-sm">
-            Nuovo indirizzo
-            <input
-              name={name("nuovoIndirizzo")}
-              required
-              placeholder="Via, numero civico, città"
-              className="rounded-lg border border-zinc-300 px-3 py-2"
-            />
-          </label>
+          <>
+            <label className="flex flex-col gap-1 text-sm">
+              Nome sede
+              <input
+                name={name("nuovoNomeSede")}
+                placeholder="Es. Sede legale"
+                className="rounded-lg border border-zinc-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              Indirizzo
+              <input
+                name={name("nuovoIndirizzo")}
+                required
+                placeholder="Via, numero civico, città"
+                className="rounded-lg border border-zinc-300 px-3 py-2"
+              />
+            </label>
+          </>
         )}
 
         <label className="flex min-w-[14rem] flex-col gap-1 text-sm">

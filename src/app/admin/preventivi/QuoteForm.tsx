@@ -10,6 +10,7 @@ import {
   type SiteBlockInitial,
   type Phrase,
 } from "./QuoteSiteFieldset";
+import { AddSiteDialog } from "./AddSiteDialog";
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
@@ -120,6 +121,15 @@ export function QuoteForm({
             ))}
           </select>
         </label>
+        {selectedClient && (
+          <div className="pt-6">
+            <AddSiteDialog
+              clientId={selectedClient.id}
+              clientName={selectedClient.name}
+              onCreated={() => router.refresh()}
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">

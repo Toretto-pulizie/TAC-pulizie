@@ -60,6 +60,11 @@ export async function updateSessionTime(input: {
   endTime: string | null;
   travelMinutes: number;
   note: string;
+  // Vero solo quando l'utente ha scritto direttamente quell'orario (celle
+  // Inizio/Fine), non quando deriva da un altro campo (es. Ore lavoro): solo
+  // in quel caso l'orario smette di essere "stimato" (mostrato vuoto).
+  startTimeIsLiteral?: boolean;
+  endTimeIsLiteral?: boolean;
 }) {
   await requireModule("timbrature");
 
@@ -81,14 +86,21 @@ export async function updateSessionTime(input: {
 
   await prisma.timeEntry.update({
     where: { id: input.startId },
-    data: { timestamp: newStart, note: input.note.trim() || null },
+    data: {
+      timestamp: newStart,
+      note: input.note.trim() || null,
+      ...(input.startTimeIsLiteral ? { orarioStimato: false } : {}),
+    },
   });
 
   if (newEnd) {
     if (input.endId) {
       await prisma.timeEntry.update({
         where: { id: input.endId },
-        data: { timestamp: newEnd },
+        data: {
+          timestamp: newEnd,
+          ...(input.endTimeIsLiteral ? { orarioStimato: false } : {}),
+        },
       });
     } else {
       await prisma.timeEntry.create({
@@ -97,6 +109,7 @@ export async function updateSessionTime(input: {
           siteId: startEntry.siteId,
           type: "WORK_END",
           timestamp: newEnd,
+          orarioStimato: !input.endTimeIsLiteral,
         },
       });
     }
@@ -142,6 +155,11 @@ export async function createManualSession(input: {
   endTime: string;
   travelMinutes: number;
   note: string;
+  // Vero solo se l'utente ha scritto letteralmente quell'orario (non se è
+  // stato dedotto dalle sole Ore lavorate): in tal caso resta "stimato" e va
+  // mostrato vuoto in griglia finché non viene impostato esplicitamente.
+  startTimeProvided: boolean;
+  endTimeProvided: boolean;
 }) {
   await requireModule("timbrature");
 
@@ -167,6 +185,7 @@ export async function createManualSession(input: {
     siteId: string;
     type: EntryType;
     timestamp: Date;
+    orarioStimato?: boolean;
     note?: string | null;
   }[] = [];
 
@@ -176,6 +195,7 @@ export async function createManualSession(input: {
       siteId: input.siteId,
       type: "TRAVEL_START",
       timestamp: new Date(start.getTime() - input.travelMinutes * 60000),
+      orarioStimato: !input.startTimeProvided,
     });
   }
   data.push({
@@ -183,6 +203,7 @@ export async function createManualSession(input: {
     siteId: input.siteId,
     type: "WORK_START",
     timestamp: start,
+    orarioStimato: !input.startTimeProvided,
     note: input.note.trim() || null,
   });
   data.push({
@@ -190,6 +211,7 @@ export async function createManualSession(input: {
     siteId: input.siteId,
     type: "WORK_END",
     timestamp: end,
+    orarioStimato: !input.endTimeProvided,
   });
 
   await prisma.timeEntry.createMany({ data });

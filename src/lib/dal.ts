@@ -61,3 +61,20 @@ export async function requireModule(moduleKey: ModuleKey) {
   }
   return session;
 }
+
+// Come requireModule, ma passa se l'utente ha almeno uno dei moduli indicati
+// — utile per azioni condivise tra più pagine (es. creare una sede sia da
+// Clienti che dal modulo Preventivi).
+export async function requireAnyModule(...moduleKeys: ModuleKey[]) {
+  const session = await verifySession();
+  if (session.role === "ADMIN") return session;
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { allowedModules: true },
+  });
+  if (!moduleKeys.some((key) => user?.allowedModules.includes(key))) {
+    redirect("/dipendente");
+  }
+  return session;
+}

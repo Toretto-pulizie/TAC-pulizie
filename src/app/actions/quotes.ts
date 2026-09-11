@@ -17,6 +17,7 @@ const QuoteSiteSchema = z
   .object({
     siteSelection: z.string().trim().min(1, "Seleziona una sede"),
     nuovoIndirizzo: z.string().trim().optional(),
+    nuovoNomeSede: z.string().trim().optional(),
     tipoPrestazione: z.string().trim().min(1, "Seleziona il tipo di servizio"),
     serviceType: z.enum(["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE"]),
     ore: z.coerce.number().min(0, "Ore non valide"),
@@ -63,6 +64,7 @@ function parseSiteBlockFormData(formData: FormData, i: number) {
   return {
     siteSelection: get("siteSelection"),
     nuovoIndirizzo: get("nuovoIndirizzo") || undefined,
+    nuovoNomeSede: get("nuovoNomeSede") || undefined,
     tipoPrestazione: get("tipoPrestazione"),
     serviceType: get("serviceType"),
     ore: get("ore"),
@@ -85,7 +87,8 @@ function parseSiteBlockFormData(formData: FormData, i: number) {
 async function resolveSiteId(
   clientId: string,
   siteSelection: string,
-  nuovoIndirizzo: string | undefined
+  nuovoIndirizzo: string | undefined,
+  nuovoNomeSede: string | undefined
 ): Promise<string> {
   if (siteSelection !== "__base__" && siteSelection !== "__custom__") {
     return siteSelection;
@@ -112,7 +115,10 @@ async function resolveSiteId(
   const site = await prisma.site.create({
     data: {
       clientId,
-      name: siteSelection === "__base__" ? "Sede" : "Nuova sede",
+      name:
+        siteSelection === "__base__"
+          ? "Sede"
+          : nuovoNomeSede?.trim() || "Nuova sede",
       address,
       lat: coords?.lat ?? null,
       lng: coords?.lng ?? null,
@@ -170,7 +176,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
 
     let siteId: string;
     try {
-      siteId = await resolveSiteId(clientId, d.siteSelection, d.nuovoIndirizzo);
+      siteId = await resolveSiteId(clientId, d.siteSelection, d.nuovoIndirizzo, d.nuovoNomeSede);
     } catch (e) {
       return { error: e instanceof Error ? e.message : "Errore nella sede" };
     }

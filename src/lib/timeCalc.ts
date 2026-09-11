@@ -121,6 +121,7 @@ type RawSessionEntry<TSite, TUser> = {
   site: TSite | null;
   type: EntryType;
   timestamp: Date;
+  orarioStimato: boolean;
   lat: number | null;
   lng: number | null;
   note: string | null;
@@ -134,6 +135,8 @@ export type WorkSession<TSite, TUser> = {
   site: TSite | null;
   start: Date;
   end: Date | null;
+  startEstimated: boolean;
+  endEstimated: boolean;
   lat: number | null;
   lng: number | null;
   note: string | null;
@@ -180,6 +183,8 @@ export function pairSessions<TSite, TUser>(
             site: pendingWork.site,
             start: pendingWork.timestamp,
             end: e.timestamp,
+            startEstimated: pendingWork.orarioStimato,
+            endEstimated: e.orarioStimato,
             lat: pendingWork.lat,
             lng: pendingWork.lng,
             note: pendingWork.note,
@@ -201,6 +206,8 @@ export function pairSessions<TSite, TUser>(
         site: pendingWork.site,
         start: pendingWork.timestamp,
         end: null,
+        startEstimated: pendingWork.orarioStimato,
+        endEstimated: false,
         lat: pendingWork.lat,
         lng: pendingWork.lng,
         note: pendingWork.note,

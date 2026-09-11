@@ -56,6 +56,8 @@ export default async function TimbraturePage({
     endTime: s.end
       ? s.end.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
       : null,
+    startEstimated: s.startEstimated,
+    endEstimated: s.endEstimated,
     workMinutes: s.end ? Math.round((s.end.getTime() - s.start.getTime()) / 60000) : null,
     travelMinutes: s.travelMinutes,
     gps: s.lat != null && s.lng != null,

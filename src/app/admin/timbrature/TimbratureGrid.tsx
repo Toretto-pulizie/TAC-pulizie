@@ -14,6 +14,8 @@ export type SessionRow = {
   dateLabel: string;
   startTime: string;
   endTime: string | null;
+  startEstimated: boolean;
+  endEstimated: boolean;
   workMinutes: number | null;
   travelMinutes: number;
   gps: boolean;
@@ -47,7 +49,8 @@ function formatHM(minutes: number) {
   return `${h}h ${String(m).padStart(2, "0")}m`;
 }
 
-// Accetta "2:30" (ore:minuti) o un numero semplice di minuti (es. "150").
+// Per lo Spostamento: accetta "2:30" (ore:minuti) o un numero semplice di
+// minuti (es. "45"), coerente con l'etichetta "Spostamento (min)".
 function parseDurationMinutes(raw: string): number | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
@@ -58,6 +61,21 @@ function parseDurationMinutes(raw: string): number | null {
   }
   const n = Number(trimmed.replace(",", "."));
   return Number.isNaN(n) ? null : Math.round(n);
+}
+
+// Per le Ore lavorate: accetta "2:30" (ore:minuti) o un numero decimale di
+// ORE (es. "1.5" o "1,5" = un'ora e mezza) — qui, a differenza dello
+// spostamento, un numero semplice è in ore, non in minuti.
+function parseHoursInput(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (trimmed.includes(":")) {
+    const [h, m] = trimmed.split(":").map((n) => Number(n));
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    return h * 60 + m;
+  }
+  const n = Number(trimmed.replace(",", "."));
+  return Number.isNaN(n) ? null : Math.round(n * 60);
 }
 
 function minutesToHM(minutes: number) {
@@ -109,9 +127,9 @@ export function TimbratureGrid({
     setError(null);
     const value =
       field === "start"
-        ? s.startTime
+        ? (s.startEstimated ? "" : s.startTime)
         : field === "end"
-          ? (s.endTime ?? "")
+          ? (s.endEstimated ? "" : (s.endTime ?? ""))
           : field === "work"
             ? (s.workMinutes != null ? minutesToHM(s.workMinutes) : "")
             : field === "travel"
@@ -126,6 +144,12 @@ export function TimbratureGrid({
     const value = editing.value;
     setEditing(null);
 
+    // Lasciare vuota una cella Inizio/Fine mostrata come "—" (stimata) è
+    // solo un annulla, non una modifica: non c'è un orario reale da
+    // cancellare.
+    if (field === "start" && value.trim() === "") return;
+    if (field === "end" && value.trim() === "" && s.endEstimated) return;
+
     let startTime = s.startTime;
     let endTime = s.endTime;
     let travelMinutes = s.travelMinutes;
@@ -135,9 +159,9 @@ export function TimbratureGrid({
     if (field === "end") endTime = value || null;
     if (field === "note") note = value;
     if (field === "work") {
-      const mins = parseDurationMinutes(value);
+      const mins = parseHoursInput(value);
       if (mins == null) {
-        setError("Durata non valida (usa es. 2:30 oppure 150)");
+        setError("Durata non valida (usa es. 2:30 oppure 1,5)");
         return;
       }
       endTime = addMinutesToTime(startTime, mins);
@@ -151,11 +175,16 @@ export function TimbratureGrid({
       travelMinutes = mins;
     }
 
+    const startTimeIsLiteral = field === "start";
+    const endTimeIsLiteral = field === "end" && endTime !== null;
+
     if (
       startTime === s.startTime &&
       endTime === s.endTime &&
       travelMinutes === s.travelMinutes &&
-      note === s.note
+      note === s.note &&
+      !(startTimeIsLiteral && s.startEstimated) &&
+      !(endTimeIsLiteral && s.endEstimated)
     ) {
       return;
     }
@@ -169,6 +198,8 @@ export function TimbratureGrid({
         endTime,
         travelMinutes,
         note,
+        startTimeIsLiteral,
+        endTimeIsLiteral,
       });
       if (result && "error" in result) {
         setError(result.error ?? "Errore durante il salvataggio");
@@ -300,35 +331,46 @@ function ManualSessionForm({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  // Se non si conosce nemmeno l'orario di inizio, si usa questo come
+  // convenzione: conta solo la durata inserita in "Ore lavorate", l'orario
+  // effettivo non è noto e viene solo abbozzato per poter salvare comunque
+  // un intervallo start/end nel database.
+  const DEFAULT_START_TIME = "07:00";
+
   function handleSubmit(formData: FormData) {
     setError(null);
     const userId = String(formData.get("userId") || "");
     const siteId = String(formData.get("siteId") || "");
     const date = String(formData.get("date") || "");
-    const startTime = String(formData.get("startTime") || "");
     const oreLavorate = String(formData.get("oreLavorate") || "").trim();
+    const startTimeProvided = String(formData.get("startTime") || "").trim() !== "";
+    const endTimeProvided = String(formData.get("endTime") || "").trim() !== "";
+    const startTime = String(formData.get("startTime") || "").trim() || (oreLavorate ? DEFAULT_START_TIME : "");
     let endTime = String(formData.get("endTime") || "").trim();
     const travelMinutes = Number(formData.get("travelMinutes") || 0);
     const note = String(formData.get("note") || "");
 
-    if (!userId || !siteId || !date || !startTime) {
-      setError("Compila collaboratore, sede, data e inizio");
+    if (!userId || !siteId || !date) {
+      setError("Compila collaboratore, sede e data");
       return;
     }
 
-    // Se non si conosce l'orario di fine esatto, basta indicare le ore
-    // lavorate: la fine si calcola da sola a partire dall'inizio.
+    // Serve almeno una delle due coppie: Inizio+Fine, oppure Ore lavorate
+    // (che da sole bastano — Inizio, se non indicato, si convenziona).
     if (!endTime) {
       if (!oreLavorate) {
         setError("Indica l'orario di fine oppure le ore lavorate");
         return;
       }
-      const mins = parseDurationMinutes(oreLavorate);
+      const mins = parseHoursInput(oreLavorate);
       if (mins == null || mins <= 0) {
-        setError("Ore lavorate non valide (usa es. 2:30 oppure 150)");
+        setError("Ore lavorate non valide (usa es. 2:30 oppure 1,5)");
         return;
       }
       endTime = addMinutesToTime(startTime, mins);
+    } else if (!startTime) {
+      setError("Indica l'orario di inizio oppure le ore lavorate");
+      return;
     }
 
     startTransition(async () => {
@@ -340,6 +382,8 @@ function ManualSessionForm({
         endTime,
         travelMinutes,
         note,
+        startTimeProvided,
+        endTimeProvided,
       });
       if (result && "error" in result) {
         setError(result.error ?? "Errore durante il salvataggio");
@@ -381,20 +425,20 @@ function ManualSessionForm({
         <input type="date" name="date" required className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
       </label>
       <label className="flex flex-col gap-1 text-xs">
-        Inizio
-        <input type="time" name="startTime" required className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+        Inizio (se noto)
+        <input type="time" name="startTime" className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
       </label>
       <label className="flex flex-col gap-1 text-xs">
         Fine (se nota)
         <input type="time" name="endTime" className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
       </label>
       <label className="flex flex-col gap-1 text-xs">
-        oppure Ore lavorate
+        oppure solo Ore lavorate
         <input
           type="text"
           name="oreLavorate"
-          placeholder="es. 2:30 o 150"
-          className="w-28 rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
+          placeholder="es. 2:30 o 1,5"
+          className="w-32 rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
         />
       </label>
       <label className="flex flex-col gap-1 text-xs">
@@ -418,6 +462,11 @@ function ManualSessionForm({
       >
         {isPending ? "Salvataggio..." : "Aggiungi"}
       </button>
+      <p className="w-full text-[11px] text-zinc-400">
+        Se non conosci gli orari esatti, compila solo "Ore lavorate": Inizio e
+        Fine restano vuoti (—) in griglia finché non li imposti tu stesso
+        cliccandoci sopra; contano comunque ai fini del calcolo delle ore.
+      </p>
       {error && <p className="w-full text-xs text-red-600">{error}</p>}
     </form>
   );
@@ -493,10 +542,10 @@ function GroupBlock({
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">{s.dateLabel}</td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5">
-              {editableCell(s, "start", s.startTime, "time")}
+              {editableCell(s, "start", s.startEstimated ? "—" : s.startTime, "time")}
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5">
-              {editableCell(s, "end", s.endTime ?? "—", "time")}
+              {editableCell(s, "end", s.endEstimated ? "—" : (s.endTime ?? "—"), "time")}
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5">
               {editableCell(

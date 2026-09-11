@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, requireModule } from "@/lib/dal";
+import { requireAdmin, requireModule, requireAnyModule } from "@/lib/dal";
 import { geocodeAddress, lookupCapFromAddress } from "@/lib/geocode";
 import { lookupPartitaIva } from "@/lib/viesLookup";
 import { isModuleKey } from "@/lib/modules";
@@ -346,7 +346,9 @@ const SiteSchema = z.object({
 });
 
 export async function createSite(_prevState: unknown, formData: FormData) {
-  await requireModule("clienti");
+  // Richiamabile sia da Clienti sia dal modulo preventivi (bottone "+
+  // Aggiungi sede" accanto al Cliente selezionato).
+  await requireAnyModule("clienti", "preventivi");
 
   const parsed = SiteSchema.safeParse({
     clientId: formData.get("clientId"),
@@ -361,12 +363,13 @@ export async function createSite(_prevState: unknown, formData: FormData) {
 
   const coords = await geocodeAddress(parsed.data.address);
 
-  await prisma.site.create({
+  const site = await prisma.site.create({
     data: { ...parsed.data, lat: coords?.lat ?? null, lng: coords?.lng ?? null },
   });
   revalidatePath("/admin/clienti");
   revalidatePath("/admin/pianificazione");
-  return { success: true };
+  revalidatePath("/admin/preventivi");
+  return { success: true, siteId: site.id };
 }
 
 export async function updateSiteCapienza(siteId: string, capienza: number | null) {
