@@ -51,9 +51,11 @@ export default async function TimbraturePage({
     travelId: s.travelId,
     userId: s.user.id,
     siteId: s.site?.id ?? null,
+    clientId: s.site?.clientId ?? null,
     userName: s.user.name,
     clientName: s.site ? clientDisplayName(s.site.client) : null,
     siteName: s.site?.name ?? null,
+    siteAddress: s.site?.address ?? null,
     dateValue: toDateInputValue(s.start),
     dateLabel: s.start.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }),
     startTime: s.start.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }),
@@ -116,9 +118,20 @@ export default async function TimbraturePage({
         sessions={sessionRows}
         employeeTotals={employeeTotals}
         employees={employees.map((e) => ({ id: e.id, name: e.name }))}
+        clients={Array.from(
+          new Map(sites.map((s) => [s.clientId, clientDisplayName(s.client)])).entries()
+        )
+          .map(([id, name]) => ({ id, name }))
+          .sort((a, b) => a.name.localeCompare(b.name, "it"))}
         sites={sites
-          .map((s) => ({ id: s.id, label: `${clientDisplayName(s.client)} — ${s.name}` }))
-          .sort((a, b) => a.label.localeCompare(b.label, "it"))}
+          .map((s) => ({
+            id: s.id,
+            clientId: s.clientId,
+            clientName: clientDisplayName(s.client),
+            siteName: s.name,
+            address: s.address ?? null,
+          }))
+          .sort((a, b) => a.siteName.localeCompare(b.siteName, "it"))}
       />
     </div>
   );

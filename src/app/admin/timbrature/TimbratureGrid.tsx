@@ -10,9 +10,11 @@ export type SessionRow = {
   travelId: string | null;
   userId: string;
   siteId: string | null;
+  clientId: string | null;
   userName: string;
   clientName: string | null;
   siteName: string | null;
+  siteAddress: string | null;
   dateValue: string;
   dateLabel: string;
   startTime: string;
@@ -88,6 +90,29 @@ function formatDecimalHours(minutes: number) {
   return (minutes / 60).toFixed(1);
 }
 
+// L'indirizzo è un campo di testo libero, in genere "Via, CAP, Città,
+// Provincia": qui estraiamo solo la città, che è la parte utile per
+// distinguere le sedi a colpo d'occhio senza appesantire la visualizzazione
+// con l'indirizzo completo.
+function extractCity(address: string | null): string | null {
+  if (!address) return null;
+  const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
+  if (parts.length === 0) return null;
+  if (parts.length === 1) return parts[0];
+  const last = parts[parts.length - 1];
+  // L'ultima parte è spesso la sigla provincia (2 lettere): in tal caso la
+  // città è quella subito prima.
+  if (/^[A-Za-z]{2}$/.test(last)) {
+    return parts[parts.length - 2];
+  }
+  return last;
+}
+
+function siteLabel(name: string, address: string | null) {
+  const city = extractCity(address);
+  return city ? `${name} — ${city}` : name;
+}
+
 function addMinutesToTime(hhmm: string, minutes: number): string {
   const [h, m] = hhmm.split(":").map(Number);
   const total = h * 60 + m + minutes;
@@ -104,23 +129,33 @@ type EditingField =
   | "note"
   | "userId"
   | "siteId"
-  // Stesso effetto di "siteId" (cambia la stessa sede/cliente): un field
-  // separato serve solo a distinguere quale delle due celle (Cliente o
-  // Sede) ha aperto la tendina, evitando che si aprano entrambe insieme.
-  | "clienteSite"
+  // Cambiare Cliente sceglie tra i clienti e passa automaticamente alla
+  // prima sede di quel cliente (vedi commitEdit); la tendina Sede, invece,
+  // elenca solo le sedi del cliente attuale della riga.
+  | "clientId"
   | "date";
 type EditingState = { startId: string; field: EditingField; value: string } | null;
+
+export type SiteOption = {
+  id: string;
+  clientId: string;
+  clientName: string;
+  siteName: string;
+  address: string | null;
+};
 
 export function TimbratureGrid({
   sessions,
   employeeTotals,
   employees,
+  clients,
   sites,
 }: {
   sessions: SessionRow[];
   employeeTotals: EmployeeTotal[];
   employees: { id: string; name: string }[];
-  sites: { id: string; label: string }[];
+  clients: { id: string; name: string }[];
+  sites: SiteOption[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -152,11 +187,13 @@ export function TimbratureGrid({
               ? (s.travelMinutes ? String(s.travelMinutes) : "")
               : field === "userId"
                 ? s.userId
-                : field === "siteId" || field === "clienteSite"
+                : field === "siteId"
                   ? (s.siteId ?? "")
-                  : field === "date"
-                    ? s.dateValue
-                    : s.note;
+                  : field === "clientId"
+                    ? (s.clientId ?? "")
+                    : field === "date"
+                      ? s.dateValue
+                      : s.note;
     setEditing({ startId: s.startId, field, value });
   }
 
@@ -188,7 +225,20 @@ export function TimbratureGrid({
     if (field === "end") endTime = value || null;
     if (field === "note") note = value;
     if (field === "userId") userId = value;
-    if (field === "siteId" || field === "clienteSite") siteId = value;
+    if (field === "siteId") siteId = value;
+    if (field === "clientId") {
+      // Cambiare cliente passa alla prima sede di quel cliente: la sede
+      // esatta si sceglie eventualmente subito dopo dalla cella Sede, che a
+      // quel punto elenca solo le sedi di questo nuovo cliente.
+      const clientSites = sites
+        .filter((site) => site.clientId === value)
+        .sort((a, b) => a.siteName.localeCompare(b.siteName, "it"));
+      if (clientSites.length === 0) {
+        setError("Questo cliente non ha sedi");
+        return;
+      }
+      siteId = clientSites[0].id;
+    }
     if (field === "date") date = value;
     if (field === "work") {
       const mins = parseHoursInput(value);
@@ -317,6 +367,7 @@ export function TimbratureGrid({
       {showManualForm && (
         <ManualSessionForm
           employees={employees}
+          clients={clients}
           sites={sites}
           onCreated={() => {
             setShowManualForm(false);
@@ -355,6 +406,7 @@ export function TimbratureGrid({
                 groupKey={key}
                 rows={rows}
                 employees={employees}
+                clients={clients}
                 sites={sites}
                 editing={editing}
                 onOpenEdit={openEdit}
@@ -380,15 +432,21 @@ export function TimbratureGrid({
 
 function ManualSessionForm({
   employees,
+  clients,
   sites,
   onCreated,
 }: {
   employees: { id: string; name: string }[];
-  sites: { id: string; label: string }[];
+  clients: { id: string; name: string }[];
+  sites: SiteOption[];
   onCreated: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState("");
+  const sitesForClient = selectedClientId
+    ? sites.filter((s) => s.clientId === selectedClientId)
+    : sites;
 
   // Se non si conosce nemmeno l'orario di inizio, si usa questo come
   // convenzione: conta solo la durata inserita in "Ore lavorate", l'orario
@@ -468,13 +526,33 @@ function ManualSessionForm({
           ))}
         </select>
       </label>
+      <label className="flex min-w-[12rem] flex-col gap-1 text-xs">
+        Cliente
+        <select
+          value={selectedClientId}
+          onChange={(e) => setSelectedClientId(e.target.value)}
+          className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
+        >
+          <option value="">Tutti</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="flex min-w-[14rem] flex-col gap-1 text-xs">
         Sede
-        <select name="siteId" required className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm">
+        <select
+          key={selectedClientId}
+          name="siteId"
+          required
+          className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
+        >
           <option value="">Seleziona...</option>
-          {sites.map((s) => (
+          {sitesForClient.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.label}
+              {selectedClientId ? siteLabel(s.siteName, s.address) : `${s.clientName} — ${siteLabel(s.siteName, s.address)}`}
             </option>
           ))}
         </select>
@@ -535,6 +613,7 @@ function GroupBlock({
   groupKey,
   rows,
   employees,
+  clients,
   sites,
   editing,
   onOpenEdit,
@@ -546,7 +625,8 @@ function GroupBlock({
   groupKey: string;
   rows: SessionRow[];
   employees: { id: string; name: string }[];
-  sites: { id: string; label: string }[];
+  clients: { id: string; name: string }[];
+  sites: SiteOption[];
   editing: EditingState;
   onOpenEdit: (s: SessionRow, field: EditingField) => void;
   onChangeEdit: (value: string) => void;
@@ -586,10 +666,11 @@ function GroupBlock({
   // invece di aspettare un blur come per i campi di testo/orario.
   function editableSelectCell(
     s: SessionRow,
-    field: "userId" | "siteId" | "clienteSite",
+    field: "userId" | "siteId" | "clientId",
     display: React.ReactNode,
     options: { value: string; label: string }[],
-    width = "w-[9rem]"
+    width = "w-[9rem]",
+    title?: string
   ) {
     const isEditing = editing?.startId === s.startId && editing.field === field;
     if (isEditing) {
@@ -612,6 +693,7 @@ function GroupBlock({
     return (
       <span
         onClick={() => onOpenEdit(s, field)}
+        title={title}
         className="-mx-1 cursor-text rounded px-1 hover:border hover:border-zinc-300"
       >
         {display}
@@ -644,19 +726,22 @@ function GroupBlock({
             <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">
               {editableSelectCell(
                 s,
-                "clienteSite",
+                "clientId",
                 s.clientName ?? "—",
-                sites.map((site) => ({ value: site.id, label: site.label })),
-                "w-[14rem]"
+                clients.map((c) => ({ value: c.id, label: c.name })),
+                "w-[12rem]"
               )}
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">
               {editableSelectCell(
                 s,
                 "siteId",
-                s.siteName ?? "—",
-                sites.map((site) => ({ value: site.id, label: site.label })),
-                "w-[14rem]"
+                extractCity(s.siteAddress) ?? s.siteName ?? "—",
+                sites
+                  .filter((site) => site.clientId === s.clientId)
+                  .map((site) => ({ value: site.id, label: siteLabel(site.siteName, site.address) })),
+                "w-[18rem]",
+                s.siteAddress ?? undefined
               )}
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">
