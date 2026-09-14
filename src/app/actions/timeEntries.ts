@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { verifySession, requireModule } from "@/lib/dal";
@@ -16,6 +17,25 @@ export type PunchInput = {
 export async function punch({ type, siteId, lat, lng }: PunchInput) {
   const session = await verifySession();
 
+  // Ogni timbratura porta con sé l'id della sessione a cui appartiene, così
+  // Inizio/Fine (ed eventuale Spostamento) restano legati anche se in
+  // seguito finiscono per condividere lo stesso orario con un'altra
+  // sessione (es. un inserimento manuale successivo). TRAVEL_START e
+  // WORK_START aprono una nuova sessione, a meno che lo START non stia
+  // chiudendo uno spostamento appena iniziato dallo stesso collaboratore
+  // (in tal caso ne eredita l'id); WORK_END eredita sempre l'id dell'ultima
+  // voce del collaboratore, che a quel punto dev'essere l'Inizio da chiudere.
+  let sessionId: string = randomUUID();
+  if (type === "WORK_START" || type === "WORK_END") {
+    const last = await prisma.timeEntry.findFirst({
+      where: { userId: session.userId },
+      orderBy: { timestamp: "desc" },
+    });
+    if (last && (type === "WORK_END" || last.type === "TRAVEL_START") && last.sessionId) {
+      sessionId = last.sessionId;
+    }
+  }
+
   await prisma.timeEntry.create({
     data: {
       userId: session.userId,
@@ -23,6 +43,7 @@ export async function punch({ type, siteId, lat, lng }: PunchInput) {
       type,
       lat: lat ?? null,
       lng: lng ?? null,
+      sessionId,
     },
   });
 
@@ -86,6 +107,12 @@ export async function updateSessionTime(input: {
     return { error: "L'orario di fine deve essere dopo l'inizio" };
   }
 
+  // Se questo Inizio non ha ancora un sessionId (dato storico precedente
+  // all'introduzione del campo), gliene assegniamo uno adesso: da questo
+  // momento in poi la sessione resta legata in modo esplicito, invece di
+  // continuare a fare affidamento sull'abbinamento per orario.
+  const sessionId = startEntry.sessionId ?? randomUUID();
+
   await prisma.timeEntry.update({
     where: { id: input.startId },
     data: {
@@ -93,6 +120,7 @@ export async function updateSessionTime(input: {
       userId: input.userId,
       siteId: input.siteId,
       note: input.note.trim() || null,
+      sessionId,
       ...(input.startTimeIsLiteral ? { orarioStimato: false } : {}),
     },
   });
@@ -105,6 +133,7 @@ export async function updateSessionTime(input: {
           timestamp: newEnd,
           userId: input.userId,
           siteId: input.siteId,
+          sessionId,
           ...(input.endTimeIsLiteral ? { orarioStimato: false } : {}),
         },
       });
@@ -116,6 +145,7 @@ export async function updateSessionTime(input: {
           type: "WORK_END",
           timestamp: newEnd,
           orarioStimato: !input.endTimeIsLiteral,
+          sessionId,
         },
       });
     }
@@ -129,7 +159,7 @@ export async function updateSessionTime(input: {
     if (input.travelId) {
       await prisma.timeEntry.update({
         where: { id: input.travelId },
-        data: { timestamp: newTravelStart, userId: input.userId, siteId: input.siteId },
+        data: { timestamp: newTravelStart, userId: input.userId, siteId: input.siteId, sessionId },
       });
     } else {
       await prisma.timeEntry.create({
@@ -138,6 +168,7 @@ export async function updateSessionTime(input: {
           siteId: input.siteId,
           type: "TRAVEL_START",
           timestamp: newTravelStart,
+          sessionId,
         },
       });
     }
@@ -205,6 +236,11 @@ export async function createManualSession(input: {
     return { error: "L'orario di fine deve essere dopo l'inizio" };
   }
 
+  // Un unico sessionId per Spostamento/Inizio/Fine di questo inserimento:
+  // così restano legati anche se un'altra sessione (per questo o un altro
+  // collaboratore) finisce per avere lo stesso orario segnaposto.
+  const sessionId = randomUUID();
+
   const data: {
     userId: string;
     siteId: string;
@@ -212,6 +248,7 @@ export async function createManualSession(input: {
     timestamp: Date;
     orarioStimato?: boolean;
     note?: string | null;
+    sessionId: string;
   }[] = [];
 
   if (input.travelMinutes > 0) {
@@ -221,6 +258,7 @@ export async function createManualSession(input: {
       type: "TRAVEL_START",
       timestamp: new Date(start.getTime() - input.travelMinutes * 60000),
       orarioStimato: !input.startTimeProvided,
+      sessionId,
     });
   }
   data.push({
@@ -230,6 +268,7 @@ export async function createManualSession(input: {
     timestamp: start,
     orarioStimato: !input.startTimeProvided,
     note: input.note.trim() || null,
+    sessionId,
   });
   data.push({
     userId: input.userId,
@@ -237,6 +276,7 @@ export async function createManualSession(input: {
     type: "WORK_END",
     timestamp: end,
     orarioStimato: !input.endTimeProvided,
+    sessionId,
   });
 
   await prisma.timeEntry.createMany({ data });

@@ -29,7 +29,7 @@ export default async function ConsuntiviPage({
     }),
     prisma.timeEntry.findMany({
       where: { timestamp: { gte: start, lte: end } },
-      select: { userId: true, siteId: true, type: true, timestamp: true },
+      select: { userId: true, siteId: true, type: true, timestamp: true, sessionId: true },
     }),
   ]);
 

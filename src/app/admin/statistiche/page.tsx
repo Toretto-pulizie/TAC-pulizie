@@ -44,7 +44,7 @@ export default async function StatistichePage() {
     }),
     prisma.timeEntry.findMany({
       where: { timestamp: { gte: curStart, lte: curEnd } },
-      select: { userId: true, siteId: true, type: true, timestamp: true },
+      select: { userId: true, siteId: true, type: true, timestamp: true, sessionId: true },
     }),
     prisma.user.findMany({ where: { role: "EMPLOYEE" }, orderBy: { name: "asc" } }),
     prisma.client.count(),

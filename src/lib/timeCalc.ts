@@ -1,9 +1,33 @@
 import type { EntryType } from "@prisma/client";
 
+// Separa le voci con un sessionId esplicito (Spostamento/Inizio/Fine creati
+// insieme, quindi già legati con certezza) da quelle storiche senza
+// sessionId, che vanno ancora abbinate indovinando dall'ordine cronologico.
+// Indispensabile perché due sessioni diverse possono avere lo stesso orario
+// (es. inserimenti manuali con lo stesso orario segnaposto): senza un legame
+// esplicito non c'è modo di sapere quale Fine appartenga a quale Inizio.
+function splitBySessionId<T extends { sessionId?: string | null }>(
+  list: T[]
+): { grouped: Map<string, T[]>; legacy: T[] } {
+  const grouped = new Map<string, T[]>();
+  const legacy: T[] = [];
+  for (const e of list) {
+    if (e.sessionId) {
+      const arr = grouped.get(e.sessionId) ?? [];
+      arr.push(e);
+      grouped.set(e.sessionId, arr);
+    } else {
+      legacy.push(e);
+    }
+  }
+  return { grouped, legacy };
+}
+
 type Entry = {
   userId: string;
   type: EntryType;
   timestamp: Date;
+  sessionId?: string | null;
 };
 
 export type UserTotals = { travelMinutes: number; workMinutes: number };
@@ -23,10 +47,25 @@ export function computeTotals(entries: Entry[]): Map<string, UserTotals> {
 
     let travelMinutes = 0;
     let workMinutes = 0;
+
+    const { grouped, legacy } = splitBySessionId(list);
+
+    for (const group of grouped.values()) {
+      const travelStart = group.find((g) => g.type === "TRAVEL_START");
+      const workStart = group.find((g) => g.type === "WORK_START");
+      const workEnd = group.find((g) => g.type === "WORK_END");
+      if (workStart && workEnd) {
+        workMinutes += (workEnd.timestamp.getTime() - workStart.timestamp.getTime()) / 60000;
+      }
+      if (travelStart && workStart) {
+        travelMinutes += (workStart.timestamp.getTime() - travelStart.timestamp.getTime()) / 60000;
+      }
+    }
+
     let pendingTravelStart: Date | null = null;
     let pendingWorkStart: Date | null = null;
 
-    for (const e of list) {
+    for (const e of legacy) {
       if (e.type === "TRAVEL_START") {
         pendingTravelStart = e.timestamp;
       } else if (e.type === "WORK_START") {
@@ -59,6 +98,7 @@ type SiteEntry = {
   siteId: string | null;
   type: EntryType;
   timestamp: Date;
+  sessionId?: string | null;
 };
 
 export function computeSiteTotals(entries: SiteEntry[]): Map<string, UserTotals> {
@@ -79,10 +119,26 @@ export function computeSiteTotals(entries: SiteEntry[]): Map<string, UserTotals>
   for (const list of byUser.values()) {
     list.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
+    const { grouped, legacy } = splitBySessionId(list);
+
+    for (const group of grouped.values()) {
+      const travelStart = group.find((g) => g.type === "TRAVEL_START");
+      const workStart = group.find((g) => g.type === "WORK_START");
+      const workEnd = group.find((g) => g.type === "WORK_END");
+      const siteId = workStart?.siteId ?? travelStart?.siteId ?? null;
+      if (!siteId) continue;
+      if (workStart && workEnd) {
+        add(siteId, (workEnd.timestamp.getTime() - workStart.timestamp.getTime()) / 60000, "workMinutes");
+      }
+      if (travelStart && workStart) {
+        add(siteId, (workStart.timestamp.getTime() - travelStart.timestamp.getTime()) / 60000, "travelMinutes");
+      }
+    }
+
     let pendingTravel: { time: Date; siteId: string } | null = null;
     let pendingWork: { time: Date; siteId: string } | null = null;
 
-    for (const e of list) {
+    for (const e of legacy) {
       if (e.type === "TRAVEL_START" && e.siteId) {
         pendingTravel = { time: e.timestamp, siteId: e.siteId };
       } else if (e.type === "WORK_START") {
@@ -125,6 +181,7 @@ type RawSessionEntry<TSite, TUser> = {
   lat: number | null;
   lng: number | null;
   note: string | null;
+  sessionId?: string | null;
 };
 
 export type WorkSession<TSite, TUser> = {
@@ -158,6 +215,36 @@ export function pairSessions<TSite, TUser>(
   for (const list of byUser.values()) {
     list.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
+    const { grouped, legacy } = splitBySessionId(list);
+
+    for (const group of grouped.values()) {
+      const travelStart = group.find((g) => g.type === "TRAVEL_START") ?? null;
+      const workStart = group.find((g) => g.type === "WORK_START") ?? null;
+      const workEnd = group.find((g) => g.type === "WORK_END") ?? null;
+      // Senza un Inizio non c'è una riga sensata da mostrare (non dovrebbe
+      // capitare: Spostamento/Fine vengono sempre creati insieme a un
+      // Inizio o abbinati a uno già esistente).
+      if (!workStart) continue;
+      const travelMinutes = travelStart
+        ? Math.round((workStart.timestamp.getTime() - travelStart.timestamp.getTime()) / 60000)
+        : 0;
+      sessions.push({
+        startId: workStart.id,
+        endId: workEnd ? workEnd.id : null,
+        travelId: travelStart ? travelStart.id : null,
+        user: workStart.user,
+        site: workStart.site,
+        start: workStart.timestamp,
+        end: workEnd ? workEnd.timestamp : null,
+        startEstimated: workStart.orarioStimato,
+        endEstimated: workEnd ? workEnd.orarioStimato : false,
+        lat: workStart.lat,
+        lng: workStart.lng,
+        note: workStart.note,
+        travelMinutes,
+      });
+    }
+
     let pendingTravel: { id: string; time: Date } | null = null;
     let pendingTravelId: string | null = null;
     let pendingTravelMinutes = 0;
@@ -189,7 +276,7 @@ export function pairSessions<TSite, TUser>(
       pendingTravelId = null;
     }
 
-    for (const e of list) {
+    for (const e of legacy) {
       if (e.type === "TRAVEL_START") {
         pendingTravel = { id: e.id, time: e.timestamp };
       } else if (e.type === "WORK_START") {

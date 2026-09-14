@@ -347,4 +347,13 @@ model TimeEntry {
   lat       Float?
   lng       Float?
   note      String?
+  // Lega tra loro le voci (Spostamento/Inizio/Fine) create per la stessa
+  // sessione, così l'abbinamento non deve più essere indovinato dall'ordine
+  // cronologico: indispensabile quando due sessioni diverse hanno lo stesso
+  // orario (es. inserimenti manuali con lo stesso orario segnaposto). Nullo
+  // sui dati storici precedenti a questo campo, che restano abbinati con la
+  // vecchia logica basata sull'orario.
+  sessionId String?
+
+  @@index([sessionId])
 }

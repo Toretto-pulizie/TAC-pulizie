@@ -197,7 +197,7 @@ export default async function AdminHomePage() {
           }),
           prisma.timeEntry.findMany({
             where: { timestamp: { gte: monthStart, lte: monthEnd } },
-            select: { userId: true, siteId: true, type: true, timestamp: true },
+            select: { userId: true, siteId: true, type: true, timestamp: true, sessionId: true },
           }),
         ])
       : Promise.resolve([[], []] as [
@@ -207,7 +207,7 @@ export default async function AdminHomePage() {
             prezzoVenduto: number | null;
             adeguamento: number | null;
           }[],
-          { userId: string; siteId: string | null; type: EntryType; timestamp: Date }[],
+          { userId: string; siteId: string | null; type: EntryType; timestamp: Date; sessionId: string | null }[],
         ]),
   ]);
 

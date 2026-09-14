@@ -81,10 +81,11 @@ function parseHoursInput(raw: string): number | null {
   return Number.isNaN(n) ? null : Math.round(n * 60);
 }
 
-function minutesToHM(minutes: number) {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${h}:${String(m).padStart(2, "0")}`;
+// Ore lavoro si mostra in decimi d'ora (es. 30 minuti -> "0.5", 36 minuti ->
+// "0.6"), arrotondato al decimo più vicino quando i minuti non sono un
+// multiplo esatto di 6 (es. un Inizio/Fine che dà 22 minuti -> "0.4").
+function formatDecimalHours(minutes: number) {
+  return (minutes / 60).toFixed(1);
 }
 
 function addMinutesToTime(hhmm: string, minutes: number): string {
@@ -146,7 +147,7 @@ export function TimbratureGrid({
         : field === "end"
           ? (s.endEstimated ? "" : (s.endTime ?? ""))
           : field === "work"
-            ? (s.workMinutes != null ? minutesToHM(s.workMinutes) : "")
+            ? (s.workMinutes != null ? formatDecimalHours(s.workMinutes) : "")
             : field === "travel"
               ? (s.travelMinutes ? String(s.travelMinutes) : "")
               : field === "userId"
@@ -673,7 +674,7 @@ function GroupBlock({
                 "work",
                 s.workMinutes != null ? (
                   <span className="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700">
-                    {formatHM(s.workMinutes)}
+                    {formatDecimalHours(s.workMinutes)}
                   </span>
                 ) : (
                   <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
