@@ -163,10 +163,37 @@ export function pairSessions<TSite, TUser>(
     let pendingTravelMinutes = 0;
     let pendingWork: RawSessionEntry<TSite, TUser> | null = null;
 
+    // Mostra come "in corso" (senza Fine) l'eventuale WORK_START ancora in
+    // sospeso invece di perderlo: capita con inserimenti manuali duplicati o
+    // doppi, dove arriva un nuovo Inizio prima che il precedente riceva la
+    // sua Fine.
+    function flushPendingAsOpen() {
+      if (!pendingWork) return;
+      sessions.push({
+        startId: pendingWork.id,
+        endId: null,
+        travelId: pendingTravelId,
+        user: pendingWork.user,
+        site: pendingWork.site,
+        start: pendingWork.timestamp,
+        end: null,
+        startEstimated: pendingWork.orarioStimato,
+        endEstimated: false,
+        lat: pendingWork.lat,
+        lng: pendingWork.lng,
+        note: pendingWork.note,
+        travelMinutes: pendingTravelMinutes,
+      });
+      pendingWork = null;
+      pendingTravelMinutes = 0;
+      pendingTravelId = null;
+    }
+
     for (const e of list) {
       if (e.type === "TRAVEL_START") {
         pendingTravel = { id: e.id, time: e.timestamp };
       } else if (e.type === "WORK_START") {
+        flushPendingAsOpen();
         pendingTravelMinutes = pendingTravel
           ? Math.round((e.timestamp.getTime() - pendingTravel.time.getTime()) / 60000)
           : 0;
@@ -197,23 +224,7 @@ export function pairSessions<TSite, TUser>(
       }
     }
 
-    if (pendingWork) {
-      sessions.push({
-        startId: pendingWork.id,
-        endId: null,
-        travelId: pendingTravelId,
-        user: pendingWork.user,
-        site: pendingWork.site,
-        start: pendingWork.timestamp,
-        end: null,
-        startEstimated: pendingWork.orarioStimato,
-        endEstimated: false,
-        lat: pendingWork.lat,
-        lng: pendingWork.lng,
-        note: pendingWork.note,
-        travelMinutes: pendingTravelMinutes,
-      });
-    }
+    flushPendingAsOpen();
   }
 
   sessions.sort((a, b) => b.start.getTime() - a.start.getTime());
