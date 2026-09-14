@@ -11,6 +11,8 @@ const typeLabels: Record<string, string> = {
   TRAVEL_START: "Inizio spostamento",
   WORK_START: "Inizio lavoro",
   WORK_END: "Fine lavoro",
+  SOPRALLUOGO_START: "Inizio sopralluogo",
+  SOPRALLUOGO_END: "Fine sopralluogo",
 };
 
 export default async function TimbraturaPage() {

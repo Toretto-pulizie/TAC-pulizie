@@ -1,5 +1,6 @@
 import type { EntryType, StatoRichiesta, TipoAssenza } from "@prisma/client";
 import { TIPO_CODES, expandDateRange } from "@/lib/leaveRequests";
+import { splitBySessionId } from "@/lib/timeCalc";
 
 export type DayCell = { day: number; hours: number | null; code: string | null };
 
@@ -12,7 +13,12 @@ export type EmployeeAttendance = {
   totaliAssenza: Partial<Record<TipoAssenza, number>>;
 };
 
-type TimeEntryLite = { userId: string; type: EntryType; timestamp: Date };
+type TimeEntryLite = {
+  userId: string;
+  type: EntryType;
+  timestamp: Date;
+  sessionId?: string | null;
+};
 type LeaveRequestLite = {
   userId: string;
   tipo: TipoAssenza;
@@ -22,20 +28,39 @@ type LeaveRequestLite = {
 };
 type EmployeeLite = { id: string; name: string; cognome: string | null };
 
+const START_TYPES = new Set<EntryType>(["WORK_START", "SOPRALLUOGO_START"]);
+const END_TYPES = new Set<EntryType>(["WORK_END", "SOPRALLUOGO_END"]);
+
+// Il Sopralluogo conta come tempo di presenza esattamente come il lavoro
+// (il collaboratore va comunque pagato per quel tempo), anche se non entra
+// nei totali di Ore lavoro fatturabili al cliente (Consuntivi/Statistiche).
 function hoursPerDay(entries: TimeEntryLite[]): Map<number, number> {
   const sorted = [...entries].sort(
     (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
   );
   const map = new Map<number, number>();
-  let pendingStart: Date | null = null;
+  const add = (start: Date, end: Date) => {
+    const day = start.getDate();
+    const minutes = (end.getTime() - start.getTime()) / 60000;
+    map.set(day, (map.get(day) ?? 0) + minutes / 60);
+  };
 
-  for (const e of sorted) {
-    if (e.type === "WORK_START") {
+  // Le voci con sessionId esplicito sono già legate con certezza (vedi
+  // timeCalc.ts): usarlo evita di doverle re-indovinare dall'ordine
+  // cronologico, ambiguo quando due sessioni condividono lo stesso orario.
+  const { grouped, legacy } = splitBySessionId(sorted);
+  for (const group of grouped.values()) {
+    const start = group.find((g) => START_TYPES.has(g.type));
+    const end = group.find((g) => END_TYPES.has(g.type));
+    if (start && end) add(start.timestamp, end.timestamp);
+  }
+
+  let pendingStart: Date | null = null;
+  for (const e of legacy) {
+    if (START_TYPES.has(e.type)) {
       pendingStart = e.timestamp;
-    } else if (e.type === "WORK_END" && pendingStart) {
-      const day = pendingStart.getDate();
-      const minutes = (e.timestamp.getTime() - pendingStart.getTime()) / 60000;
-      map.set(day, (map.get(day) ?? 0) + minutes / 60);
+    } else if (END_TYPES.has(e.type) && pendingStart) {
+      add(pendingStart, e.timestamp);
       pendingStart = null;
     }
   }

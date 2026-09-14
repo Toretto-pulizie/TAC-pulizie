@@ -6,7 +6,7 @@ import type { EntryType } from "@prisma/client";
 // Indispensabile perché due sessioni diverse possono avere lo stesso orario
 // (es. inserimenti manuali con lo stesso orario segnaposto): senza un legame
 // esplicito non c'è modo di sapere quale Fine appartenga a quale Inizio.
-function splitBySessionId<T extends { sessionId?: string | null }>(
+export function splitBySessionId<T extends { sessionId?: string | null }>(
   list: T[]
 ): { grouped: Map<string, T[]>; legacy: T[] } {
   const grouped = new Map<string, T[]>();
@@ -181,8 +181,11 @@ type RawSessionEntry<TSite, TUser> = {
   lat: number | null;
   lng: number | null;
   note: string | null;
+  luogo: string | null;
   sessionId?: string | null;
 };
+
+export type ActivityType = "LAVORO" | "SOPRALLUOGO";
 
 export type WorkSession<TSite, TUser> = {
   startId: string;
@@ -197,7 +200,9 @@ export type WorkSession<TSite, TUser> = {
   lat: number | null;
   lng: number | null;
   note: string | null;
+  luogo: string | null;
   travelMinutes: number;
+  activityType: ActivityType;
 };
 
 export function pairSessions<TSite, TUser>(
@@ -219,29 +224,34 @@ export function pairSessions<TSite, TUser>(
 
     for (const group of grouped.values()) {
       const travelStart = group.find((g) => g.type === "TRAVEL_START") ?? null;
-      const workStart = group.find((g) => g.type === "WORK_START") ?? null;
-      const workEnd = group.find((g) => g.type === "WORK_END") ?? null;
+      const start =
+        group.find((g) => g.type === "WORK_START" || g.type === "SOPRALLUOGO_START") ?? null;
+      const end =
+        group.find((g) => g.type === "WORK_END" || g.type === "SOPRALLUOGO_END") ?? null;
       // Senza un Inizio non c'è una riga sensata da mostrare (non dovrebbe
       // capitare: Spostamento/Fine vengono sempre creati insieme a un
       // Inizio o abbinati a uno già esistente).
-      if (!workStart) continue;
+      if (!start) continue;
+      const activityType: ActivityType = start.type === "SOPRALLUOGO_START" ? "SOPRALLUOGO" : "LAVORO";
       const travelMinutes = travelStart
-        ? Math.round((workStart.timestamp.getTime() - travelStart.timestamp.getTime()) / 60000)
+        ? Math.round((start.timestamp.getTime() - travelStart.timestamp.getTime()) / 60000)
         : 0;
       sessions.push({
-        startId: workStart.id,
-        endId: workEnd ? workEnd.id : null,
+        startId: start.id,
+        endId: end ? end.id : null,
         travelId: travelStart ? travelStart.id : null,
-        user: workStart.user,
-        site: workStart.site,
-        start: workStart.timestamp,
-        end: workEnd ? workEnd.timestamp : null,
-        startEstimated: workStart.orarioStimato,
-        endEstimated: workEnd ? workEnd.orarioStimato : false,
-        lat: workStart.lat,
-        lng: workStart.lng,
-        note: workStart.note,
+        user: start.user,
+        site: start.site,
+        start: start.timestamp,
+        end: end ? end.timestamp : null,
+        startEstimated: start.orarioStimato,
+        endEstimated: end ? end.orarioStimato : false,
+        lat: start.lat,
+        lng: start.lng,
+        note: start.note,
+        luogo: start.luogo,
         travelMinutes,
+        activityType,
       });
     }
 
@@ -269,7 +279,9 @@ export function pairSessions<TSite, TUser>(
         lat: pendingWork.lat,
         lng: pendingWork.lng,
         note: pendingWork.note,
+        luogo: pendingWork.luogo,
         travelMinutes: pendingTravelMinutes,
+        activityType: "LAVORO",
       });
       pendingWork = null;
       pendingTravelMinutes = 0;
@@ -302,7 +314,9 @@ export function pairSessions<TSite, TUser>(
             lat: pendingWork.lat,
             lng: pendingWork.lng,
             note: pendingWork.note,
+            luogo: pendingWork.luogo,
             travelMinutes: pendingTravelMinutes,
+            activityType: "LAVORO",
           });
           pendingWork = null;
           pendingTravelMinutes = 0;
@@ -347,11 +361,14 @@ type EntryWithSite = {
 
 export function currentStatus<T extends EntryWithSite>(entries: T[]) {
   const last = entries[entries.length - 1];
-  if (!last || last.type === "WORK_END") {
+  if (!last || last.type === "WORK_END" || last.type === "SOPRALLUOGO_END") {
     return { status: "FREE" as const, site: null };
   }
   if (last.type === "TRAVEL_START") {
     return { status: "TRAVELING" as const, site: last.site };
+  }
+  if (last.type === "SOPRALLUOGO_START") {
+    return { status: "SOPRALLUOGO" as const, site: last.site };
   }
   return { status: "WORKING" as const, site: last.site };
 }

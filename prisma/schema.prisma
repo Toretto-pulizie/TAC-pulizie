@@ -22,6 +22,8 @@ enum EntryType {
   TRAVEL_START
   WORK_START
   WORK_END
+  SOPRALLUOGO_START
+  SOPRALLUOGO_END
 }
 
 enum ServiceType {
@@ -347,6 +349,10 @@ model TimeEntry {
   lat       Float?
   lng       Float?
   note      String?
+  // Descrizione libera del luogo, usata per i Sopralluoghi fatti presso
+  // potenziali clienti non ancora in anagrafica (senza un Cliente/Sede
+  // collegato).
+  luogo     String?
   // Lega tra loro le voci (Spostamento/Inizio/Fine) create per la stessa
   // sessione, così l'abbinamento non deve più essere indovinato dall'ordine
   // cronologico: indispensabile quando due sessioni diverse hanno lo stesso

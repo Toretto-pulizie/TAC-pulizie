@@ -26,12 +26,13 @@ export async function punch({ type, siteId, lat, lng }: PunchInput) {
   // (in tal caso ne eredita l'id); WORK_END eredita sempre l'id dell'ultima
   // voce del collaboratore, che a quel punto dev'essere l'Inizio da chiudere.
   let sessionId: string = randomUUID();
-  if (type === "WORK_START" || type === "WORK_END") {
+  if (type === "WORK_START" || type === "WORK_END" || type === "SOPRALLUOGO_END") {
     const last = await prisma.timeEntry.findFirst({
       where: { userId: session.userId },
       orderBy: { timestamp: "desc" },
     });
-    if (last && (type === "WORK_END" || last.type === "TRAVEL_START") && last.sessionId) {
+    const isEndType = type === "WORK_END" || type === "SOPRALLUOGO_END";
+    if (last && (isEndType || last.type === "TRAVEL_START") && last.sessionId) {
       sessionId = last.sessionId;
     }
   }
@@ -79,12 +80,15 @@ export async function updateSessionTime(input: {
   endId: string | null;
   travelId: string | null;
   userId: string;
-  siteId: string;
+  siteId: string | null;
   date: string;
   startTime: string;
   endTime: string | null;
   travelMinutes: number;
   note: string;
+  // Descrizione libera del luogo, per i Sopralluoghi senza un Cliente/Sede
+  // in anagrafica.
+  luogo?: string | null;
   // Vero solo quando l'utente ha scritto direttamente quell'orario (celle
   // Inizio/Fine), non quando deriva da un altro campo (es. Ore lavoro): solo
   // in quel caso l'orario smette di essere "stimato" (mostrato vuoto).
@@ -97,9 +101,11 @@ export async function updateSessionTime(input: {
     where: { id: input.startId },
   });
 
-  if (startEntry.type !== "WORK_START") {
+  if (startEntry.type !== "WORK_START" && startEntry.type !== "SOPRALLUOGO_START") {
     return { error: "Voce non valida" };
   }
+  const endType: EntryType =
+    startEntry.type === "SOPRALLUOGO_START" ? "SOPRALLUOGO_END" : "WORK_END";
 
   const newStart = combineDate(input.date, input.startTime);
   const newEnd = input.endTime ? combineDate(input.date, input.endTime) : null;
@@ -120,6 +126,7 @@ export async function updateSessionTime(input: {
       userId: input.userId,
       siteId: input.siteId,
       note: input.note.trim() || null,
+      luogo: input.luogo?.trim() || null,
       sessionId,
       ...(input.startTimeIsLiteral ? { orarioStimato: false } : {}),
     },
@@ -142,7 +149,7 @@ export async function updateSessionTime(input: {
         data: {
           userId: input.userId,
           siteId: input.siteId,
-          type: "WORK_END",
+          type: endType,
           timestamp: newEnd,
           orarioStimato: !input.endTimeIsLiteral,
           sessionId,
@@ -205,7 +212,10 @@ export async function deleteSession(input: {
 // collaboratore non abbia timbrato dall'app.
 export async function createManualSession(input: {
   userId: string;
-  siteId: string;
+  // Facoltativo per il Sopralluogo: spesso fatto presso potenziali clienti
+  // non ancora in anagrafica, in tal caso si usa "luogo" al suo posto.
+  siteId: string | null;
+  luogo?: string | null;
   date: string;
   startTime: string;
   endTime: string;
@@ -216,8 +226,16 @@ export async function createManualSession(input: {
   // mostrato vuoto in griglia finché non viene impostato esplicitamente.
   startTimeProvided: boolean;
   endTimeProvided: boolean;
+  // "LAVORO" (default) se assente: il Sopralluogo non ha spostamento
+  // associato, essendo un'attività a sé.
+  activityType?: "LAVORO" | "SOPRALLUOGO";
 }) {
   await requireModule("timbrature");
+
+  const isSopralluogo = input.activityType === "SOPRALLUOGO";
+  if (!isSopralluogo && !input.siteId) {
+    return { error: "Seleziona una sede" };
+  }
 
   const [y, m, d] = input.date.split("-").map(Number);
   const [sh, sm] = input.startTime.split(":").map(Number);
@@ -240,18 +258,21 @@ export async function createManualSession(input: {
   // così restano legati anche se un'altra sessione (per questo o un altro
   // collaboratore) finisce per avere lo stesso orario segnaposto.
   const sessionId = randomUUID();
+  const startType: EntryType = isSopralluogo ? "SOPRALLUOGO_START" : "WORK_START";
+  const endType: EntryType = isSopralluogo ? "SOPRALLUOGO_END" : "WORK_END";
 
   const data: {
     userId: string;
-    siteId: string;
+    siteId: string | null;
     type: EntryType;
     timestamp: Date;
     orarioStimato?: boolean;
     note?: string | null;
+    luogo?: string | null;
     sessionId: string;
   }[] = [];
 
-  if (input.travelMinutes > 0) {
+  if (!isSopralluogo && input.travelMinutes > 0) {
     data.push({
       userId: input.userId,
       siteId: input.siteId,
@@ -264,16 +285,17 @@ export async function createManualSession(input: {
   data.push({
     userId: input.userId,
     siteId: input.siteId,
-    type: "WORK_START",
+    type: startType,
     timestamp: start,
     orarioStimato: !input.startTimeProvided,
     note: input.note.trim() || null,
+    luogo: input.luogo?.trim() || null,
     sessionId,
   });
   data.push({
     userId: input.userId,
     siteId: input.siteId,
-    type: "WORK_END",
+    type: endType,
     timestamp: end,
     orarioStimato: !input.endTimeProvided,
     sessionId,

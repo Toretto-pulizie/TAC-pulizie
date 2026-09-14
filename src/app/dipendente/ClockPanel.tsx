@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { punch } from "@/app/actions/timeEntries";
 
 type Site = { id: string; label: string };
-type Status = "FREE" | "TRAVELING" | "WORKING";
+type Status = "FREE" | "TRAVELING" | "WORKING" | "SOPRALLUOGO";
 
 function getPosition(): Promise<{ lat?: number; lng?: number }> {
   return new Promise((resolve) => {
@@ -37,15 +37,18 @@ export function ClockPanel({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  function doPunch(type: "TRAVEL_START" | "WORK_START" | "WORK_END") {
+  function doPunch(
+    type: "TRAVEL_START" | "WORK_START" | "WORK_END" | "SOPRALLUOGO_START" | "SOPRALLUOGO_END"
+  ) {
     setError(null);
-    if (type !== "WORK_END" && !siteId) {
+    const isEndType = type === "WORK_END" || type === "SOPRALLUOGO_END";
+    if (!isEndType && !siteId) {
       setError("Seleziona prima un cliente/cantiere.");
       return;
     }
     startTransition(async () => {
       const coords = await getPosition();
-      await punch({ type, siteId: type === "WORK_END" ? undefined : siteId, ...coords });
+      await punch({ type, siteId: isEndType ? undefined : siteId, ...coords });
     });
   }
 
@@ -84,6 +87,13 @@ export function ClockPanel({
           >
             Inizia lavoro (senza spostamento)
           </button>
+          <button
+            disabled={isPending}
+            onClick={() => doPunch("SOPRALLUOGO_START")}
+            className="rounded-lg border border-zinc-300 px-4 py-4 text-base font-medium text-zinc-800 disabled:opacity-50"
+          >
+            Inizia sopralluogo
+          </button>
         </>
       )}
 
@@ -115,6 +125,22 @@ export function ClockPanel({
             className="rounded-lg bg-red-600 px-4 py-4 text-base font-medium text-white disabled:opacity-50"
           >
             Fine lavoro
+          </button>
+        </>
+      )}
+
+      {status === "SOPRALLUOGO" && (
+        <>
+          <p className="text-sm text-zinc-500">In sopralluogo presso</p>
+          <p className="text-lg font-semibold text-zinc-900">
+            {currentSiteLabel}
+          </p>
+          <button
+            disabled={isPending}
+            onClick={() => doPunch("SOPRALLUOGO_END")}
+            className="rounded-lg bg-red-600 px-4 py-4 text-base font-medium text-white disabled:opacity-50"
+          >
+            Fine sopralluogo
           </button>
         </>
       )}

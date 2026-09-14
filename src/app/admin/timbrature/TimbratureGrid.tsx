@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateSessionTime, createManualSession, deleteSession } from "@/app/actions/timeEntries";
+import type { ActivityType } from "@/lib/timeCalc";
 
 export type SessionRow = {
   startId: string;
@@ -25,6 +26,8 @@ export type SessionRow = {
   travelMinutes: number;
   gps: boolean;
   note: string;
+  luogo: string | null;
+  activityType: ActivityType;
 };
 
 export type EmployeeTotal = {
@@ -54,23 +57,9 @@ function formatHM(minutes: number) {
   return `${h}h ${String(m).padStart(2, "0")}m`;
 }
 
-// Per lo Spostamento: accetta "2:30" (ore:minuti) o un numero semplice di
-// minuti (es. "45"), coerente con l'etichetta "Spostamento (min)".
-function parseDurationMinutes(raw: string): number | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  if (trimmed.includes(":")) {
-    const [h, m] = trimmed.split(":").map((n) => Number(n));
-    if (Number.isNaN(h) || Number.isNaN(m)) return null;
-    return h * 60 + m;
-  }
-  const n = Number(trimmed.replace(",", "."));
-  return Number.isNaN(n) ? null : Math.round(n);
-}
-
-// Per le Ore lavorate: accetta "2:30" (ore:minuti) o un numero decimale di
-// ORE (es. "1.5" o "1,5" = un'ora e mezza) — qui, a differenza dello
-// spostamento, un numero semplice è in ore, non in minuti.
+// Per le Ore lavorate e lo Spostamento: accetta "2:30" (ore:minuti) o un
+// numero decimale di ORE (es. "1.5" o "1,5" = un'ora e mezza) — un numero
+// semplice è sempre in ore, non in minuti.
 function parseHoursInput(raw: string): number | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
@@ -111,6 +100,9 @@ type EditingField =
   // prima sede di quel cliente (vedi commitEdit); la tendina Sede, invece,
   // elenca solo le sedi del cliente attuale della riga.
   | "clientId"
+  // Per i Sopralluoghi senza Cliente/Sede in anagrafica: descrizione libera
+  // del luogo, editabile solo quando la riga non ha una sede collegata.
+  | "luogo"
   | "date";
 type EditingState = { startId: string; field: EditingField; value: string } | null;
 
@@ -162,16 +154,18 @@ export function TimbratureGrid({
           : field === "work"
             ? (s.workMinutes != null ? formatDecimalHours(s.workMinutes) : "")
             : field === "travel"
-              ? (s.travelMinutes ? String(s.travelMinutes) : "")
+              ? (s.travelMinutes ? formatDecimalHours(s.travelMinutes) : "")
               : field === "userId"
                 ? s.userId
                 : field === "siteId"
                   ? (s.siteId ?? "")
                   : field === "clientId"
                     ? (s.clientId ?? "")
-                    : field === "date"
-                      ? s.dateValue
-                      : s.note;
+                    : field === "luogo"
+                      ? (s.luogo ?? "")
+                      : field === "date"
+                        ? s.dateValue
+                        : s.note;
     setEditing({ startId: s.startId, field, value });
   }
 
@@ -197,6 +191,7 @@ export function TimbratureGrid({
     let note = s.note;
     let userId = s.userId;
     let siteId = s.siteId;
+    let luogo = s.luogo;
     let date = s.dateValue;
 
     if (field === "start") startTime = value;
@@ -204,6 +199,7 @@ export function TimbratureGrid({
     if (field === "note") note = value;
     if (field === "userId") userId = value;
     if (field === "siteId") siteId = value;
+    if (field === "luogo") luogo = value;
     if (field === "clientId") {
       // Cambiare cliente passa alla prima sede di quel cliente: la sede
       // esatta si sceglie eventualmente subito dopo dalla cella Sede, che a
@@ -227,9 +223,9 @@ export function TimbratureGrid({
       endTime = addMinutesToTime(startTime, mins);
     }
     if (field === "travel") {
-      const mins = value.trim() === "" ? 0 : parseDurationMinutes(value);
+      const mins = value.trim() === "" ? 0 : parseHoursInput(value);
       if (mins == null) {
-        setError("Spostamento non valido");
+        setError("Spostamento non valido (usa es. 0:30 oppure 0,5)");
         return;
       }
       travelMinutes = mins;
@@ -245,6 +241,7 @@ export function TimbratureGrid({
       note === s.note &&
       userId === s.userId &&
       siteId === s.siteId &&
+      luogo === s.luogo &&
       date === s.dateValue &&
       !(startTimeIsLiteral && s.startEstimated) &&
       !(endTimeIsLiteral && s.endEstimated)
@@ -252,7 +249,9 @@ export function TimbratureGrid({
       return;
     }
 
-    if (!siteId) {
+    // Il Sopralluogo può non avere una sede (potenziale cliente non in
+    // anagrafica): la sede resta obbligatoria solo per il Lavoro.
+    if (!siteId && s.activityType !== "SOPRALLUOGO") {
       setError("Seleziona una sede");
       return;
     }
@@ -264,6 +263,7 @@ export function TimbratureGrid({
         travelId: s.travelId,
         userId,
         siteId,
+        luogo,
         date,
         startTime,
         endTime,
@@ -360,6 +360,7 @@ export function TimbratureGrid({
             <tr>
               {[
                 "Collaboratore",
+                "Tipo",
                 "Cliente",
                 "Sede",
                 "Data",
@@ -396,7 +397,7 @@ export function TimbratureGrid({
             ))}
             {sessions.length === 0 && (
               <tr>
-                <td colSpan={11} className="px-4 py-6 text-center text-zinc-400">
+                <td colSpan={12} className="px-4 py-6 text-center text-zinc-400">
                   Nessuna timbratura nel periodo selezionato.
                 </td>
               </tr>
@@ -422,6 +423,7 @@ function ManualSessionForm({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState("");
+  const [activityType, setActivityType] = useState<ActivityType>("LAVORO");
   const sitesForClient = selectedClientId
     ? sites.filter((s) => s.clientId === selectedClientId)
     : sites;
@@ -435,18 +437,23 @@ function ManualSessionForm({
   function handleSubmit(formData: FormData) {
     setError(null);
     const userId = String(formData.get("userId") || "");
-    const siteId = String(formData.get("siteId") || "");
+    const siteId = String(formData.get("siteId") || "") || null;
+    const luogo = String(formData.get("luogo") || "").trim();
     const date = String(formData.get("date") || "");
     const oreLavorate = String(formData.get("oreLavorate") || "").trim();
     const startTimeProvided = String(formData.get("startTime") || "").trim() !== "";
     const endTimeProvided = String(formData.get("endTime") || "").trim() !== "";
     const startTime = String(formData.get("startTime") || "").trim() || (oreLavorate ? DEFAULT_START_TIME : "");
     let endTime = String(formData.get("endTime") || "").trim();
-    const travelMinutes = Number(formData.get("travelMinutes") || 0);
+    const travelMinutes = activityType === "SOPRALLUOGO" ? 0 : Math.round(Number(formData.get("travelHours") || 0) * 60);
     const note = String(formData.get("note") || "");
 
-    if (!userId || !siteId || !date) {
-      setError("Compila collaboratore, sede e data");
+    if (!userId || !date) {
+      setError("Compila collaboratore e data");
+      return;
+    }
+    if (activityType === "LAVORO" && !siteId) {
+      setError("Compila la sede");
       return;
     }
 
@@ -472,6 +479,7 @@ function ManualSessionForm({
       const result = await createManualSession({
         userId,
         siteId,
+        luogo,
         date,
         startTime,
         endTime,
@@ -479,6 +487,7 @@ function ManualSessionForm({
         note,
         startTimeProvided,
         endTimeProvided,
+        activityType,
       });
       if (result && "error" in result) {
         setError(result.error ?? "Errore durante il salvataggio");
@@ -504,6 +513,17 @@ function ManualSessionForm({
           ))}
         </select>
       </label>
+      <label className="flex flex-col gap-1 text-xs">
+        Tipo
+        <select
+          value={activityType}
+          onChange={(e) => setActivityType(e.target.value as ActivityType)}
+          className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
+        >
+          <option value="LAVORO">Lavoro</option>
+          <option value="SOPRALLUOGO">Sopralluogo</option>
+        </select>
+      </label>
       <label className="flex min-w-[12rem] flex-col gap-1 text-xs">
         Cliente
         <select
@@ -520,14 +540,14 @@ function ManualSessionForm({
         </select>
       </label>
       <label className="flex min-w-[14rem] flex-col gap-1 text-xs">
-        Sede
+        Sede{activityType === "SOPRALLUOGO" && " (se cliente esistente)"}
         <select
           key={selectedClientId}
           name="siteId"
-          required
+          required={activityType === "LAVORO"}
           className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
         >
-          <option value="">Seleziona...</option>
+          <option value="">{activityType === "SOPRALLUOGO" ? "Nessuna / non in anagrafica" : "Seleziona..."}</option>
           {sitesForClient.map((s) => (
             <option key={s.id} value={s.id}>
               {selectedClientId ? s.siteName : `${s.clientName} — ${s.siteName}`}
@@ -535,6 +555,17 @@ function ManualSessionForm({
           ))}
         </select>
       </label>
+      {activityType === "SOPRALLUOGO" && (
+        <label className="flex min-w-[12rem] flex-col gap-1 text-xs">
+          Luogo (se non in anagrafica)
+          <input
+            type="text"
+            name="luogo"
+            placeholder="es. Via Roma 5, Torino"
+            className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
+          />
+        </label>
+      )}
       <label className="flex flex-col gap-1 text-xs">
         Data
         <input type="date" name="date" required className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
@@ -556,16 +587,19 @@ function ManualSessionForm({
           className="w-32 rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
         />
       </label>
-      <label className="flex flex-col gap-1 text-xs">
-        Spostamento (min)
-        <input
-          type="number"
-          name="travelMinutes"
-          min="0"
-          defaultValue={0}
-          className="w-24 rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
-        />
-      </label>
+      {activityType === "LAVORO" && (
+        <label className="flex flex-col gap-1 text-xs">
+          Spostamento (ore)
+          <input
+            type="number"
+            name="travelHours"
+            min="0"
+            step="0.1"
+            defaultValue={0}
+            className="w-24 rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
+          />
+        </label>
+      )}
       <label className="flex min-w-[12rem] flex-1 flex-col gap-1 text-xs">
         Note (opzionale)
         <input type="text" name="note" className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
@@ -682,7 +716,7 @@ function GroupBlock({
   return (
     <>
       <tr className="bg-zinc-50">
-        <td colSpan={11} className="border-b border-t border-zinc-300 px-2.5 py-1.5 text-[11px] font-bold text-zinc-700">
+        <td colSpan={12} className="border-b border-t border-zinc-300 px-2.5 py-1.5 text-[11px] font-bold text-zinc-700">
           {groupKey}{" "}
           <span className="font-normal text-zinc-400">
             — {rows.length} {rows.length === 1 ? "sessione" : "sessioni"}
@@ -701,6 +735,17 @@ function GroupBlock({
                 employees.map((e) => ({ value: e.id, label: e.name }))
               )}
             </td>
+            <td className="border-r border-zinc-100 px-2.5 py-1.5">
+              {s.activityType === "SOPRALLUOGO" ? (
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                  Sopralluogo
+                </span>
+              ) : (
+                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-600">
+                  Lavoro
+                </span>
+              )}
+            </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">
               {editableSelectCell(
                 s,
@@ -711,15 +756,19 @@ function GroupBlock({
               )}
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">
-              {editableSelectCell(
-                s,
-                "siteId",
-                s.siteName ?? "—",
-                sites
-                  .filter((site) => site.clientId === s.clientId)
-                  .map((site) => ({ value: site.id, label: site.siteName })),
-                "w-[14rem]",
-                s.siteAddress ?? undefined
+              {s.siteId ? (
+                editableSelectCell(
+                  s,
+                  "siteId",
+                  s.siteName ?? "—",
+                  sites
+                    .filter((site) => site.clientId === s.clientId)
+                    .map((site) => ({ value: site.id, label: site.siteName })),
+                  "w-[14rem]",
+                  s.siteAddress ?? undefined
+                )
+              ) : (
+                editableCell(s, "luogo", s.luogo || "—", "text", "w-[12rem]")
               )}
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">
@@ -749,7 +798,7 @@ function GroupBlock({
               )}
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">
-              {editableCell(s, "travel", s.travelMinutes ? `${s.travelMinutes}m` : "—", "text", "w-[56px]")}
+              {editableCell(s, "travel", s.travelMinutes ? formatDecimalHours(s.travelMinutes) : "—", "text", "w-[56px]")}
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5">
               {s.gps ? (

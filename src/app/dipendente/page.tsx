@@ -13,6 +13,7 @@ const STATUS_LABELS = {
   FREE: "Libera",
   TRAVELING: "In spostamento",
   WORKING: "Al lavoro",
+  SOPRALLUOGO: "In sopralluogo",
 } as const;
 
 function ClockIcon() {

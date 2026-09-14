@@ -68,6 +68,8 @@ export default async function TimbraturePage({
     travelMinutes: s.travelMinutes,
     gps: s.lat != null && s.lng != null,
     note: s.note ?? "",
+    luogo: s.luogo,
+    activityType: s.activityType,
   }));
 
   return (
