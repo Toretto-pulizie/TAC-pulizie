@@ -17,7 +17,7 @@ type Site = {
 
 type Client = {
   id: string;
-  codiceCliente: number;
+  codiceCliente: number | null;
   name: string;
   tipo: "AZIENDA" | "PERSONA_FISICA" | "ENTE" | "ASSOCIAZIONE";
   nome: string | null;
@@ -48,7 +48,7 @@ export function ClientList({ clients }: { clients: Client[] }) {
 
   const rowsForFilter = clients.map((c) => ({
     ...c,
-    codice: String(c.codiceCliente).padStart(6, "0"),
+    codice: c.codiceCliente != null ? String(c.codiceCliente).padStart(6, "0") : "—",
     tipoLabel: TIPO_LABELS[c.tipo],
     denominazione:
       c.tipo === "PERSONA_FISICA"

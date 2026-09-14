@@ -43,7 +43,7 @@ export function EditClientForm({
   citta: string | null;
   cap: string | null;
   provincia: string | null;
-  codiceCliente: number;
+  codiceCliente: number | null;
   partitaIva: string | null;
   codiceFiscale: string | null;
   personaRiferimento: string | null;
@@ -127,8 +127,13 @@ export function EditClientForm({
       <input type="hidden" name="id" value={id} />
 
       <p className="text-sm text-zinc-500">
-        Cod. cliente: <span className="font-medium text-zinc-900">{String(codiceCliente).padStart(6, "0")}</span>{" "}
-        <span className="text-xs text-zinc-400">(assegnato automaticamente)</span>
+        Cod. cliente:{" "}
+        <span className="font-medium text-zinc-900">
+          {codiceCliente != null ? String(codiceCliente).padStart(6, "0") : "— (cliente interno)"}
+        </span>{" "}
+        {codiceCliente != null && (
+          <span className="text-xs text-zinc-400">(assegnato automaticamente)</span>
+        )}
       </p>
 
       <div className="flex gap-4 text-sm">

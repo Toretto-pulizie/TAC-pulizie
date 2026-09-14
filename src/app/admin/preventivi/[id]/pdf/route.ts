@@ -82,7 +82,7 @@ export async function GET(
       cap: client.cap,
       citta: client.citta,
       provincia: client.provincia,
-      codiceCliente: String(client.codiceCliente).padStart(6, "0"),
+      codiceCliente: client.codiceCliente != null ? String(client.codiceCliente).padStart(6, "0") : "—",
       partitaIva: client.partitaIva,
       codiceFiscale: client.codiceFiscale,
       personaRiferimento: client.personaRiferimento,

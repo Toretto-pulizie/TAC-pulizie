@@ -34,7 +34,7 @@ export function ClientRow({
   editHref,
 }: {
   clientId: string;
-  codiceCliente: number;
+  codiceCliente: number | null;
   name: string;
   tipo: "AZIENDA" | "PERSONA_FISICA" | "ENTE" | "ASSOCIAZIONE";
   citta: string | null;
@@ -49,7 +49,7 @@ export function ClientRow({
     <>
       <tr className="border-b border-zinc-100 last:border-0">
         <td className="px-3 py-1.5 font-mono text-xs text-zinc-400">
-          {String(codiceCliente).padStart(6, "0")}
+          {codiceCliente != null ? String(codiceCliente).padStart(6, "0") : "—"}
         </td>
         <td className="px-3 py-1.5">
           <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500">

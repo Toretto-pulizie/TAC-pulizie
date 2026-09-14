@@ -171,7 +171,7 @@ export default async function StampaPreventivoPage({
         <div className="flex border-b border-zinc-300">
           <InfoCol
             label="Cod. cliente"
-            value={String(client.codiceCliente).padStart(6, "0")}
+            value={client.codiceCliente != null ? String(client.codiceCliente).padStart(6, "0") : "—"}
           />
           <InfoCol label="P. IVA" value={client.partitaIva ?? ""} />
           <InfoCol label="Codice fiscale" value={client.codiceFiscale ?? ""} />

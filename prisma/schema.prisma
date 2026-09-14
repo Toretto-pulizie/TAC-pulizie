@@ -119,7 +119,10 @@ model Client {
   citta              String?
   cap                String?
   provincia          String?
-  codiceCliente      Int        @unique @default(autoincrement())
+  // Nullo per i clienti "interni" (es. uso personale del titolare) creati
+  // senza codice, che non seguono la numerazione progressiva dei clienti
+  // veri.
+  codiceCliente      Int?       @unique @default(autoincrement())
   partitaIva         String?
   codiceFiscale      String?
   personaRiferimento String?

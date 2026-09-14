@@ -128,6 +128,7 @@ export async function updateAllowedModules(userId: string, moduleKeys: string[])
 
 const ClientBaseSchema = {
   tipo: z.enum(["AZIENDA", "PERSONA_FISICA", "ENTE", "ASSOCIAZIONE"]),
+  senzaCodice: z.boolean().optional(),
   ragioneSociale: z.string().trim().optional(),
   nome: z.string().trim().optional(),
   cognome: z.string().trim().optional(),
@@ -176,6 +177,10 @@ async function findDuplicateClient(
 function clientFormFields(formData: FormData) {
   return {
     tipo: formData.get("tipo"),
+    // "Cliente interno" (uso personale, non un cliente vero): niente codice
+    // progressivo, per non consumare la numerazione dei clienti reali né
+    // farlo comparire come tale.
+    senzaCodice: formData.get("senzaCodice") === "on",
     ragioneSociale: formData.get("ragioneSociale") || undefined,
     nome: formData.get("nome") || undefined,
     cognome: formData.get("cognome") || undefined,
@@ -203,6 +208,7 @@ export async function createClient(_prevState: unknown, formData: FormData) {
 
   const {
     tipo,
+    senzaCodice,
     ragioneSociale,
     nome,
     cognome,
@@ -231,6 +237,9 @@ export async function createClient(_prevState: unknown, formData: FormData) {
   await prisma.client.create({
     data: {
       tipo,
+      // Se "senza codice", niente numero progressivo: omettendo il campo
+      // (invece di null) resterebbe applicato l'autoincrement di default.
+      codiceCliente: senzaCodice ? null : undefined,
       name,
       ragioneSociale: tipo === "PERSONA_FISICA" ? null : ragioneSociale,
       nome: tipo === "PERSONA_FISICA" ? nome : null,

@@ -141,6 +141,12 @@ export function ClientForm() {
           />
           Associazione
         </label>
+        <label className="ml-4 flex items-center gap-2 border-l border-zinc-200 pl-4">
+          <input type="checkbox" name="senzaCodice" value="on" />
+          <Tooltip text="Per uso personale/interno (es. un cantiere non fatturabile a un cliente vero): non riceve un codice cliente progressivo e non entra nella numerazione dei clienti reali.">
+            Cliente interno (senza codice)
+          </Tooltip>
+        </label>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
