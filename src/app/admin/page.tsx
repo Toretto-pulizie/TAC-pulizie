@@ -96,7 +96,11 @@ export default async function AdminHomePage() {
 
   const [activeEmployees, todayEntries, quotesByStatus, homeSettings] =
     await Promise.all([
-      prisma.user.count({ where: { active: true, role: "EMPLOYEE" } }),
+      // "Liberi" = tutti gli attivi meno chi risulta al lavoro/in
+      // spostamento oggi: questi ultimi due contano chiunque abbia timbrato
+      // (anche un Amministratore), quindi il totale deve farlo altrettanto,
+      // altrimenti "Liberi" risulta sballato quando un Amministratore timbra.
+      prisma.user.count({ where: { active: true } }),
       prisma.timeEntry.findMany({
         where: { timestamp: { gte: startOfToday() } },
         orderBy: { timestamp: "asc" },

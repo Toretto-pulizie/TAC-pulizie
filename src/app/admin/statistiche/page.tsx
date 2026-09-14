@@ -46,7 +46,10 @@ export default async function StatistichePage() {
       where: { timestamp: { gte: curStart, lte: curEnd } },
       select: { userId: true, siteId: true, type: true, timestamp: true, sessionId: true },
     }),
-    prisma.user.findMany({ where: { role: "EMPLOYEE" }, orderBy: { name: "asc" } }),
+    // Non solo i Collaboratori: chi timbra da Amministratore (es. per il
+    // proprio lavoro personale) deve comunque comparire nel riepilogo ore,
+    // come già avviene in Presenze e Pianificazione.
+    prisma.user.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.client.count(),
     prisma.client.count({
       where: { OR: [{ partitaIva: { not: null } }, { codiceFiscale: { not: null } }] },
@@ -105,7 +108,8 @@ export default async function StatistichePage() {
       const oreLavorate = totals.workMinutes / 60;
       const contrattoMensile = qs.adeguamento ?? qs.prezzoVenduto ?? 0;
       const euroConsuntivo = oreLavorate * qs.tariffaConsuntivo;
-      const scostamento = euroConsuntivo - contrattoMensile;
+      // Margine: vedi la stessa nota in consuntivi/page.tsx.
+      const scostamento = contrattoMensile - euroConsuntivo;
       return {
         id: qs.id,
         siteLabel: `${clientDisplayName(qs.site.client)} — ${qs.site.name}`,

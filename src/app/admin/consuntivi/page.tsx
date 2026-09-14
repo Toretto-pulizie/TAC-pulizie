@@ -45,7 +45,10 @@ export default async function ConsuntiviPage({
       const oreLavorate = totals.workMinutes / 60;
       const oreSpostamento = totals.travelMinutes / 60;
       const euroConsuntivo = oreLavorate * qs.tariffaConsuntivo;
-      const scostamento = euroConsuntivo - contrattoMensile;
+      // Margine: prezzo fatturato meno costo del lavoro svolto. Positivo =
+      // margine (si guadagna), negativo = perdita (il lavoro svolto costa
+      // più di quanto fatturato al cliente).
+      const scostamento = contrattoMensile - euroConsuntivo;
       const scostamentoPct = contrattoMensile !== 0 ? scostamento / contrattoMensile : null;
       return {
         id: qs.id,
