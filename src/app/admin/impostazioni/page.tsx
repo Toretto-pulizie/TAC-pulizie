@@ -10,6 +10,8 @@ import { getBankSettings } from "@/lib/bankSettings";
 import { ServiceTypeLabelRow } from "./ServiceTypeLabelRow";
 import { TipoPrestazioneForm } from "./TipoPrestazioneForm";
 import { TipoPrestazioneRow } from "./TipoPrestazioneRow";
+import { CondizionePagamentoForm } from "./CondizionePagamentoForm";
+import { CondizionePagamentoRow } from "./CondizionePagamentoRow";
 import { HomeSettingsForm } from "./HomeSettingsForm";
 import { BankSettingsForm } from "./BankSettingsForm";
 import { AttachmentForm } from "./AttachmentForm";
@@ -31,6 +33,7 @@ export default async function ImpostazioniPage() {
     bankSettings,
     attachments,
     phrases,
+    condizioniPagamento,
   ] = await Promise.all([
     getServiceTypeLabels(),
     getServiceTypeAbbreviazioni(),
@@ -40,6 +43,7 @@ export default async function ImpostazioniPage() {
     getBankSettings(),
     prisma.attachment.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.quotePhrase.findMany({ orderBy: [{ ordine: "asc" }, { titolo: "asc" }] }),
+    prisma.condizionePagamento.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
   ]);
 
   return (
@@ -104,6 +108,40 @@ export default async function ImpostazioniPage() {
                     />
                   ))}
                   {tipiPrestazione.length === 0 && (
+                    <p className="text-sm text-zinc-400">
+                      Nessuna voce ancora creata.
+                    </p>
+                  )}
+                </div>
+              </section>
+            ),
+          },
+          {
+            id: "pagamento",
+            label: "Condizioni di pagamento",
+            content: (
+              <section className="flex flex-col gap-3">
+                <div>
+                  <h1 className="text-lg font-semibold text-zinc-900">
+                    Condizioni di pagamento
+                  </h1>
+                  <p className="text-sm text-zinc-500">
+                    Voci proposte per il campo "Condizioni di pagamento", sia
+                    nella scheda Cliente (come valore predefinito per quel
+                    cliente) sia nel modulo Preventivo — restano comunque
+                    campi liberi, puoi sempre scriverne uno diverso.
+                  </p>
+                </div>
+                <CondizionePagamentoForm />
+                <div className="flex flex-col gap-2">
+                  {condizioniPagamento.map((c) => (
+                    <CondizionePagamentoRow
+                      key={c.id}
+                      id={c.id}
+                      etichetta={c.etichetta}
+                    />
+                  ))}
+                  {condizioniPagamento.length === 0 && (
                     <p className="text-sm text-zinc-400">
                       Nessuna voce ancora creata.
                     </p>

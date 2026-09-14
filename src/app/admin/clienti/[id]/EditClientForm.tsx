@@ -29,7 +29,12 @@ export function EditClientForm({
   codiceCliente,
   partitaIva,
   codiceFiscale,
+  codiceUnivoco,
+  condizioniPagamento,
+  condizioniPagamentoOptions,
   personaRiferimento,
+  telefonoRiferimento,
+  emailRiferimento,
   telefono,
   email,
   notes,
@@ -46,7 +51,12 @@ export function EditClientForm({
   codiceCliente: number | null;
   partitaIva: string | null;
   codiceFiscale: string | null;
+  codiceUnivoco: string | null;
+  condizioniPagamento: string | null;
+  condizioniPagamentoOptions: string[];
   personaRiferimento: string | null;
+  telefonoRiferimento: string | null;
+  emailRiferimento: string | null;
   telefono: string | null;
   email: string | null;
   notes: string | null;
@@ -122,7 +132,7 @@ export function EditClientForm({
   return (
     <form
       action={action}
-      className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+      className="flex flex-col gap-5 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6"
     >
       <input type="hidden" name="id" value={id} />
 
@@ -136,217 +146,278 @@ export function EditClientForm({
         )}
       </p>
 
-      <div className="flex gap-4 text-sm">
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="tipo"
-            value="AZIENDA"
-            checked={tipo === "AZIENDA"}
-            onChange={() => setTipo("AZIENDA")}
-          />
-          Azienda
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="tipo"
-            value="PERSONA_FISICA"
-            checked={tipo === "PERSONA_FISICA"}
-            onChange={() => setTipo("PERSONA_FISICA")}
-          />
-          Persona fisica
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="tipo"
-            value="ENTE"
-            checked={tipo === "ENTE"}
-            onChange={() => setTipo("ENTE")}
-          />
-          Ente
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="tipo"
-            value="ASSOCIAZIONE"
-            checked={tipo === "ASSOCIAZIONE"}
-            onChange={() => setTipo("ASSOCIAZIONE")}
-          />
-          Associazione
-        </label>
-      </div>
+      {/* --- Dati cliente --- */}
+      <div className="flex flex-col gap-3">
+        <h2 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+          Dati cliente
+        </h2>
 
-      {tipo === "AZIENDA" ? (
-        <label className="flex flex-col gap-1 text-sm">
-          <Tooltip text="Compila da sola ragione sociale, indirizzo, CAP, città e provincia">
-            P. IVA
-          </Tooltip>
-          <input
-            name="partitaIva"
-            defaultValue={partitaIva ?? ""}
-            onBlur={handlePartitaIvaBlur}
-            onChange={() => setPivaStato(null)}
-            className={`w-48 rounded-lg border px-3 py-2 ${
-              pivaStato?.tipo === "non valida" || pivaStato?.tipo === "non trovata"
-                ? "border-red-400"
-                : "border-zinc-300"
-            }`}
-          />
-          {pivaStato?.tipo === "verificando" && (
-            <span className="text-xs text-zinc-500">Verifica in corso...</span>
-          )}
-          {pivaStato?.tipo === "trovata" && (
-            <span className="text-xs text-green-600">✓ Trovata: {pivaStato.nome}</span>
-          )}
-          {pivaStato?.tipo === "non trovata" && (
-            <span className="text-xs text-red-600">
-              ⚠ Non trovata su VIES (verifica il numero)
-            </span>
-          )}
-          {pivaStato?.tipo === "non valida" && (
-            <span className="text-xs text-red-600">⚠ Partita IVA non valida</span>
-          )}
-        </label>
-      ) : (
-        <label className="flex flex-col gap-1 text-sm">
-          Codice fiscale
-          <input
-            name="codiceFiscale"
-            defaultValue={codiceFiscale ?? ""}
-            className="w-48 rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
-      )}
-
-      {tipo !== "PERSONA_FISICA" ? (
-        <label className="flex flex-col gap-1 text-sm">
-          {tipo === "AZIENDA" ? "Ragione sociale" : "Denominazione"}
-          <input
-            ref={ragioneSocialeRef}
-            name="ragioneSociale"
-            defaultValue={ragioneSociale ?? ""}
-            required
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
-      ) : (
-        <div className="flex gap-3">
-          <label className="flex flex-1 flex-col gap-1 text-sm">
-            Cognome
+        <div className="flex flex-wrap gap-4 text-sm">
+          <label className="flex items-center gap-2">
             <input
-              name="cognome"
-              defaultValue={cognome ?? ""}
-              required
+              type="radio"
+              name="tipo"
+              value="AZIENDA"
+              checked={tipo === "AZIENDA"}
+              onChange={() => setTipo("AZIENDA")}
+            />
+            Azienda
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="tipo"
+              value="PERSONA_FISICA"
+              checked={tipo === "PERSONA_FISICA"}
+              onChange={() => setTipo("PERSONA_FISICA")}
+            />
+            Persona fisica
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="tipo"
+              value="ENTE"
+              checked={tipo === "ENTE"}
+              onChange={() => setTipo("ENTE")}
+            />
+            Ente
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="tipo"
+              value="ASSOCIAZIONE"
+              checked={tipo === "ASSOCIAZIONE"}
+              onChange={() => setTipo("ASSOCIAZIONE")}
+            />
+            Associazione
+          </label>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-3">
+          {tipo === "AZIENDA" ? (
+            <label className="flex flex-col gap-1 text-sm">
+              <Tooltip text="Compila da sola ragione sociale, indirizzo, CAP, città e provincia">
+                P. IVA
+              </Tooltip>
+              <input
+                name="partitaIva"
+                defaultValue={partitaIva ?? ""}
+                onBlur={handlePartitaIvaBlur}
+                onChange={() => setPivaStato(null)}
+                className={`w-48 rounded-lg border px-3 py-2 ${
+                  pivaStato?.tipo === "non valida" || pivaStato?.tipo === "non trovata"
+                    ? "border-red-400"
+                    : "border-zinc-300"
+                }`}
+              />
+              {pivaStato?.tipo === "verificando" && (
+                <span className="text-xs text-zinc-500">Verifica in corso...</span>
+              )}
+              {pivaStato?.tipo === "trovata" && (
+                <span className="text-xs text-green-600">✓ Trovata: {pivaStato.nome}</span>
+              )}
+              {pivaStato?.tipo === "non trovata" && (
+                <span className="text-xs text-red-600">
+                  ⚠ Non trovata su VIES (verifica il numero)
+                </span>
+              )}
+              {pivaStato?.tipo === "non valida" && (
+                <span className="text-xs text-red-600">⚠ Partita IVA non valida</span>
+              )}
+            </label>
+          ) : (
+            <label className="flex flex-col gap-1 text-sm">
+              Codice fiscale
+              <input
+                name="codiceFiscale"
+                defaultValue={codiceFiscale ?? ""}
+                className="w-48 rounded-lg border border-zinc-300 px-3 py-2"
+              />
+            </label>
+          )}
+
+          {tipo !== "PERSONA_FISICA" ? (
+            <label className="flex min-w-[16rem] flex-1 flex-col gap-1 text-sm">
+              {tipo === "AZIENDA" ? "Ragione sociale" : "Denominazione"}
+              <input
+                ref={ragioneSocialeRef}
+                name="ragioneSociale"
+                defaultValue={ragioneSociale ?? ""}
+                required
+                className="rounded-lg border border-zinc-300 px-3 py-2"
+              />
+            </label>
+          ) : (
+            <>
+              <label className="flex flex-1 flex-col gap-1 text-sm">
+                Cognome
+                <input
+                  name="cognome"
+                  defaultValue={cognome ?? ""}
+                  required
+                  className="rounded-lg border border-zinc-300 px-3 py-2"
+                />
+              </label>
+              <label className="flex flex-1 flex-col gap-1 text-sm">
+                Nome
+                <input
+                  name="nome"
+                  defaultValue={nome ?? ""}
+                  required
+                  className="rounded-lg border border-zinc-300 px-3 py-2"
+                />
+              </label>
+            </>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex min-w-[16rem] flex-1 flex-col gap-1 text-sm">
+            <Tooltip text="Se manca il CAP, prova a compilarlo da solo (in base all'indirizzo)">
+              Indirizzo
+            </Tooltip>
+            <input
+              ref={indirizzoRef}
+              name="indirizzo"
+              defaultValue={indirizzo ?? ""}
+              onBlur={handleIndirizzoBlur}
+              onChange={() => setCapStato(null)}
+              className="rounded-lg border border-zinc-300 px-3 py-2"
+            />
+            {capStato?.tipo === "verificando" && (
+              <span className="text-xs text-zinc-500">Cerco il CAP...</span>
+            )}
+            {capStato?.tipo === "trovato" && (
+              <span className="text-xs text-green-600">✓ CAP compilato</span>
+            )}
+            {capStato?.tipo === "non trovato" && (
+              <span className="text-xs text-amber-600">⚠ CAP non trovato, inseriscilo a mano</span>
+            )}
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <Tooltip text="Compila da sola città e provincia">CAP</Tooltip>
+            <input
+              ref={capRef}
+              name="cap"
+              defaultValue={cap ?? ""}
+              onBlur={handleCapBlur}
+              className="w-24 rounded-lg border border-zinc-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-1 flex-col gap-1 text-sm">
+            Città
+            <input
+              ref={cittaRef}
+              name="citta"
+              defaultValue={citta ?? ""}
+              className="rounded-lg border border-zinc-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            Prov.
+            <input
+              ref={provinciaRef}
+              name="provincia"
+              defaultValue={provincia ?? ""}
+              maxLength={2}
+              className="w-20 rounded-lg border border-zinc-300 px-3 py-2 uppercase"
+            />
+          </label>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-1 flex-col gap-1 text-sm">
+            Telefono
+            <input
+              name="telefono"
+              defaultValue={telefono ?? ""}
               className="rounded-lg border border-zinc-300 px-3 py-2"
             />
           </label>
           <label className="flex flex-1 flex-col gap-1 text-sm">
-            Nome
+            Email
             <input
-              name="nome"
-              defaultValue={nome ?? ""}
-              required
+              name="email"
+              type="email"
+              defaultValue={email ?? ""}
               className="rounded-lg border border-zinc-300 px-3 py-2"
             />
           </label>
         </div>
-      )}
 
-      <label className="flex flex-col gap-1 text-sm">
-        <Tooltip text="Se manca il CAP, prova a compilarlo da solo (in base all'indirizzo)">
-          Indirizzo
-        </Tooltip>
-        <input
-          ref={indirizzoRef}
-          name="indirizzo"
-          defaultValue={indirizzo ?? ""}
-          onBlur={handleIndirizzoBlur}
-          onChange={() => setCapStato(null)}
-          className="rounded-lg border border-zinc-300 px-3 py-2"
-        />
-        {capStato?.tipo === "verificando" && (
-          <span className="text-xs text-zinc-500">Cerco il CAP...</span>
-        )}
-        {capStato?.tipo === "trovato" && (
-          <span className="text-xs text-green-600">✓ CAP compilato</span>
-        )}
-        {capStato?.tipo === "non trovato" && (
-          <span className="text-xs text-amber-600">⚠ CAP non trovato, inseriscilo a mano</span>
-        )}
-      </label>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1 text-sm">
+            <Tooltip text="Codice Destinatario SDI per la fatturazione elettronica">
+              Codice univoco
+            </Tooltip>
+            <input
+              name="codiceUnivoco"
+              defaultValue={codiceUnivoco ?? ""}
+              className="w-40 rounded-lg border border-zinc-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex min-w-[16rem] flex-1 flex-col gap-1 text-sm">
+            Condizioni di pagamento
+            <input
+              name="condizioniPagamento"
+              list="condizioni-pagamento-options"
+              defaultValue={condizioniPagamento ?? ""}
+              placeholder="Es. 30 gg data fattura"
+              className="rounded-lg border border-zinc-300 px-3 py-2"
+            />
+            <datalist id="condizioni-pagamento-options">
+              {condizioniPagamentoOptions.map((o) => (
+                <option key={o} value={o} />
+              ))}
+            </datalist>
+          </label>
+        </div>
 
-      <div className="flex gap-3">
         <label className="flex flex-col gap-1 text-sm">
-          <Tooltip text="Compila da sola città e provincia">CAP</Tooltip>
+          Note
           <input
-            ref={capRef}
-            name="cap"
-            defaultValue={cap ?? ""}
-            onBlur={handleCapBlur}
-            className="w-24 rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-1 flex-col gap-1 text-sm">
-          Città
-          <input
-            ref={cittaRef}
-            name="citta"
-            defaultValue={citta ?? ""}
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Prov.
-          <input
-            ref={provinciaRef}
-            name="provincia"
-            defaultValue={provincia ?? ""}
-            maxLength={2}
-            className="w-20 rounded-lg border border-zinc-300 px-3 py-2 uppercase"
-          />
-        </label>
-      </div>
-
-      <label className="flex flex-col gap-1 text-sm">
-        Persona di riferimento
-        <input
-          name="personaRiferimento"
-          defaultValue={personaRiferimento ?? ""}
-          className="rounded-lg border border-zinc-300 px-3 py-2"
-        />
-      </label>
-
-      <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-sm">
-          Telefono
-          <input
-            name="telefono"
-            defaultValue={telefono ?? ""}
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-1 flex-col gap-1 text-sm">
-          Email
-          <input
-            name="email"
-            type="email"
-            defaultValue={email ?? ""}
+            name="notes"
+            defaultValue={notes ?? ""}
             className="rounded-lg border border-zinc-300 px-3 py-2"
           />
         </label>
       </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Note
-        <input
-          name="notes"
-          defaultValue={notes ?? ""}
-          className="rounded-lg border border-zinc-300 px-3 py-2"
-        />
-      </label>
+      {/* --- Persona di riferimento --- */}
+      <div className="flex flex-col gap-3 border-t border-zinc-100 pt-4">
+        <h2 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+          Persona di riferimento
+        </h2>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex min-w-[14rem] flex-1 flex-col gap-1 text-sm">
+            Nome
+            <input
+              name="personaRiferimento"
+              defaultValue={personaRiferimento ?? ""}
+              className="rounded-lg border border-zinc-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-1 flex-col gap-1 text-sm">
+            Telefono
+            <input
+              name="telefonoRiferimento"
+              defaultValue={telefonoRiferimento ?? ""}
+              className="rounded-lg border border-zinc-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-1 flex-col gap-1 text-sm">
+            Email
+            <input
+              name="emailRiferimento"
+              type="email"
+              defaultValue={emailRiferimento ?? ""}
+              className="rounded-lg border border-zinc-300 px-3 py-2"
+            />
+          </label>
+        </div>
+      </div>
 
       {state && "error" in state && (
         <p className="text-sm text-red-600">{state.error}</p>

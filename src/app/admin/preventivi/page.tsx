@@ -29,6 +29,7 @@ export default async function PreventiviPage({
     serviceLabels,
     serviceAbbreviazioni,
     tipiPrestazioneRows,
+    condizioniPagamentoRows,
     attachments,
   ] = await Promise.all([
       prisma.client.findMany({
@@ -50,6 +51,9 @@ export default async function PreventiviPage({
       getServiceTypeLabels(),
       getServiceTypeAbbreviazioni(),
       prisma.tipoPrestazione.findMany({
+        orderBy: [{ ordine: "asc" }, { etichetta: "asc" }],
+      }),
+      prisma.condizionePagamento.findMany({
         orderBy: [{ ordine: "asc" }, { etichetta: "asc" }],
       }),
       prisma.attachment.findMany({ orderBy: { createdAt: "asc" } }),
@@ -97,6 +101,7 @@ export default async function PreventiviPage({
     : undefined;
 
   const tipiPrestazione = tipiPrestazioneRows.map((t) => t.etichetta);
+  const condizioniPagamento = condizioniPagamentoRows.map((c) => c.etichetta);
   // Nell'elenco preventivi si mostra l'Abbreviazione al posto del testo
   // completo, per non appesantire la colonna; se non impostata (o se il
   // testo non corrisponde più a nessuna voce) si mostra il testo per intero.
@@ -226,6 +231,7 @@ export default async function PreventiviPage({
               }))}
               serviceLabels={serviceLabels}
               tipiPrestazione={tipiPrestazione}
+              condizioniPagamento={condizioniPagamento}
               attachments={attachments.map((a) => ({ id: a.id, nome: a.nome }))}
               editingQuote={editingQuote}
             />

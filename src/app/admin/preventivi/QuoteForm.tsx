@@ -31,6 +31,7 @@ export function QuoteForm({
   phrases,
   serviceLabels,
   tipiPrestazione,
+  condizioniPagamento,
   attachments,
   editingQuote,
 }: {
@@ -38,6 +39,7 @@ export function QuoteForm({
   phrases: Phrase[];
   serviceLabels: Record<ServiceType, string>;
   tipiPrestazione: string[];
+  condizioniPagamento: string[];
   attachments: AttachmentOption[];
   editingQuote?: EditingQuote;
 }) {
@@ -174,10 +176,16 @@ export function QuoteForm({
           Condizioni di pagamento
           <input
             name="condizioniPagamento"
+            list="condizioni-pagamento-options"
             placeholder="Es. 30 gg data fattura"
             defaultValue={editingQuote?.condizioniPagamento ?? ""}
             className="w-48 rounded-lg border border-zinc-300 px-3 py-2"
           />
+          <datalist id="condizioni-pagamento-options">
+            {condizioniPagamento.map((o) => (
+              <option key={o} value={o} />
+            ))}
+          </datalist>
         </label>
       </div>
 

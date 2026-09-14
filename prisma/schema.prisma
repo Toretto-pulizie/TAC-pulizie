@@ -125,13 +125,32 @@ model Client {
   codiceCliente      Int?       @unique @default(autoincrement())
   partitaIva         String?
   codiceFiscale      String?
+  // Codice Destinatario SDI per la fatturazione elettronica.
+  codiceUnivoco      String?
+  // Condizioni di pagamento predefinite di questo cliente (es. "30 gg data
+  // fattura"): proposta come punto di partenza nei preventivi, restano comunque
+  // modificabili preventivo per preventivo.
+  condizioniPagamento String?
   personaRiferimento String?
+  // Contatto della persona di riferimento, distinto da telefono/email del
+  // cliente (es. centralino aziendale vs. recapito diretto della persona).
+  telefonoRiferimento String?
+  emailRiferimento   String?
   telefono           String?
   email              String?
   notes              String?
   createdAt          DateTime   @default(now())
   sites              Site[]
   quotes             Quote[]
+}
+
+// Voci preimpostate per il campo "Condizioni di pagamento", gestibili da
+// Impostazioni e selezionabili sia in anagrafica Cliente sia nel preventivo.
+model CondizionePagamento {
+  id        String   @id @default(cuid())
+  etichetta String
+  ordine    Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 model Site {

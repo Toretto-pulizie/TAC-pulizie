@@ -15,7 +15,11 @@ type PivaStato =
   | null;
 type CapStato = { tipo: "verificando" } | { tipo: "trovato" } | { tipo: "non trovato" } | null;
 
-export function ClientForm() {
+export function ClientForm({
+  condizioniPagamentoOptions,
+}: {
+  condizioniPagamentoOptions: string[];
+}) {
   const [state, action, pending] = useActionState(createClient, undefined);
   const [tipo, setTipo] = useState<Tipo>("AZIENDA");
   const [pivaStato, setPivaStato] = useState<PivaStato>(null);
@@ -271,11 +275,27 @@ export function ClientForm() {
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Persona di riferimento
+          <Tooltip text="Codice Destinatario SDI per la fatturazione elettronica">
+            Codice univoco
+          </Tooltip>
           <input
-            name="personaRiferimento"
+            name="codiceUnivoco"
+            className="w-40 rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex min-w-[14rem] flex-col gap-1 text-sm">
+          Condizioni di pagamento
+          <input
+            name="condizioniPagamento"
+            list="condizioni-pagamento-options-new"
+            placeholder="Es. 30 gg data fattura"
             className="rounded-lg border border-zinc-300 px-3 py-2"
           />
+          <datalist id="condizioni-pagamento-options-new">
+            {condizioniPagamentoOptions.map((o) => (
+              <option key={o} value={o} />
+            ))}
+          </datalist>
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Telefono
@@ -288,6 +308,28 @@ export function ClientForm() {
           Email
           <input
             name="email"
+            type="email"
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Persona di riferimento
+          <input
+            name="personaRiferimento"
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Telefono persona di riferimento
+          <input
+            name="telefonoRiferimento"
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Email persona di riferimento
+          <input
+            name="emailRiferimento"
             type="email"
             className="rounded-lg border border-zinc-300 px-3 py-2"
           />
