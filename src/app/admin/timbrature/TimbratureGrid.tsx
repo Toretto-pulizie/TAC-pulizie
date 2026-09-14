@@ -90,28 +90,6 @@ function formatDecimalHours(minutes: number) {
   return (minutes / 60).toFixed(1);
 }
 
-// L'indirizzo è un campo di testo libero, in genere "Via, CAP, Città,
-// Provincia": qui estraiamo solo la città, che è la parte utile per
-// distinguere le sedi a colpo d'occhio senza appesantire la visualizzazione
-// con l'indirizzo completo.
-function extractCity(address: string | null): string | null {
-  if (!address) return null;
-  const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
-  if (parts.length === 0) return null;
-  if (parts.length === 1) return parts[0];
-  const last = parts[parts.length - 1];
-  // L'ultima parte è spesso la sigla provincia (2 lettere): in tal caso la
-  // città è quella subito prima.
-  if (/^[A-Za-z]{2}$/.test(last)) {
-    return parts[parts.length - 2];
-  }
-  return last;
-}
-
-function siteLabel(name: string, address: string | null) {
-  const city = extractCity(address);
-  return city ? `${name} — ${city}` : name;
-}
 
 function addMinutesToTime(hhmm: string, minutes: number): string {
   const [h, m] = hhmm.split(":").map(Number);
@@ -552,7 +530,7 @@ function ManualSessionForm({
           <option value="">Seleziona...</option>
           {sitesForClient.map((s) => (
             <option key={s.id} value={s.id}>
-              {selectedClientId ? siteLabel(s.siteName, s.address) : `${s.clientName} — ${siteLabel(s.siteName, s.address)}`}
+              {selectedClientId ? s.siteName : `${s.clientName} — ${s.siteName}`}
             </option>
           ))}
         </select>
@@ -736,11 +714,11 @@ function GroupBlock({
               {editableSelectCell(
                 s,
                 "siteId",
-                extractCity(s.siteAddress) ?? s.siteName ?? "—",
+                s.siteName ?? "—",
                 sites
                   .filter((site) => site.clientId === s.clientId)
-                  .map((site) => ({ value: site.id, label: siteLabel(site.siteName, site.address) })),
-                "w-[18rem]",
+                  .map((site) => ({ value: site.id, label: site.siteName })),
+                "w-[14rem]",
                 s.siteAddress ?? undefined
               )}
             </td>
