@@ -12,9 +12,8 @@ import { cadenzaLabel } from "@/lib/quotePrint";
 import { clientDisplayName } from "@/lib/clients";
 import { ShiftForm } from "./ShiftForm";
 import { WeekCalendar } from "./WeekCalendar";
-import { ShiftPlanForm } from "./ShiftPlanForm";
 import { ShiftPlanRow } from "./ShiftPlanRow";
-import { CollapsibleForm } from "@/app/CollapsibleForm";
+import { PianificazionePageActions } from "./PianificazionePageActions";
 
 export default async function PianificazionePage({
   searchParams,
@@ -128,16 +127,14 @@ export default async function PianificazionePage({
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
-        <CollapsibleForm label="Nuovo turno ricorrente">
-          <ShiftPlanForm
-            employees={employees.map((e) => ({ id: e.id, name: e.name }))}
-            sites={sites.map((s) => ({
-              id: s.id,
-              label: `${clientDisplayName(s.client)} — ${s.name}`,
-            }))}
-            quoteSites={quoteSiteOptions}
-          />
-        </CollapsibleForm>
+        <PianificazionePageActions
+          employees={employees.map((e) => ({ id: e.id, name: e.name }))}
+          sites={sites.map((s) => ({
+            id: s.id,
+            label: `${clientDisplayName(s.client)} — ${s.name}`,
+          }))}
+          quoteSites={quoteSiteOptions}
+        />
 
         {shiftPlanItems.length > 0 && (
           <div className="flex flex-col gap-2">

@@ -20,10 +20,7 @@ export default async function EditSitePage({
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:max-w-md sm:p-8">
-      <h1 className="text-lg font-semibold text-zinc-900">
-        Modifica cantiere
-      </h1>
-      <p className="-mt-4 text-sm text-zinc-500">Cliente: {clientDisplayName(site.client)}</p>
+      <p className="text-sm text-zinc-500">Cliente: {clientDisplayName(site.client)}</p>
       <EditSiteForm
         id={site.id}
         name={site.name}

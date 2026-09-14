@@ -1,12 +1,10 @@
-import Link from "next/link";
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeListPrice, computeSoldAnnual, computeDiscountPct } from "@/lib/quotes";
 import { getServiceTypeLabels, getServiceTypeAbbreviazioni } from "@/lib/serviceTypeLabels";
 import { formatSedeAddress } from "@/lib/quotePrint";
 import { clientDisplayName } from "@/lib/clients";
-import { QuoteForm } from "./QuoteForm";
-import { CollapsibleForm } from "@/app/CollapsibleForm";
+import { PreventiviPageActions } from "./PreventiviPageActions";
 import { QuoteList } from "./QuoteList";
 
 function formatEuro(n: number) {
@@ -215,34 +213,21 @@ export default async function PreventiviPage({
           </div>
         </section>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <CollapsibleForm
-            key={editingQuote?.id ?? "new"}
-            label="Nuovo preventivo"
-            defaultOpen={!!editingQuote}
-          >
-            <QuoteForm
-              clients={clients}
-              phrases={phrases.map((p) => ({
-                id: p.id,
-                codice: p.codice,
-                titolo: p.titolo,
-                testo: p.testo,
-              }))}
-              serviceLabels={serviceLabels}
-              tipiPrestazione={tipiPrestazione}
-              condizioniPagamento={condizioniPagamento}
-              attachments={attachments.map((a) => ({ id: a.id, nome: a.nome }))}
-              editingQuote={editingQuote}
-            />
-          </CollapsibleForm>
-          <Link
-            href="/admin/preventivi/frasi"
-            className="text-sm text-zinc-600 underline"
-          >
-            Gestisci frasi preimpostate →
-          </Link>
-        </div>
+        <PreventiviPageActions
+          key={editingQuote?.id ?? "new"}
+          clients={clients}
+          phrases={phrases.map((p) => ({
+            id: p.id,
+            codice: p.codice,
+            titolo: p.titolo,
+            testo: p.testo,
+          }))}
+          serviceLabels={serviceLabels}
+          tipiPrestazione={tipiPrestazione}
+          condizioniPagamento={condizioniPagamento}
+          attachments={attachments.map((a) => ({ id: a.id, nome: a.nome }))}
+          editingQuote={editingQuote}
+        />
 
         <QuoteList
           rows={rows.map((r) => ({
