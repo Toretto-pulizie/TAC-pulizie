@@ -18,9 +18,6 @@ export default async function EditCollaboratorePage({
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:max-w-md sm:p-8">
-      <h1 className="text-lg font-semibold text-zinc-900">
-        Modifica collaboratore
-      </h1>
       <EditCollaboratoreForm
         id={collaboratore.id}
         nome={collaboratore.nome}

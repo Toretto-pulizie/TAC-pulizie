@@ -1,30 +1,18 @@
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { ClientForm } from "./ClientForm";
-import { SiteForm } from "./SiteForm";
 import { ClientList } from "./ClientList";
-import { CollapsibleForm } from "@/app/CollapsibleForm";
+import { ClientiPageActions } from "./ClientiPageActions";
 
 export default async function ClientiPage() {
   await requireModule("clienti");
-  const [clients, condizioniPagamento] = await Promise.all([
-    prisma.client.findMany({
-      include: { sites: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.condizionePagamento.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
-  ]);
+  const clients = await prisma.client.findMany({
+    include: { sites: true },
+    orderBy: { name: "asc" },
+  });
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
-        <div className="flex flex-wrap gap-3">
-          <CollapsibleForm label="Nuovo cliente">
-            <ClientForm condizioniPagamentoOptions={condizioniPagamento.map((c) => c.etichetta)} />
-          </CollapsibleForm>
-          <CollapsibleForm label="Nuova sede/cantiere">
-            <SiteForm clients={clients.map((c) => ({ id: c.id, name: c.name }))} />
-          </CollapsibleForm>
-        </div>
+        <ClientiPageActions clients={clients.map((c) => ({ id: c.id, name: c.name }))} />
 
         <ClientList
           clients={clients.map((c) => ({

@@ -1,8 +1,7 @@
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { FornitoreForm } from "./FornitoreForm";
 import { FornitoreList } from "./FornitoreList";
-import { CollapsibleForm } from "@/app/CollapsibleForm";
+import { FornitoriPageActions } from "./FornitoriPageActions";
 
 export default async function FornitoriPage() {
   await requireModule("fornitori");
@@ -12,9 +11,7 @@ export default async function FornitoriPage() {
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
-      <CollapsibleForm label="Nuovo fornitore">
-        <FornitoreForm />
-      </CollapsibleForm>
+      <FornitoriPageActions />
 
       <FornitoreList
         fornitori={fornitori.map((f) => ({

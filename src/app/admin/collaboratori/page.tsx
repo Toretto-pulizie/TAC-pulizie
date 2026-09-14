@@ -1,8 +1,7 @@
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { CollaboratoreForm } from "./CollaboratoreForm";
 import { CollaboratoreList } from "./CollaboratoreList";
-import { CollapsibleForm } from "@/app/CollapsibleForm";
+import { CollaboratoriPageActions } from "./CollaboratoriPageActions";
 
 export default async function CollaboratoriPage() {
   await requireModule("collaboratori");
@@ -12,9 +11,7 @@ export default async function CollaboratoriPage() {
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
-      <CollapsibleForm label="Nuovo collaboratore">
-        <CollaboratoreForm />
-      </CollapsibleForm>
+      <CollaboratoriPageActions />
 
       <CollaboratoreList
         collaboratori={collaboratori.map((c) => ({

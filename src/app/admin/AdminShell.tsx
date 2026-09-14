@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { TopBar } from "./TopBar";
 import { PageHeader } from "./PageHeader";
+import { PageHeaderActionsProvider } from "./PageHeaderActionsContext";
 import type { NotificationItem } from "@/app/NotificationBell";
 import type { ModuleKey } from "@/lib/modules";
 
@@ -62,8 +63,10 @@ export function AdminShell({
           userEmail={userEmail}
           isAdmin={isAdmin}
         />
-        <PageHeader />
-        <main className="flex flex-1 flex-col">{children}</main>
+        <PageHeaderActionsProvider>
+          <PageHeader />
+          <main className="flex flex-1 flex-col">{children}</main>
+        </PageHeaderActionsProvider>
       </div>
     </div>
   );

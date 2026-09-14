@@ -246,7 +246,7 @@ export async function createClient(_prevState: unknown, formData: FormData) {
   const name =
     tipo === "PERSONA_FISICA" ? `${cognome} ${nome}` : ragioneSociale!;
 
-  await prisma.client.create({
+  const created = await prisma.client.create({
     data: {
       tipo,
       // Se "senza codice", niente numero progressivo: omettendo il campo
@@ -273,7 +273,9 @@ export async function createClient(_prevState: unknown, formData: FormData) {
     },
   });
   revalidatePath("/admin/clienti");
-  return { success: true };
+  // Non torna all'elenco: va direttamente sulla scheda del cliente appena
+  // creato, dove si possono subito aggiungere le sue sedi/cantieri.
+  redirect(`/admin/clienti/${created.id}`);
 }
 
 const UpdateClientSchema = z

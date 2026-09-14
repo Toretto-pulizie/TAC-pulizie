@@ -16,9 +16,6 @@ export default async function EditFornitorePage({
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:max-w-md sm:p-8">
-      <h1 className="text-lg font-semibold text-zinc-900">
-        Modifica fornitore
-      </h1>
       <EditFornitoreForm
         id={fornitore.id}
         name={fornitore.name}
