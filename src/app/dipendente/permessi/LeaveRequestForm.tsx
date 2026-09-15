@@ -59,8 +59,9 @@ export function LeaveRequestForm() {
 
       <label className="flex flex-col gap-1 text-sm">
         Note (facoltative)
-        <input
+        <textarea
           name="note"
+          rows={3}
           className="rounded-lg border border-zinc-300 px-3 py-3 text-base"
         />
       </label>

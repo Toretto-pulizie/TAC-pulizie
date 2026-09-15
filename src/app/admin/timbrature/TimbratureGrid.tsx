@@ -602,7 +602,7 @@ function ManualSessionForm({
       )}
       <label className="flex min-w-[12rem] flex-1 flex-col gap-1 text-xs">
         Note (opzionale)
-        <input type="text" name="note" className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+        <textarea name="note" rows={2} className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
       </label>
       <button
         type="submit"

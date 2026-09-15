@@ -1,7 +1,7 @@
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeSiteTotals } from "@/lib/timeCalc";
-import { MONTH_LABELS, monthRange } from "@/lib/dates";
+import { MONTH_LABELS, monthRange, workingDaysInMonth } from "@/lib/dates";
 import { clientDisplayName } from "@/lib/clients";
 import { ConsuntiviList } from "./ConsuntiviList";
 
@@ -22,7 +22,7 @@ export default async function ConsuntiviPage({
   const month = params.month ? parseInt(params.month, 10) : now.getMonth() + 1;
   const { start, end } = monthRange(year, month);
 
-  const [quoteSites, entries] = await Promise.all([
+  const [quoteSites, entries, collaboratoriAttivi] = await Promise.all([
     prisma.quoteSite.findMany({
       where: { quote: { status: "ACCETTATO" } },
       include: { site: { include: { client: true } } },
@@ -31,7 +31,13 @@ export default async function ConsuntiviPage({
       where: { timestamp: { gte: start, lte: end } },
       select: { userId: true, siteId: true, type: true, timestamp: true, sessionId: true },
     }),
+    prisma.user.count({ where: { active: true } }),
   ]);
+
+  // Ore disponibili nel mese: giorni lavorativi (esclusi sabati, domeniche,
+  // feste comandate e il Patrono di Torino) × 8h × collaboratori attivi —
+  // il tetto teorico a cui confrontare le Ore lavorate/spostamento.
+  const oreDisponibili = workingDaysInMonth(year, month) * 8 * collaboratoriAttivi;
 
   const siteTotals = computeSiteTotals(entries);
 
@@ -77,7 +83,7 @@ export default async function ConsuntiviPage({
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
-        <section className="grid gap-3 sm:grid-cols-4">
+        <section className="grid gap-3 sm:grid-cols-5">
           <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-zinc-500">Contrattualizzato</p>
             <p className="text-xl font-semibold text-zinc-900">
@@ -88,6 +94,12 @@ export default async function ConsuntiviPage({
             <p className="text-sm text-zinc-500">Consuntivato</p>
             <p className="text-xl font-semibold text-zinc-900">
               {formatEuro(totConsuntivo)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <p className="text-sm text-zinc-500">Ore disponibili</p>
+            <p className="text-xl font-semibold text-zinc-900">
+              {oreDisponibili.toFixed(1)}h
             </p>
           </div>
           <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">

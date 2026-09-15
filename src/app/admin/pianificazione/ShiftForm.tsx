@@ -105,8 +105,9 @@ export function ShiftForm({
       </label>
       <label className="flex flex-col gap-1 text-sm">
         Note
-        <input
+        <textarea
           name="notes"
+          rows={2}
           className="rounded-lg border border-zinc-300 px-3 py-2"
         />
       </label>
