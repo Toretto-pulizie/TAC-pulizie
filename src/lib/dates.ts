@@ -120,20 +120,25 @@ export function italianHolidays(year: number): Date[] {
   ];
 }
 
+// Un giorno "lavorativo" è lunedì-venerdì ed esclude le feste comandate
+// dell'anno a cui appartiene (una singola data, non un intervallo: usato sia
+// per contare i giorni disponibili del mese sia per scontare i permessi).
+export function isWorkingDay(d: Date): boolean {
+  const weekday = d.getDay();
+  if (weekday === 0 || weekday === 6) return false;
+  const holidays = new Set(
+    italianHolidays(d.getFullYear()).map((h) => toDateInputValue(h))
+  );
+  return !holidays.has(toDateInputValue(d));
+}
+
 // Giorni lavorativi (lunedì-venerdì, esclusi sabato/domenica e le feste
 // comandate) nel mese/anno dato.
 export function workingDaysInMonth(year: number, month: number): number {
-  const holidays = new Set(
-    italianHolidays(year).map((d) => toDateInputValue(d))
-  );
   const daysInMonth = new Date(year, month, 0).getDate();
   let count = 0;
   for (let day = 1; day <= daysInMonth; day++) {
-    const d = new Date(year, month - 1, day);
-    const weekday = d.getDay();
-    if (weekday === 0 || weekday === 6) continue;
-    if (holidays.has(toDateInputValue(d))) continue;
-    count++;
+    if (isWorkingDay(new Date(year, month - 1, day))) count++;
   }
   return count;
 }

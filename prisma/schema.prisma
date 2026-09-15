@@ -289,6 +289,15 @@ model HomeSettings {
   showTotaleConsuntiviBar  Boolean @default(true)
 }
 
+// Riga singola: decide come si comporta "Ore disponibili" in Statistiche.
+model StatisticheSettings {
+  id                  String  @id @default("singleton")
+  // Spento: mostra tutte le ore disponibili (giorni lavorativi × 8h ×
+  // Collaboratori Operativi attivi). Acceso: sottrae le ore dei permessi
+  // approvati nel mese (Ferie aziendali comprese).
+  oreDisponibiliNette Boolean @default(false)
+}
+
 model BankSettings {
   id           String  @id @default("singleton")
   nomeBanca    String  @default("")

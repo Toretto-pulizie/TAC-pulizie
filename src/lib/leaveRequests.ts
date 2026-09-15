@@ -1,4 +1,5 @@
 import type { TipoAssenza } from "@prisma/client";
+import { isWorkingDay, monthRange } from "@/lib/dates";
 
 export const TIPO_LABELS: Record<TipoAssenza, string> = {
   INFORTUNIO: "Infortunio",
@@ -43,4 +44,25 @@ export function expandDateRange(dataInizio: Date, dataFine: Date): Date[] {
     current.setDate(current.getDate() + 1);
   }
   return days;
+}
+
+// Ore perse per permessi/assenze approvati (Ferie aziendali comprese) nel
+// mese/anno dato: 8h per ogni giorno lavorativo (esclusi sabati, domeniche e
+// feste comandate — già esclusi dalla capacità lorda, quindi non vanno
+// scontati due volte) coperto da una richiesta approvata. Non distingue tra
+// tipi di assenza: qualunque permesso approvato riduce la capacità.
+export function hoursLostToApprovedLeave(
+  leaveRequests: { dataInizio: Date; dataFine: Date }[],
+  year: number,
+  month: number
+): number {
+  const { start, end } = monthRange(year, month);
+  let lostDays = 0;
+  for (const req of leaveRequests) {
+    for (const day of expandDateRange(req.dataInizio, req.dataFine)) {
+      if (day < start || day > end) continue;
+      if (isWorkingDay(day)) lostDays++;
+    }
+  }
+  return lostDays * 8;
 }

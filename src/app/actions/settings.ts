@@ -70,6 +70,21 @@ export async function updateHomeSettings(settings: {
   revalidatePath("/admin");
 }
 
+export async function updateStatisticheSettings(settings: {
+  oreDisponibiliNette: boolean;
+}) {
+  await requireAdmin();
+
+  await prisma.statisticheSettings.upsert({
+    where: { id: "singleton" },
+    update: settings,
+    create: { id: "singleton", ...settings },
+  });
+
+  revalidatePath("/admin/impostazioni");
+  revalidatePath("/admin/statistiche");
+}
+
 const BankSettingsSchema = z.object({
   nomeBanca: z.string().trim(),
   iban: z.string().trim(),

@@ -6,6 +6,7 @@ import {
   getServiceTypeMostraCadenza,
 } from "@/lib/serviceTypeLabels";
 import { getHomeSettings } from "@/lib/homeSettings";
+import { getStatisticheSettings } from "@/lib/statisticheSettings";
 import { getBankSettings } from "@/lib/bankSettings";
 import { ServiceTypeLabelRow } from "./ServiceTypeLabelRow";
 import { TipoPrestazioneForm } from "./TipoPrestazioneForm";
@@ -13,6 +14,7 @@ import { TipoPrestazioneRow } from "./TipoPrestazioneRow";
 import { CondizionePagamentoForm } from "./CondizionePagamentoForm";
 import { CondizionePagamentoRow } from "./CondizionePagamentoRow";
 import { HomeSettingsForm } from "./HomeSettingsForm";
+import { StatisticheSettingsForm } from "./StatisticheSettingsForm";
 import { BankSettingsForm } from "./BankSettingsForm";
 import { AttachmentForm } from "./AttachmentForm";
 import { AttachmentRow } from "./AttachmentRow";
@@ -30,6 +32,7 @@ export default async function ImpostazioniPage() {
     mostraCadenzaSettings,
     tipiPrestazione,
     homeSettings,
+    statisticheSettings,
     bankSettings,
     attachments,
     phrases,
@@ -40,6 +43,7 @@ export default async function ImpostazioniPage() {
     getServiceTypeMostraCadenza(),
     prisma.tipoPrestazione.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
     getHomeSettings(),
+    getStatisticheSettings(),
     getBankSettings(),
     prisma.attachment.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.quotePhrase.findMany({ orderBy: [{ ordine: "asc" }, { titolo: "asc" }] }),
@@ -175,6 +179,11 @@ export default async function ImpostazioniPage() {
                     showAlLavoroBar: homeSettings.showAlLavoroBar,
                     showPreventiviBar: homeSettings.showPreventiviBar,
                     showTotaleConsuntiviBar: homeSettings.showTotaleConsuntiviBar,
+                  }}
+                />
+                <StatisticheSettingsForm
+                  initial={{
+                    oreDisponibiliNette: statisticheSettings.oreDisponibiliNette,
                   }}
                 />
               </section>
