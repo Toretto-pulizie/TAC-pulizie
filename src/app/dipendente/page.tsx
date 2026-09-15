@@ -61,7 +61,7 @@ export default async function DipendentePage() {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
-      <AutoRefresh intervalMs={20000} />
+      <AutoRefresh intervalMs={150000} />
       <header className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-3">
           <Image

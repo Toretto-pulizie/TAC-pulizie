@@ -24,7 +24,7 @@ export default async function AdminLayout({
 
   return (
     <>
-      <AutoRefresh intervalMs={20000} />
+      <AutoRefresh intervalMs={150000} />
       <AdminShell
         groups={groups}
         showImpostazioni={isAdmin}

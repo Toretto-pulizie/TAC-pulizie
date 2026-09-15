@@ -27,7 +27,7 @@ Prima pagina del programma. Mostra, in base a cosa il titolare ha attivato in Im
 - **Turni di oggi**: chi lavora dove, con orario (visibile solo con accesso a Pianificazione).
 - **Permessi in attesa**: elenco delle richieste da approvare, cliccabili per andare ad approvarle (visibile solo con accesso a Permessi).
 - Ogni sezione appare solo se hai anche accesso al modulo corrispondente (es. Totale consuntivi richiede l'accesso a Consuntivi).
-- La pagina (come tutte le altre) si aggiorna da sola ogni 20 secondi: non serve ricaricare per vedere dati nuovi (es. una timbratura appena fatta da un collaboratore).
+- La pagina (come tutte le altre, incluso il modulo Timbratura dei collaboratori) si aggiorna da sola ogni 2 minuti e mezzo: non serve ricaricare per vedere dati nuovi (es. una timbratura appena fatta da un collaboratore).
 
 ## Notifiche
 
@@ -99,7 +99,7 @@ Elenco di tutte le richieste di permesso/assenza inviate dai collaboratori (in a
 - **Allegati in stampa**: nel modulo preventivo, in fondo, un elenco con una casella per ciascun allegato caricato in Impostazioni (es. Clausole contratto): quelli spuntati vengono accodati al PDF così come sono stati creati, senza alterarne la formattazione — restano pagine a parte, dopo quelle del preventivo. Un link "anteprima" per ciascuno apre il file originale in una nuova scheda. Nella pagina di stampa a schermo compare un richiamo "Allegati inclusi in stampa" con i link agli originali (non visibile in stampa/PDF, dove gli allegati sono già pagine a sé).
 
 ### Consuntivi (`/admin/consuntivi`)
-Confronta, per **Mese**/**Anno** scelti, quanto contrattualizzato (dai preventivi accettati) con quanto effettivamente lavorato (dalle timbrature): ore lavorate, ore spostamento, importo a consuntivo e scostamento in euro/percentuale (rosso se in perdita, verde se in surplus), per ogni cantiere — un preventivo con più sedi produce una riga indipendente per ciascuna. Totali generali in cima; filtro e ordinamento su ogni colonna come in Excel.
+Confronta, per **Mese**/**Anno** scelti, quanto contrattualizzato (dai preventivi accettati) con quanto effettivamente lavorato (dalle timbrature): ore lavorate, ore spostamento, importo a consuntivo e scostamento in euro/percentuale (rosso se in perdita, verde se in surplus), per ogni cantiere — un preventivo con più sedi produce una riga indipendente per ciascuna. Compaiono solo i cantieri con almeno un'ora (lavoro o spostamento) registrata nel mese scelto: un contratto accettato ma non lavorato in quel mese non compare e non pesa sul Contrattualizzato. Totali generali in cima (anch'essi calcolati solo sui cantieri effettivamente lavorati quel mese); filtro e ordinamento su ogni colonna come in Excel.
 
 ### Clienti (`/admin/clienti`)
 - L'intestazione in alto mostra qui "Elenco Clienti" (invece del generico "Clienti"), con i pulsanti **+ Nuovo cliente** e **+ Nuova sede/cantiere** allineati a destra nello stesso box. "+ Nuova sede/cantiere" apre/chiude il modulo direttamente nel corpo della pagina; "+ Nuovo cliente" porta invece a una pagina dedicata ("Nuovo cliente"), con lo stesso layout e gli stessi campi della scheda "Modifica cliente" — salvando si va direttamente sulla scheda "Modifica cliente" del cliente appena creato (non all'elenco), per poterci aggiungere subito le sedi/cantieri.

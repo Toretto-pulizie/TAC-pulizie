@@ -97,7 +97,7 @@ export function ConsuntiviList({ rows }: { rows: ConsuntivoRow[] }) {
               <tr>
                 <td colSpan={6} className="px-4 py-6 text-center text-zinc-400">
                   {rows.length === 0
-                    ? "Nessun contratto accettato al momento."
+                    ? "Nessun cantiere lavorato in questo mese."
                     : "Nessun risultato."}
                 </td>
               </tr>

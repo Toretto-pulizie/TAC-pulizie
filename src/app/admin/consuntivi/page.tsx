@@ -37,8 +37,12 @@ export default async function ConsuntiviPage({
 
   // Ogni sede di un preventivo accettato è una riga indipendente: ognuna ha
   // il proprio contratto (Netto o Adeguamento, se presente) confrontato con
-  // le ore effettivamente lavorate su quella sede.
+  // le ore effettivamente lavorate su quella sede. Si mostrano solo le sedi
+  // con almeno un'ora (lavoro o spostamento) registrata nel mese scelto: gli
+  // altri contratti accettati, non lavorati in quel mese, non devono gonfiare
+  // il Contrattualizzato né comparire come falsi scostamenti al 100%.
   const rows = quoteSites
+    .filter((qs) => siteTotals.has(qs.siteId))
     .map((qs) => {
       const totals = siteTotals.get(qs.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
       const contrattoMensile = qs.adeguamento ?? qs.prezzoVenduto ?? 0;
