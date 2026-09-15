@@ -18,6 +18,15 @@ enum Role {
   EMPLOYEE
 }
 
+// Solo per i Collaboratori (role EMPLOYEE): un Amministrativo non ha una
+// capacità fissa di 8h/giorno sul campo, quindi non conta per "Ore
+// disponibili" in Consuntivi né compare come opzione per l'inserimento
+// manuale di una timbratura.
+enum TipoCollaboratore {
+  OPERATIVO
+  AMMINISTRATIVO
+}
+
 enum EntryType {
   TRAVEL_START
   WORK_START
@@ -71,6 +80,7 @@ model User {
   cognome      String?
   telefono     String?
   role         Role        @default(EMPLOYEE)
+  tipoCollaboratore TipoCollaboratore @default(OPERATIVO)
   allowedModules String[]  @default([])
   active       Boolean     @default(true)
   createdAt    DateTime    @default(now())

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { updateEmployee } from "@/app/actions/admin";
 
 export function EditEmployeeForm({
@@ -10,6 +10,7 @@ export function EditEmployeeForm({
   telefono,
   email,
   role,
+  tipoCollaboratore,
 }: {
   id: string;
   name: string;
@@ -17,8 +18,10 @@ export function EditEmployeeForm({
   telefono: string | null;
   email: string;
   role: "ADMIN" | "EMPLOYEE";
+  tipoCollaboratore: "OPERATIVO" | "AMMINISTRATIVO";
 }) {
   const [state, action, pending] = useActionState(updateEmployee, undefined);
+  const [currentRole, setCurrentRole] = useState(role);
 
   return (
     <form
@@ -71,13 +74,28 @@ export function EditEmployeeForm({
         Ruolo
         <select
           name="role"
-          defaultValue={role}
+          value={currentRole}
+          onChange={(e) => setCurrentRole(e.target.value as "ADMIN" | "EMPLOYEE")}
           className="rounded-lg border border-zinc-300 px-3 py-2"
         >
           <option value="EMPLOYEE">Collaboratore</option>
           <option value="ADMIN">Amministratore</option>
         </select>
       </label>
+
+      {currentRole === "EMPLOYEE" && (
+        <label className="flex flex-col gap-1 text-sm">
+          Tipo
+          <select
+            name="tipoCollaboratore"
+            defaultValue={tipoCollaboratore}
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          >
+            <option value="OPERATIVO">Operativo</option>
+            <option value="AMMINISTRATIVO">Amministrativo</option>
+          </select>
+        </label>
+      )}
 
       <label className="flex flex-col gap-1 text-sm">
         Nuova password (lascia vuoto per non cambiarla)

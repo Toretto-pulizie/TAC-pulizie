@@ -17,6 +17,7 @@ const EmployeeSchema = z.object({
   email: z.string().trim().email("Email non valida"),
   password: z.string().min(6, "Almeno 6 caratteri"),
   role: z.enum(["ADMIN", "EMPLOYEE"]),
+  tipoCollaboratore: z.enum(["OPERATIVO", "AMMINISTRATIVO"]).default("OPERATIVO"),
 });
 
 export async function createEmployee(_prevState: unknown, formData: FormData) {
@@ -29,13 +30,14 @@ export async function createEmployee(_prevState: unknown, formData: FormData) {
     email: formData.get("email"),
     password: formData.get("password"),
     role: formData.get("role"),
+    tipoCollaboratore: formData.get("tipoCollaboratore") || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  const { name, cognome, telefono, email, password, role } = parsed.data;
+  const { name, cognome, telefono, email, password, role, tipoCollaboratore } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -51,6 +53,7 @@ export async function createEmployee(_prevState: unknown, formData: FormData) {
       email,
       passwordHash,
       role,
+      tipoCollaboratore,
     },
   });
 
@@ -65,6 +68,7 @@ const UpdateEmployeeSchema = z.object({
   telefono: z.string().trim().optional(),
   email: z.string().trim().email("Email non valida"),
   role: z.enum(["ADMIN", "EMPLOYEE"]),
+  tipoCollaboratore: z.enum(["OPERATIVO", "AMMINISTRATIVO"]).default("OPERATIVO"),
   password: z.union([z.string().min(6, "Almeno 6 caratteri"), z.literal("")]),
 });
 
@@ -78,6 +82,7 @@ export async function updateEmployee(_prevState: unknown, formData: FormData) {
     telefono: formData.get("telefono") || undefined,
     email: formData.get("email"),
     role: formData.get("role"),
+    tipoCollaboratore: formData.get("tipoCollaboratore") || undefined,
     password: formData.get("password") || "",
   });
 
@@ -85,7 +90,7 @@ export async function updateEmployee(_prevState: unknown, formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  const { id, name, cognome, telefono, email, role, password } = parsed.data;
+  const { id, name, cognome, telefono, email, role, tipoCollaboratore, password } = parsed.data;
 
   const existing = await prisma.user.findFirst({
     where: { email, NOT: { id } },
@@ -102,6 +107,7 @@ export async function updateEmployee(_prevState: unknown, formData: FormData) {
       telefono: telefono || null,
       email,
       role,
+      tipoCollaboratore,
       ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {}),
     },
   });

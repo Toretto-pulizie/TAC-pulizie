@@ -38,6 +38,14 @@ export default async function TimbraturePage({
   const totals = computeTotals(entries);
   const sessions = pairSessions(entries);
 
+  // Nell'inserimento manuale non propongo i Collaboratori Amministrativi:
+  // non hanno una capacità fissa sul campo, quindi non hanno timbrature da
+  // registrare (restano comunque visibili nel filtro e nelle righe già
+  // esistenti, se mai ce ne fossero).
+  const manualEntryEmployees = employees.filter(
+    (e) => e.role !== "EMPLOYEE" || e.tipoCollaboratore === "OPERATIVO"
+  );
+
   const employeeTotals: EmployeeTotal[] = employees
     .filter((e) => !params.userId || e.id === params.userId)
     .map((e) => {
@@ -120,6 +128,7 @@ export default async function TimbraturePage({
         sessions={sessionRows}
         employeeTotals={employeeTotals}
         employees={employees.map((e) => ({ id: e.id, name: e.name }))}
+        manualEntryEmployees={manualEntryEmployees.map((e) => ({ id: e.id, name: e.name }))}
         clients={Array.from(
           new Map(sites.map((s) => [s.clientId, clientDisplayName(s.client)])).entries()
         )

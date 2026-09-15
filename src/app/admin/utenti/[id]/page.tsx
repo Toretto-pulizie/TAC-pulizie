@@ -25,6 +25,7 @@ export default async function EditEmployeePage({
           telefono={employee.telefono}
           email={employee.email}
           role={employee.role}
+          tipoCollaboratore={employee.tipoCollaboratore}
         />
       </div>
       {employee.role === "EMPLOYEE" && (

@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { createEmployee } from "@/app/actions/admin";
 
 export function EmployeeForm() {
   const [state, action, pending] = useActionState(createEmployee, undefined);
   const formRef = useRef<HTMLFormElement>(null);
+  const [role, setRole] = useState("EMPLOYEE");
 
   useEffect(() => {
     if (state && "success" in state && state.success) {
@@ -65,13 +66,27 @@ export function EmployeeForm() {
         Ruolo
         <select
           name="role"
-          defaultValue="EMPLOYEE"
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
           className="rounded-lg border border-zinc-300 px-3 py-2"
         >
           <option value="EMPLOYEE">Collaboratore</option>
           <option value="ADMIN">Amministratore</option>
         </select>
       </label>
+      {role === "EMPLOYEE" && (
+        <label className="flex flex-col gap-1 text-sm">
+          Tipo
+          <select
+            name="tipoCollaboratore"
+            defaultValue="OPERATIVO"
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          >
+            <option value="OPERATIVO">Operativo</option>
+            <option value="AMMINISTRATIVO">Amministrativo</option>
+          </select>
+        </label>
+      )}
       <button
         type="submit"
         disabled={pending}

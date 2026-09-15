@@ -118,12 +118,14 @@ export function TimbratureGrid({
   sessions,
   employeeTotals,
   employees,
+  manualEntryEmployees,
   clients,
   sites,
 }: {
   sessions: SessionRow[];
   employeeTotals: EmployeeTotal[];
   employees: { id: string; name: string }[];
+  manualEntryEmployees: { id: string; name: string }[];
   clients: { id: string; name: string }[];
   sites: SiteOption[];
 }) {
@@ -344,7 +346,7 @@ export function TimbratureGrid({
 
       {showManualForm && (
         <ManualSessionForm
-          employees={employees}
+          employees={manualEntryEmployees}
           clients={clients}
           sites={sites}
           onCreated={() => {
