@@ -28,11 +28,15 @@ export function LeaveRequestForm() {
           defaultValue="FERIE_RICHIESTE"
           className="rounded-lg border border-zinc-300 px-3 py-3 text-base"
         >
-          {Object.entries(TIPO_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
+          {Object.entries(TIPO_LABELS)
+            // "Ferie aziendali" la decide l'azienda, non è una richiesta del
+            // collaboratore: la inserisce solo l'amministratore da Permessi.
+            .filter(([value]) => value !== "FERIE_AZIENDALI")
+            .map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
         </select>
       </label>
 

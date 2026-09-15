@@ -11,6 +11,7 @@ export function EmployeeRow({
   telefono,
   email,
   role,
+  tipoCollaboratore,
   active,
 }: {
   id: string;
@@ -19,6 +20,7 @@ export function EmployeeRow({
   telefono: string | null;
   email: string;
   role: string;
+  tipoCollaboratore: string;
   active: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -31,6 +33,13 @@ export function EmployeeRow({
       <td className="px-4 py-3 text-zinc-500">{email}</td>
       <td className="px-4 py-3 text-zinc-500">
         {role === "ADMIN" ? "Amministratore" : "Collaboratore"}
+      </td>
+      <td className="px-4 py-3 text-zinc-500">
+        {role === "ADMIN"
+          ? "—"
+          : tipoCollaboratore === "AMMINISTRATIVO"
+            ? "Amministrativo"
+            : "Operativo"}
       </td>
       <td className="px-4 py-3">
         <span

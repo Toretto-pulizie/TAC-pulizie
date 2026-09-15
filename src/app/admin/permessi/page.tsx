@@ -3,16 +3,23 @@ import { prisma } from "@/lib/prisma";
 import { TIPO_LABELS } from "@/lib/leaveRequests";
 import { formatDateLabel } from "@/lib/dates";
 import { LeaveRequestRow } from "./LeaveRequestRow";
+import { PermessiPageActions } from "./PermessiPageActions";
 
 const STATO_ORDER = { IN_ATTESA: 0, APPROVATO: 1, RIFIUTATO: 2 };
 
 export default async function AdminPermessiPage() {
   await requireModule("permessi");
 
-  const requests = await prisma.leaveRequest.findMany({
-    include: { user: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const [requests, employees] = await Promise.all([
+    prisma.leaveRequest.findMany({
+      include: { user: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.user.findMany({
+      where: { active: true, role: "EMPLOYEE" },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   const sorted = [...requests].sort(
     (a, b) => STATO_ORDER[a.stato] - STATO_ORDER[b.stato]
@@ -20,6 +27,10 @@ export default async function AdminPermessiPage() {
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
+        <PermessiPageActions
+          employees={employees.map((e) => ({ id: e.id, name: e.name }))}
+        />
+
         <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white [contain:inline-size]">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">

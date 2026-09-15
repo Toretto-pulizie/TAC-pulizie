@@ -57,7 +57,7 @@ Il **Sopralluogo** è un'attività distinta dal lavoro vero e proprio (es. un pr
 
 La pagina mostra anche i turni programmati nei prossimi 7 giorni e le timbrature già fatte oggi. Se il dispositivo lo consente, viene registrata anche la posizione GPS.
 
-**Richiedi permesso** — si compila: **Tipo** (Infortunio, Malattia, Permesso, Permesso retribuito, Legge 104, Ferie, Ferie aziendali, Maternità anticipata, Maternità facoltativa), **Dal**, **Al**, **Note** (facoltative), poi **Invia richiesta**. Sotto è visibile lo storico delle proprie richieste con lo stato.
+**Richiedi permesso** — si compila: **Tipo** (Infortunio, Malattia, Permesso, Permesso retribuito, Legge 104, Ferie, Maternità anticipata, Maternità facoltativa — "Ferie aziendali" non è tra le opzioni: la decide l'azienda, non il collaboratore, e la inserisce l'Amministratore da Permessi), **Dal**, **Al**, **Note** (facoltative), poi **Invia richiesta**. Sotto è visibile lo storico delle proprie richieste con lo stato.
 
 ## Moduli del programma (menu laterale)
 
@@ -90,6 +90,8 @@ Griglia mensile (**Mese**/**Anno** + **Mostra**): una riga per collaboratore, un
 
 ### Permessi (`/admin/permessi`)
 Elenco di tutte le richieste di permesso/assenza inviate dai collaboratori (in attesa per prime), con azioni **Approva**, **Rifiuta**, **Riapri**, **Elimina**.
+
+Il pulsante **+ Aggiungi permesso**, in alto a destra nell'intestazione, apre un modulo per inserire direttamente un'assenza: utile sia per quelle che il collaboratore si è dimenticato di registrare, sia per quelle decise dall'azienda e non richieste dal collaboratore (es. **Ferie aziendali** per una chiusura). Si sceglie **Collaboratore** (un singolo nome, oppure **Tutti i collaboratori** per applicare la stessa assenza a tutti i Collaboratori attivi in un colpo solo — comodo per una chiusura aziendale), **Tipo**, **Dal**, **Al** e **Note** facoltative. A differenza di una richiesta del collaboratore, questa entra subito come **Approvata**: chi la inserisce è lo stesso Amministratore che altrimenti dovrebbe approvarla.
 
 ### Preventivi (`/admin/preventivi`)
 - Pulsante **+ Nuovo preventivo**, in alto a destra nell'intestazione insieme a "Gestisci frasi preimpostate →": apre/chiude il modulo di creazione (rimane chiuso finché non serve, per non intasare la vista). Cliccando **Modifica** su un preventivo esistente il modulo si apre già compilato.
@@ -129,7 +131,7 @@ Solo lettura, quattro tabelle: andamento preventivi ultimi 6 mesi (creati/accett
 
 ### Utenti (`/admin/utenti`, solo titolare)
 Raggiungibile da **Gestione utenti** nel menu utente in alto a destra (non più dal menu laterale).
-- Elenco utenti (Nome, Cognome, Telefono, Email, Ruolo, Stato).
+- Elenco utenti (Nome, Cognome, Telefono, Email, Ruolo, **Tipo** — Operativo/Amministrativo per i Collaboratori, "—" per l'Amministratore, Stato).
 - **Aggiungi utente** / **Modifica utente**: Nome, Cognome, Telefono, Email, Password (o "Nuova password" in modifica, vuoto per non cambiarla), Ruolo (Collaboratore o Amministratore). Per il Ruolo Collaboratore compare anche **Tipo**: **Operativo** (lavora sul campo, valore di default) o **Amministrativo** (lavoro d'ufficio, senza timbrature sul campo). Un Collaboratore Amministrativo non compare tra le opzioni di "+ Aggiungi timbratura manuale" in Timbrature (resta comunque selezionabile nel filtro della pagina) e non pesa su "Ore disponibili" in Consuntivi; conta comunque normalmente se mai avesse delle Ore lavorate registrate. La scheda "Modifica utente" mostra il proprio titolo nell'intestazione in alto (dove di solito compare "Utenti"), con accanto, a destra, "← Torna all'elenco".
 - Per i Collaboratori, sezione **Pagine accessibili** con un interruttore per ogni pagina, raggruppate come nel menu (Anagrafiche / Gestione / Produzione / Utilità). Utenti e Impostazioni non sono mai assegnabili. Pulsante **Salva permessi**.
 

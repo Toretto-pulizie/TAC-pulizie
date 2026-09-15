@@ -20,6 +20,7 @@ export default async function UtentiPage() {
                 <th className="px-4 py-3 font-medium">Telefono</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Ruolo</th>
+                <th className="px-4 py-3 font-medium">Tipo</th>
                 <th className="px-4 py-3 font-medium">Stato</th>
                 <th className="px-4 py-3"></th>
               </tr>
@@ -34,6 +35,7 @@ export default async function UtentiPage() {
                   telefono={e.telefono}
                   email={e.email}
                   role={e.role}
+                  tipoCollaboratore={e.tipoCollaboratore}
                   active={e.active}
                 />
               ))}
