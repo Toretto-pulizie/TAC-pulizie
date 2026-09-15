@@ -1,8 +1,9 @@
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeSiteTotals } from "@/lib/timeCalc";
-import { MONTH_LABELS, monthRange, workingDaysInMonth } from "@/lib/dates";
+import { MONTH_LABELS, monthRange } from "@/lib/dates";
 import { clientDisplayName } from "@/lib/clients";
+import { getOreDisponibili } from "@/lib/oreDisponibili";
 import { ConsuntiviList } from "./ConsuntiviList";
 
 function formatEuro(n: number) {
@@ -22,28 +23,20 @@ export default async function ConsuntiviPage({
   const month = params.month ? parseInt(params.month, 10) : now.getMonth() + 1;
   const { start, end } = monthRange(year, month);
 
-  const [quoteSites, entries, collaboratoriAttivi] = await Promise.all([
-    prisma.quoteSite.findMany({
-      where: { quote: { status: "ACCETTATO" } },
-      include: { site: { include: { client: true } } },
-    }),
-    prisma.timeEntry.findMany({
-      where: { timestamp: { gte: start, lte: end } },
-      select: { userId: true, siteId: true, type: true, timestamp: true, sessionId: true },
-    }),
-    // Solo i Collaboratori Operativi (chi lavora sul campo con una capacità
-    // fissa di 8h/giorno) contano per la capacità disponibile — non
-    // l'Amministratore né i Collaboratori Amministrativi, che pure possono
-    // timbrare occasionalmente (contano comunque in Ore lavorate).
-    prisma.user.count({
-      where: { active: true, role: "EMPLOYEE", tipoCollaboratore: "OPERATIVO" },
-    }),
-  ]);
-
-  // Ore disponibili nel mese: giorni lavorativi (esclusi sabati, domeniche,
-  // feste comandate e il Patrono di Torino) × 8h × collaboratori attivi —
-  // il tetto teorico a cui confrontare le Ore lavorate/spostamento.
-  const oreDisponibili = workingDaysInMonth(year, month) * 8 * collaboratoriAttivi;
+  const [quoteSites, entries, { ore: oreDisponibili, netto: oreDisponibiliNette }] =
+    await Promise.all([
+      prisma.quoteSite.findMany({
+        where: { quote: { status: "ACCETTATO" } },
+        include: { site: { include: { client: true } } },
+      }),
+      prisma.timeEntry.findMany({
+        where: { timestamp: { gte: start, lte: end } },
+        select: { userId: true, siteId: true, type: true, timestamp: true, sessionId: true },
+      }),
+      // Stesso calcolo condiviso con Statistiche, incluso l'interruttore
+      // "al netto dei permessi" impostato in Impostazioni → Visualizzazione.
+      getOreDisponibili(year, month),
+    ]);
 
   const siteTotals = computeSiteTotals(entries);
 
@@ -106,6 +99,9 @@ export default async function ConsuntiviPage({
             <p className="text-sm text-zinc-500">Ore disponibili</p>
             <p className="text-xl font-semibold text-zinc-900">
               {oreDisponibili.toFixed(1)}h
+            </p>
+            <p className="text-xs text-zinc-400">
+              {oreDisponibiliNette ? "Al netto dei permessi" : "Totale"}
             </p>
           </div>
           <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">

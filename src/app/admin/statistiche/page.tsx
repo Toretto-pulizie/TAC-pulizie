@@ -2,10 +2,9 @@ import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeListPrice, computeDiscountPct } from "@/lib/quotes";
 import { computeSiteTotals, computeTotals } from "@/lib/timeCalc";
-import { monthRange, MONTH_LABELS, workingDaysInMonth } from "@/lib/dates";
+import { monthRange, MONTH_LABELS } from "@/lib/dates";
 import { clientDisplayName } from "@/lib/clients";
-import { hoursLostToApprovedLeave } from "@/lib/leaveRequests";
-import { getStatisticheSettings } from "@/lib/statisticheSettings";
+import { getOreDisponibili } from "@/lib/oreDisponibili";
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
@@ -31,8 +30,7 @@ export default async function StatistichePage() {
     acceptedQuoteSites,
     currentMonthEntries,
     employees,
-    collaboratoriOperativi,
-    statisticheSettings,
+    { ore: oreDisponibili, netto: oreDisponibiliNette },
     totClienti,
     clientiConDatiFiscali,
     totCantieri,
@@ -54,13 +52,9 @@ export default async function StatistichePage() {
     // proprio lavoro personale) deve comunque comparire nel riepilogo ore,
     // come già avviene in Presenze e Pianificazione.
     prisma.user.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
-    // Solo i Collaboratori Operativi contano per "Ore disponibili" — vedi la
-    // stessa nota in consuntivi/page.tsx.
-    prisma.user.findMany({
-      where: { active: true, role: "EMPLOYEE", tipoCollaboratore: "OPERATIVO" },
-      select: { id: true },
-    }),
-    getStatisticheSettings(),
+    // Stesso calcolo condiviso con Consuntivi, incluso l'interruttore "al
+    // netto dei permessi" impostato in Impostazioni → Visualizzazione.
+    getOreDisponibili(currentYear, currentMonth),
     prisma.client.count(),
     prisma.client.count({
       where: { OR: [{ partitaIva: { not: null } }, { codiceFiscale: { not: null } }] },
@@ -68,24 +62,6 @@ export default async function StatistichePage() {
     prisma.site.count(),
     prisma.site.count({ where: { lat: { not: null } } }),
   ]);
-
-  // --- Ore disponibili (mese corrente) ---
-  const oreDisponibiliLorde = workingDaysInMonth(currentYear, currentMonth) * 8 * collaboratoriOperativi.length;
-  let oreDisponibili = oreDisponibiliLorde;
-  if (statisticheSettings.oreDisponibiliNette) {
-    const operativoIds = new Set(collaboratoriOperativi.map((u) => u.id));
-    const approvedLeave = await prisma.leaveRequest.findMany({
-      where: {
-        stato: "APPROVATO",
-        userId: { in: [...operativoIds] },
-        dataInizio: { lte: curEnd },
-        dataFine: { gte: curStart },
-      },
-      select: { dataInizio: true, dataFine: true },
-    });
-    const perse = hoursLostToApprovedLeave(approvedLeave, currentYear, currentMonth);
-    oreDisponibili = Math.max(0, oreDisponibiliLorde - perse);
-  }
 
   // --- Andamento preventivi (ultimi 6 mesi) ---
   const monthsWindow: { year: number; month: number }[] = [];
@@ -177,7 +153,7 @@ export default async function StatistichePage() {
               {oreDisponibili.toFixed(1)}h
             </p>
             <p className="text-xs text-zinc-400">
-              {statisticheSettings.oreDisponibiliNette
+              {oreDisponibiliNette
                 ? "Al netto dei permessi approvati (Ferie aziendali comprese)"
                 : "Totale, senza sottrarre i permessi"}
             </p>
