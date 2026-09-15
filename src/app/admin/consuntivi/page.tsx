@@ -31,7 +31,10 @@ export default async function ConsuntiviPage({
       where: { timestamp: { gte: start, lte: end } },
       select: { userId: true, siteId: true, type: true, timestamp: true, sessionId: true },
     }),
-    prisma.user.count({ where: { active: true } }),
+    // Solo i Collaboratori (chi lavora sul campo con una capacità fissa di
+    // 8h/giorno) contano per la capacità disponibile — non l'Amministratore,
+    // che pure può timbrare occasionalmente (conta comunque in Ore lavorate).
+    prisma.user.count({ where: { active: true, role: "EMPLOYEE" } }),
   ]);
 
   // Ore disponibili nel mese: giorni lavorativi (esclusi sabati, domeniche,
