@@ -10,8 +10,8 @@ import {
 } from "@/lib/dates";
 import { cadenzaLabel } from "@/lib/quotePrint";
 import { clientDisplayName } from "@/lib/clients";
-import { ShiftForm } from "./ShiftForm";
-import { WeekCalendar } from "./WeekCalendar";
+import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
+import { PianificazioneCalendar } from "./PianificazioneCalendar";
 import { ShiftPlanRow } from "./ShiftPlanRow";
 import { PianificazionePageActions } from "./PianificazionePageActions";
 
@@ -28,8 +28,15 @@ export default async function PianificazionePage({
   const weekEnd = endOfDay(addDays(weekStart, 6));
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  const [employees, sites, shifts, shiftPlans, continuativeQuoteSites] =
-    await Promise.all([
+  const [
+    employees,
+    sites,
+    shifts,
+    shiftPlans,
+    continuativeQuoteSites,
+    allAcceptedQuoteSites,
+    serviceTypeLabels,
+  ] = await Promise.all([
       prisma.user.findMany({
         where: { active: true },
         orderBy: { name: "asc" },
@@ -53,6 +60,25 @@ export default async function PianificazionePage({
         },
         include: { site: { include: { client: true } } },
       }),
+      // Tutti i preventivi/servizi accettati di ogni sede (qualunque tipo,
+      // compreso "una tantum"): proposti nel modulo turno come scelta
+      // esplicita quando si assegnano più collaboratori insieme, così le
+      // ore per suddividere il tempo vengono sempre da un preventivo
+      // preciso e non indovinate — una sede può avere più contratti nel
+      // tempo (es. prima settimanale poi mensile) o più righe.
+      prisma.quoteSite.findMany({
+        where: { quote: { status: "ACCETTATO" } },
+        select: {
+          id: true,
+          siteId: true,
+          ore: true,
+          serviceType: true,
+          oneShotCount: true,
+          passSettimanale: true,
+          passMensile: true,
+        },
+      }),
+      getServiceTypeLabels(),
     ]);
 
   sites.sort((a, b) => {
@@ -60,18 +86,45 @@ export default async function PianificazionePage({
     return byClient !== 0 ? byClient : a.name.localeCompare(b.name, "it");
   });
 
+  const quoteSitesBySite = new Map<string, { id: string; ore: number; label: string }[]>();
+  for (const qs of allAcceptedQuoteSites) {
+    const list = quoteSitesBySite.get(qs.siteId) ?? [];
+    list.push({
+      id: qs.id,
+      ore: qs.ore,
+      label: `${cadenzaLabel(qs.serviceType, qs.oneShotCount, qs.passSettimanale, qs.passMensile)} — ${qs.ore}h/intervento`,
+    });
+    quoteSitesBySite.set(qs.siteId, list);
+  }
+
+  // Più collaboratori sullo stesso turno condividono lo stesso groupId
+  // (stessa sede/data/orario per costruzione): li raggruppiamo in un unico
+  // blocco per il calendario invece di uno per collaboratore.
+  const shiftsByGroup = new Map<string, typeof shifts>();
+  for (const s of shifts) {
+    const list = shiftsByGroup.get(s.groupId) ?? [];
+    list.push(s);
+    shiftsByGroup.set(s.groupId, list);
+  }
+  const groupedShiftItems = Array.from(shiftsByGroup.values()).map((members) => {
+    const first = members[0];
+    return {
+      groupId: first.groupId,
+      start: first.start,
+      end: first.end,
+      siteId: first.siteId,
+      siteLabel: `${clientDisplayName(first.site.client)} — ${first.site.name}`,
+      notes: first.notes,
+      members: members.map((m) => ({
+        shiftId: m.id,
+        userId: m.userId,
+        employeeName: m.user.name,
+      })),
+    };
+  });
+
   const shiftsByDay = days.map((day) =>
-    shifts
-      .filter((s) => s.start.toDateString() === day.toDateString())
-      .map((s) => ({
-        id: s.id,
-        start: s.start,
-        end: s.end,
-        userId: s.userId,
-        employeeName: s.user.name,
-        siteLabel: `${clientDisplayName(s.site.client)} — ${s.site.name}`,
-        notes: s.notes,
-      }))
+    groupedShiftItems.filter((g) => g.start.toDateString() === day.toDateString())
   );
 
   const DEFAULT_START_HOUR = 7;
@@ -110,6 +163,7 @@ export default async function PianificazionePage({
     siteLabel: `${clientDisplayName(p.site.client)} — ${p.site.name}`,
     daysOfWeek: p.daysOfWeek,
     intervalWeeks: p.intervalWeeks,
+    intervalDays: p.intervalDays,
     startTime: p.startTime,
     endTime: p.endTime,
     dataInizioLabel: p.dataInizio.toLocaleDateString("it-IT"),
@@ -121,6 +175,7 @@ export default async function PianificazionePage({
       id: qs.id,
       siteId: qs.siteId,
       serviceType: qs.serviceType,
+      ore: qs.ore,
       label: `${clientDisplayName(qs.site.client)} — ${qs.site.name} (${cadenzaLabel(qs.serviceType, qs.oneShotCount, qs.passSettimanale, qs.passMensile)})`,
     }))
     .sort((a, b) => a.label.localeCompare(b.label, "it"));
@@ -134,6 +189,10 @@ export default async function PianificazionePage({
             label: `${clientDisplayName(s.client)} — ${s.name}`,
           }))}
           quoteSites={quoteSiteOptions}
+          frequenzaLabels={{
+            settimanale: serviceTypeLabels.PASS_SETTIMANALE,
+            mensile: serviceTypeLabels.PASS_MENSILE,
+          }}
         />
 
         {shiftPlanItems.length > 0 && (
@@ -148,17 +207,6 @@ export default async function PianificazionePage({
             </ul>
           </div>
         )}
-
-        <ShiftForm
-          employees={employees.map((e) => ({ id: e.id, name: e.name }))}
-          sites={sites.map((s) => ({
-            id: s.id,
-            label: `${clientDisplayName(s.client)} — ${s.name}`,
-            capienza: s.capienza,
-          }))}
-          occupancy={occupancy}
-          defaultDate={toDateInputValue(reference)}
-        />
 
         <div className="flex items-center justify-between">
           <Link
@@ -178,15 +226,21 @@ export default async function PianificazionePage({
           </Link>
         </div>
 
-        <WeekCalendar
+        <PianificazioneCalendar
+          employees={employees.map((e) => ({ id: e.id, name: e.name }))}
+          sites={sites.map((s) => ({
+            id: s.id,
+            label: `${clientDisplayName(s.client)} — ${s.name}`,
+            capienza: s.capienza,
+            quoteSites: quoteSitesBySite.get(s.id) ?? [],
+          }))}
+          occupancy={occupancy}
+          defaultDate={toDateInputValue(reference)}
           days={days}
           shiftsByDay={shiftsByDay}
           startHour={startHour}
           endHour={endHour}
         />
-        <p className="text-xs text-zinc-400">
-          Passa il mouse su un turno per i dettagli, clicca sulla × per rimuoverlo.
-        </p>
     </div>
   );
 }

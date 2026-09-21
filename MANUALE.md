@@ -5,14 +5,13 @@
 ## Chi usa l'app
 
 - **Titolare (Amministratore)**: accesso completo a tutto, incluse le pagine Utenti e Impostazioni che nessun altro può vedere.
-- **Collaboratore**: ha sempre accesso alla propria area personale (timbratura e richiesta permessi). In più può avere accesso a singole pagine del programma, se il titolare gliele ha assegnate da Utenti.
+- **Collaboratore**: ha sempre accesso alla propria area personale (timbratura e richiesta permessi). In più può avere accesso a singole pagine del programma, se il titolare gliele ha assegnate da Utenti — raggiungibili dalla stessa area personale, nella sezione "Gestione".
 
 ## Accesso
 
 Login con email e password. Dopo l'accesso:
 - Il titolare atterra sulla home del programma.
-- Un collaboratore **senza** nessun permesso assegnato atterra sulla propria area personale.
-- Un collaboratore **con** almeno un permesso assegnato atterra direttamente sul programma (non più sull'area personale), e da lì può tornare alla sua area cliccando "La mia area" in fondo al menu laterale.
+- Un collaboratore atterra sempre sulla propria area personale (vedi sotto), da cui — se ha permessi assegnati — può anche raggiungere le pagine del programma. Da lì può tornare alla sua area cliccando "La mia area" in fondo al menu laterale.
 
 ## Barra superiore
 
@@ -59,6 +58,8 @@ La pagina mostra anche i turni programmati nei prossimi 7 giorni e le timbrature
 
 **Richiedi permesso** — si compila: **Tipo** (Infortunio, Malattia, Permesso, Permesso retribuito, Legge 104, Ferie, Maternità anticipata, Maternità facoltativa — "Ferie aziendali" non è tra le opzioni: la decide l'azienda, non il collaboratore, e la inserisce l'Amministratore da Permessi), **Dal**, **Al**, **Note** (facoltative), poi **Invia richiesta**. Sotto è visibile lo storico delle proprie richieste con lo stato.
 
+**Gestione** — sotto ai due riquadri sopra, compare solo se il titolare ha assegnato al collaboratore l'accesso a una o più pagine del programma (da Utenti → Pagine accessibili): un pulsante per ciascuna pagina assegnata, raggruppati come nel menu laterale (es. Anagrafiche, Gestione, Produzione, Utilità). Aprono le stesse identiche pagine usate dal computer, adattate allo schermo del telefono; da lì si torna all'area personale con "La mia area" in fondo al menu. Se il collaboratore non ha nessun permesso assegnato, questa sezione non compare affatto.
+
 ## Moduli del programma (menu laterale)
 
 Il menu è diviso in quattro gruppi, in quest'ordine:
@@ -81,7 +82,28 @@ Elenco delle timbrature registrate, filtrabile per **Da**/**A** (intervallo di d
 - **Ore lavoro e Spostamento in decimi**: in griglia, entrambi i valori sono sempre in ore decimali con un decimale (es. "0.5" per mezz'ora, "1.5" per un'ora e mezza) — sia quando li scrivi tu direttamente in cella, sia quando Ore lavoro viene calcolato da un Inizio e una Fine (es. dalle 7:00 alle 7:30 → "0.5"); se i minuti non sono un multiplo esatto di 6, il valore mostrato è arrotondato al decimo più vicino. Nella cella si può scrivere sia in questo formato ("1,5" o "1.5") sia come "ore:minuti" (es. "2:30").
 
 ### Pianificazione (`/admin/pianificazione`)
-Calendario settimanale dei turni assegnati, navigabile con "← Settimana precedente" / "Settimana successiva →". Modulo per assegnare un turno singolo: **Collaboratore**, **Cliente/cantiere**, **Data**, **Dalle**, **Alle**, **Note**. Se il cantiere ha una **capienza** massima impostata, il modulo mostra quante persone sono già assegnate quel giorno e avvisa (senza bloccare) se il limite è superato.
+Calendario settimanale dei turni assegnati, navigabile con "← Settimana precedente" / "Settimana successiva →". Modulo per assegnare un turno: **Collaboratori** (uno o più, con caselle di spunta), **Cliente/cantiere**, **Data**, **Dalle**, **Alle**, **Note**. Se il cantiere ha una **capienza** massima impostata, il modulo mostra quante persone sono già assegnate quel giorno e avvisa (senza bloccare) se il limite è superato.
+
+**Più collaboratori sullo stesso cantiere**: selezionando più di un collaboratore, il modulo propone come dividere il tempo:
+- Se la sede ha **un solo preventivo accettato**, le sue ore per intervento vengono usate in automatico.
+- Se ne ha **più di uno** (es. prima un contratto settimanale poi passato a mensile, o più righe), compare il menu **Preventivo/servizio** per scegliere esplicitamente a quale fare riferimento — le ore non si indovinano.
+- Se il cantiere **non ha nessun preventivo accettato** (lavoro estemporaneo), resta un campo libero **Ore intervento (totali)** da compilare a mano.
+
+In tutti i casi, l'orario **Alle** si calcola da solo dividendo le ore intervento per il numero di collaboratori scelti: es. un cantiere con 6 ore a preventivo assegnato a 3 collaboratori genera un turno di 2 ore ciascuno, dalle 09:00 alle 11:00. Con un solo collaboratore selezionato, **Alle** resta un campo libero come sempre. Lo stesso funziona anche nel modulo **"+ Nuovo turno ricorrente"** (turni ricorrenti, dove la scelta del preventivo è la stessa tendina "Da preventivo continuativo" già presente).
+
+Un turno con più collaboratori compare in calendario come **un unico blocco** (es. "Enrico, Giulia, Maria"), non uno per persona — più facile da leggere a colpo d'occhio. Trascinandolo o ridimensionandolo si spostano tutti i collaboratori coinvolti insieme.
+
+**Cadenza del turno ricorrente**: se il piano è collegato a un preventivo (tendina "Da preventivo continuativo"), la cadenza si deduce da quello e il campo non compare nemmeno — non c'è nulla da scegliere. Senza un preventivo collegato, compare invece un menu **Cadenza** con le due frequenze già note dai preventivi (le stesse etichette personalizzabili in Impostazioni → Frequenza, es. "Passaggio settimanale"/"Passaggio mensile"), più un campo **"Ogni quante settimane/mesi"** per il moltiplicatore:
+- **Passaggio settimanale**: il numero indica ogni quante settimane si ripete (1 = ogni settimana, 2 = a settimane alterne, ecc.) — combinato con i giorni scelti sopra, che restano invariati settimana dopo settimana.
+- **Passaggio mensile**: il numero indica ogni quanti mesi (contati a "mese standard" di 30 giorni: 1 = ogni mese, 2 = ogni due mesi/bimestrale, ecc.). Il turno si posiziona nel primo dei giorni scelti sopra che segue ciascun traguardo di 30×N giorni dalla data inizio — non slitta rispetto al calendario come farebbe una stima a settimane (es. "ogni 4 settimane" perde qualche giorno all'anno rispetto a un vero mese).
+
+**Calendario interattivo, come Google Calendar**: ogni turno (anche con più collaboratori insieme) si può **trascinare** per spostarlo su un altro giorno/orario, oppure **allungare/accorciare** trascinando il bordo superiore o inferiore del blocco (orario arrotondato ai 15 minuti) — sempre tutti i collaboratori coinvolti insieme. Un **click** (senza trascinare) sul blocco lo riapre per intero nel modulo in alto, con tutti i campi già compilati — collaboratori coinvolti compresi, che si possono aggiungere o togliere come nella creazione — così si può modificare qualsiasi cosa del turno. Il pulsante **×** sul blocco elimina il turno per tutti i collaboratori coinvolti (chiede conferma).
+
+**Verifica prima di confermare**: quando crei, modifichi o trascini un turno, se c'è qualcosa da sapere compare un popup con gli avvisi pertinenti (nessuno di questi blocca il salvataggio, decidi tu se procedere):
+- **Sovrapposizione**: uno dei collaboratori coinvolti ha già un altro turno che si sovrappone nello stesso orario — il popup mostra quel turno e permette di **spostarlo su due piedi** scegliendo una nuova data/ora (senza uscire dal popup), oppure di "Sovrapporlo comunque".
+- **Capienza cantiere**: quante persone sono già assegnate quel giorno rispetto al limite impostato sulla sede.
+- **Monte ore contrattuale**: per un cantiere con un preventivo accettato, quante ore-persona risultano già pianificate nel periodo di riferimento (settimana per un Passaggio settimanale, mese per un Passaggio mensile, totale per una tantum) rispetto a quelle concordate (ore per intervento × interventi) — segnalato se si sfora. Con più collaboratori sullo stesso turno, ciascuno conta per intero (3 collaboratori per 2 ore = 6 ore-persona).
+- **Distanza**: se un collaboratore coinvolto ha un altro turno lo stesso giorno su una sede diversa, la distanza approssimativa in km in linea d'aria tra le due sedi (visibile solo se entrambe hanno un indirizzo geolocalizzato), utile per accorgersi di spostamenti poco pratici.
 
 **Turni ricorrenti**: il pulsante **+ Nuovo turno ricorrente**, in alto a destra nell'intestazione, apre un modulo per generare automaticamente i turni di un servizio continuativo, invece di crearli uno a uno ogni settimana. Si può partire da un preventivo accettato con sede a Passaggio settimanale/mensile (menu "Da preventivo continuativo") — cliente/cantiere e "Ogni quante settimane" (1 per il settimanale, 4 per il mensile) si compilano da soli, restano da scegliere Collaboratore, giorni della settimana, orario, data inizio ed eventuale data fine. Appena creato, il sistema genera subito i turni per le prossime 6 settimane; un controllo automatico giornaliero estende poi la finestra man mano che il tempo passa, così i turni futuri restano sempre generati con anticipo. Eliminare un turno singolo dal calendario (×) non tocca il piano, che continua a generarne altri; eliminare il piano stesso rimuove solo i turni futuri non ancora svolti — quelli passati restano come storico. L'elenco "Turni ricorrenti attivi" mostra tutti i piani in corso con **Elimina**.
 

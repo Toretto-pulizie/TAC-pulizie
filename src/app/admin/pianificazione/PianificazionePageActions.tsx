@@ -9,6 +9,7 @@ type QuoteSiteOption = {
   siteId: string;
   label: string;
   serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
+  ore: number;
 };
 
 // Il pulsante vive nel box condiviso in alto (vedi PageHeaderActions); il
@@ -18,10 +19,12 @@ export function PianificazionePageActions({
   employees,
   sites,
   quoteSites,
+  frequenzaLabels,
 }: {
   employees: { id: string; name: string }[];
   sites: { id: string; label: string }[];
   quoteSites: QuoteSiteOption[];
+  frequenzaLabels: { settimanale: string; mensile: string };
 }) {
   const [open, setOpen] = useState(false);
 
@@ -37,7 +40,12 @@ export function PianificazionePageActions({
         </button>
       </PageHeaderActions>
       {open && (
-        <ShiftPlanForm employees={employees} sites={sites} quoteSites={quoteSites} />
+        <ShiftPlanForm
+          employees={employees}
+          sites={sites}
+          quoteSites={quoteSites}
+          frequenzaLabels={frequenzaLabels}
+        />
       )}
     </>
   );

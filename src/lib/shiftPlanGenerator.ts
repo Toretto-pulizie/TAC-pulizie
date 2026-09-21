@@ -20,15 +20,17 @@ type PlanForGeneration = {
   siteId: string;
   daysOfWeek: number[];
   intervalWeeks: number;
+  intervalDays: number | null;
   startTime: string;
   endTime: string;
   dataInizio: Date;
   dataFine: Date | null;
   note: string | null;
+  groupId: string;
 };
 
-// Le date generate da un piano per la finestra [oggi, oggi+HORIZON_DAYS].
-function datesForPlan(plan: PlanForGeneration, today: Date): Date[] {
+// Cadenza "a settimane" (esatta: 1 settimana = 7 giorni sempre uguali).
+function datesForPlanByWeeks(plan: PlanForGeneration, today: Date): Date[] {
   const planWeekStart = startOfWeek(plan.dataInizio);
   const dates: Date[] = [];
   for (let i = 0; i <= HORIZON_DAYS; i++) {
@@ -43,6 +45,38 @@ function datesForPlan(plan: PlanForGeneration, today: Date): Date[] {
     dates.push(day);
   }
   return dates;
+}
+
+// Cadenza "a giorni" (es. mensile/bimestrale a mesi standard di 30gg): ogni
+// intervalDays giorni dalla data inizio si apre una finestra di 7 giorni, e
+// il turno si piazza nel primo giorno di quella finestra tra quelli scelti
+// in daysOfWeek — così non slitta rispetto al calendario come farebbe una
+// stima "a settimane" (4 settimane ≠ un vero mese).
+function datesForPlanByDays(plan: PlanForGeneration, today: Date): Date[] {
+  const startDay = startOfDay(plan.dataInizio);
+  const horizonEnd = addDays(today, HORIZON_DAYS);
+  const dates: Date[] = [];
+  for (
+    let cycleStart = startDay;
+    cycleStart <= horizonEnd;
+    cycleStart = addDays(cycleStart, plan.intervalDays!)
+  ) {
+    for (let i = 0; i < 7; i++) {
+      const candidate = addDays(cycleStart, i);
+      if (!plan.daysOfWeek.includes(candidate.getDay())) continue;
+      if (candidate < today || candidate > horizonEnd) continue;
+      if (plan.dataFine && candidate > startOfDay(plan.dataFine)) continue;
+      dates.push(candidate);
+    }
+  }
+  return dates;
+}
+
+// Le date generate da un piano per la finestra [oggi, oggi+HORIZON_DAYS].
+function datesForPlan(plan: PlanForGeneration, today: Date): Date[] {
+  return plan.intervalDays
+    ? datesForPlanByDays(plan, today)
+    : datesForPlanByWeeks(plan, today);
 }
 
 export async function generateShiftsForPlan(plan: PlanForGeneration) {
@@ -70,6 +104,7 @@ export async function generateShiftsForPlan(plan: PlanForGeneration) {
       userId: plan.userId,
       siteId: plan.siteId,
       planId: plan.id,
+      groupId: plan.groupId,
       start: s.start,
       end: s.end,
       notes: plan.note,

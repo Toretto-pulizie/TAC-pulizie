@@ -11,6 +11,7 @@ export type ShiftPlanItem = {
   siteLabel: string;
   daysOfWeek: number[];
   intervalWeeks: number;
+  intervalDays: number | null;
   startTime: string;
   endTime: string;
   dataInizioLabel: string;
@@ -23,6 +24,11 @@ export function ShiftPlanRow({ plan }: { plan: ShiftPlanItem }) {
     .sort((a, b) => a - b)
     .map((d) => WEEKDAY_SHORT[d])
     .join(", ");
+  const cadenzaLabel = plan.intervalDays
+    ? ` (ogni ${plan.intervalDays} giorni)`
+    : plan.intervalWeeks > 1
+      ? ` (ogni ${plan.intervalWeeks} settimane)`
+      : "";
 
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 px-4 py-3 text-sm">
@@ -32,8 +38,7 @@ export function ShiftPlanRow({ plan }: { plan: ShiftPlanItem }) {
         </p>
         <p className="text-zinc-500">
           {giorni}
-          {plan.intervalWeeks > 1 ? ` (ogni ${plan.intervalWeeks} settimane)` : ""} ·{" "}
-          {plan.startTime}–{plan.endTime} · dal {plan.dataInizioLabel}
+          {cadenzaLabel} · {plan.startTime}–{plan.endTime} · dal {plan.dataInizioLabel}
           {plan.dataFineLabel ? ` al ${plan.dataFineLabel}` : ""}
         </p>
       </div>

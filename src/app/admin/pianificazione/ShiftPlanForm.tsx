@@ -19,40 +19,88 @@ type QuoteSiteOption = {
   siteId: string;
   label: string;
   serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
+  ore: number;
 };
+
+type Site = { id: string; label: string };
+type FrequenzaLabels = { settimanale: string; mensile: string };
+
+// "HH:MM" + ore (anche frazionarie) → nuovo "HH:MM", arrotondato al minuto.
+function addHoursToTime(time: string, hours: number): string {
+  const [h, m] = time.split(":").map(Number);
+  const total = ((h * 60 + m + Math.round(hours * 60)) % 1440 + 1440) % 1440;
+  const hh = Math.floor(total / 60).toString().padStart(2, "0");
+  const mm = (total % 60).toString().padStart(2, "0");
+  return `${hh}:${mm}`;
+}
 
 export function ShiftPlanForm({
   employees,
   sites,
   quoteSites,
+  frequenzaLabels,
 }: {
   employees: { id: string; name: string }[];
-  sites: { id: string; label: string }[];
+  sites: Site[];
   quoteSites: QuoteSiteOption[];
+  frequenzaLabels: FrequenzaLabels;
 }) {
   const [state, action, pending] = useActionState(createShiftPlan, undefined);
   const formRef = useRef<HTMLFormElement>(null);
   const [quoteSiteId, setQuoteSiteId] = useState("");
   const [siteId, setSiteId] = useState("");
-  const [intervalWeeks, setIntervalWeeks] = useState(1);
+  const [cadenzaUnit, setCadenzaUnit] = useState<"SETTIMANE" | "MESI">("SETTIMANE");
+  const [cadenzaN, setCadenzaN] = useState(1);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("12:00");
+  // Ore da dividere tra più collaboratori: se arrivano da un preventivo
+  // (scelto qui sopra o dedotto dalla sede) non sono modificabili; solo
+  // se il cantiere non ha nessun preventivo accettato si inseriscono a mano.
+  const [manualOre, setManualOre] = useState("");
 
   useEffect(() => {
     if (state && "success" in state && state.success) {
       formRef.current?.reset();
       setQuoteSiteId("");
       setSiteId("");
-      setIntervalWeeks(1);
+      setCadenzaUnit("SETTIMANE");
+      setCadenzaN(1);
+      setSelectedUserIds([]);
+      setStartTime("09:00");
+      setEndTime("12:00");
+      setManualOre("");
     }
   }, [state]);
+
+  function toggleUser(id: string) {
+    setSelectedUserIds((prev) =>
+      prev.includes(id) ? prev.filter((u) => u !== id) : [...prev, id]
+    );
+  }
 
   function handleQuoteSiteChange(id: string) {
     setQuoteSiteId(id);
     const qs = quoteSites.find((q) => q.id === id);
-    if (qs) {
-      setSiteId(qs.siteId);
-      setIntervalWeeks(qs.serviceType === "PASS_MENSILE" ? 4 : 1);
-    }
+    if (qs) setSiteId(qs.siteId);
   }
+
+  function handleSiteChange(value: string) {
+    setSiteId(value);
+    // Un solo preventivo continuativo per questa sede: lo si propone
+    // subito. Con più di uno o nessuno, va scelto esplicitamente sopra (o
+    // inserito a mano), per non indovinare quello sbagliato.
+    const matches = quoteSites.filter((q) => q.siteId === value);
+    setQuoteSiteId(matches.length === 1 ? matches[0].id : "");
+    setManualOre("");
+  }
+
+  const activeQuoteSite = quoteSites.find((q) => q.id === quoteSiteId);
+  const oreNum = activeQuoteSite ? activeQuoteSite.ore : parseFloat(manualOre.replace(",", "."));
+  const isMultiAuto = selectedUserIds.length > 1 && !Number.isNaN(oreNum) && oreNum > 0;
+  const displayedEndTime = isMultiAuto
+    ? addHoursToTime(startTime, oreNum / selectedUserIds.length)
+    : endTime;
 
   return (
     <form
@@ -80,28 +128,30 @@ export function ShiftPlanForm({
       )}
 
       <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          Collaboratore
-          <select
-            name="userId"
-            required
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          >
-            <option value="">Seleziona...</option>
+        <div className="flex flex-col gap-1 text-sm">
+          Collaboratori
+          <div className="flex max-w-xs flex-wrap gap-x-3 gap-y-1 rounded-lg border border-zinc-300 px-3 py-2">
             {employees.map((e) => (
-              <option key={e.id} value={e.id}>
+              <label key={e.id} className="flex items-center gap-1 text-sm">
+                <input
+                  type="checkbox"
+                  name="userIds"
+                  value={e.id}
+                  checked={selectedUserIds.includes(e.id)}
+                  onChange={() => toggleUser(e.id)}
+                />
                 {e.name}
-              </option>
+              </label>
             ))}
-          </select>
-        </label>
+          </div>
+        </div>
         <label className="flex flex-col gap-1 text-sm">
           Cliente / cantiere
           <select
             name="siteId"
             required
             value={siteId}
-            onChange={(e) => setSiteId(e.target.value)}
+            onChange={(e) => handleSiteChange(e.target.value)}
             className="rounded-lg border border-zinc-300 px-3 py-2"
           >
             <option value="">Seleziona...</option>
@@ -126,23 +176,56 @@ export function ShiftPlanForm({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          Ogni quante settimane
-          <input
-            type="number"
-            name="intervalWeeks"
-            min={1}
-            max={12}
-            value={intervalWeeks}
-            onChange={(e) => setIntervalWeeks(Number(e.target.value))}
-            className="w-24 rounded-lg border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <p className="pb-2 text-xs text-zinc-400">
-          Settimanale = 1, mensile ≈ 4
-        </p>
-      </div>
+      {activeQuoteSite ? (
+        // La cadenza si deduce dal preventivo collegato: niente da mostrare
+        // o far scegliere, si invia comunque il valore corretto. I contratti
+        // mensili usano la cadenza a giorni (mese standard 30gg, non slitta
+        // rispetto al calendario); quelli settimanali quella a settimane
+        // (già esatta di suo).
+        activeQuoteSite.serviceType === "PASS_MENSILE" ? (
+          <input type="hidden" name="intervalDays" value={30} />
+        ) : (
+          <input type="hidden" name="intervalWeeks" value={1} />
+        )
+      ) : (
+        <>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1 text-sm">
+              Cadenza
+              <select
+                value={cadenzaUnit}
+                onChange={(e) => setCadenzaUnit(e.target.value as "SETTIMANE" | "MESI")}
+                className="rounded-lg border border-zinc-300 px-3 py-2"
+              >
+                <option value="SETTIMANE">{frequenzaLabels.settimanale}</option>
+                <option value="MESI">{frequenzaLabels.mensile}</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              Ogni quant{cadenzaUnit === "MESI" ? "i mesi" : "e settimane"}
+              <input
+                type="number"
+                min={1}
+                max={cadenzaUnit === "MESI" ? 24 : 52}
+                value={cadenzaN}
+                onChange={(e) => setCadenzaN(Number(e.target.value))}
+                className="w-24 rounded-lg border border-zinc-300 px-3 py-2"
+              />
+            </label>
+            {cadenzaUnit === "MESI" && (
+              <p className="pb-2 text-xs text-zinc-400">
+                Mese standard di 30 giorni: si piazza nel primo giorno scelto
+                sopra a partire da ogni traguardo di {cadenzaN * 30} giorni.
+              </p>
+            )}
+          </div>
+          {cadenzaUnit === "SETTIMANE" ? (
+            <input type="hidden" name="intervalWeeks" value={cadenzaN} />
+          ) : (
+            <input type="hidden" name="intervalDays" value={cadenzaN * 30} />
+          )}
+        </>
+      )}
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-sm">
@@ -150,19 +233,38 @@ export function ShiftPlanForm({
           <input
             type="time"
             name="startTime"
-            defaultValue="09:00"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
             required
             className="rounded-lg border border-zinc-300 px-3 py-2"
           />
         </label>
+        {selectedUserIds.length > 1 && !activeQuoteSite && (
+          <label className="flex flex-col gap-1 text-sm">
+            Ore intervento (totali)
+            <input
+              type="number"
+              step="0.25"
+              min="0"
+              value={manualOre}
+              onChange={(e) => setManualOre(e.target.value)}
+              placeholder="es. 6"
+              className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
+            />
+          </label>
+        )}
         <label className="flex flex-col gap-1 text-sm">
           Alle
           <input
             type="time"
             name="endTime"
-            defaultValue="12:00"
+            value={displayedEndTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            readOnly={isMultiAuto}
             required
-            className="rounded-lg border border-zinc-300 px-3 py-2"
+            className={`rounded-lg border border-zinc-300 px-3 py-2 ${
+              isMultiAuto ? "bg-zinc-100 text-zinc-500" : ""
+            }`}
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -184,6 +286,16 @@ export function ShiftPlanForm({
           />
         </label>
       </div>
+
+      {selectedUserIds.length > 1 && (
+        <p className="text-sm text-zinc-500">
+          {isMultiAuto
+            ? `${selectedUserIds.length} collaboratori × ${(oreNum / selectedUserIds.length).toFixed(2)}h ciascuno = ${oreNum}h intervento totali, ad ogni occorrenza.`
+            : quoteSites.some((q) => q.siteId === siteId)
+              ? "Scegli il preventivo continuativo qui sopra per calcolare automaticamente l'orario di fine di ciascun collaboratore."
+              : "Inserisci le ore totali dell'intervento per calcolare automaticamente l'orario di fine di ciascun collaboratore."}
+        </p>
+      )}
 
       <label className="flex flex-col gap-1 text-sm">
         Note

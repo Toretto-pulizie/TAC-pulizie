@@ -340,11 +340,23 @@ model Shift {
   start     DateTime
   end       DateTime
   notes     String?
+  // Vero per ogni turno inserito o spostato manualmente (form o
+  // drag&drop in Pianificazione): un futuro motore di pianificazione
+  // automatica non dovrà mai spostare un turno pinned, e userà
+  // pinned:false per le proprie proposte non ancora confermate.
+  pinned    Boolean    @default(true)
+  // Lega tra loro le righe create per lo stesso turno assegnato a più
+  // collaboratori insieme (stessa sede/data/orario): in calendario vanno
+  // mostrate come un unico blocco invece che una per collaboratore, e
+  // modificate/spostate/eliminate tutte insieme. Condiviso anche dai turni
+  // generati da più ShiftPlan "fratelli" (stesso ShiftPlan.groupId).
+  groupId   String
   createdAt DateTime   @default(now())
 
   @@unique([planId, start])
   @@index([userId, start])
   @@index([siteId, start])
+  @@index([groupId])
 }
 
 // Regola di ricorrenza per generare automaticamente i turni di un servizio
@@ -362,17 +374,30 @@ model ShiftPlan {
   quoteSiteId   String?
   daysOfWeek    Int[]
   intervalWeeks Int        @default(1)
+  // Se impostato, il piano usa la cadenza "a giorni" (mesi standard da 30gg)
+  // invece che "a settimane": ogni intervalDays giorni dalla data inizio si
+  // piazza il turno nel primo giorno tra quelli di daysOfWeek che segue quel
+  // traguardo — non slitta rispetto ai cicli precedenti come farebbe una
+  // stima a settimane (es. 4 settimane ≠ un vero mese). Nullo per i piani
+  // settimanali, dove la cadenza a settimane è già esatta.
+  intervalDays  Int?
   startTime     String
   endTime       String
   dataInizio    DateTime
   dataFine      DateTime?
   note          String?
+  // Lega tra loro i piani "fratelli" creati insieme per più collaboratori
+  // sullo stesso turno ricorrente: i turni che generano condividono lo
+  // stesso Shift.groupId, così in calendario compaiono come un unico
+  // blocco invece che uno per collaboratore.
+  groupId       String
   createdAt     DateTime   @default(now())
   shifts        Shift[]
 
   @@index([siteId])
   @@index([userId])
   @@index([quoteSiteId])
+  @@index([groupId])
 }
 
 model TimeEntry {
