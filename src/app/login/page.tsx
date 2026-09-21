@@ -1,14 +1,13 @@
 import Image from "next/image";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
-import { getCurrentUser, homePathFor } from "@/lib/dal";
+import { homePathFor } from "@/lib/dal";
 import { LoginForm } from "./LoginForm";
 
 export default async function LoginPage() {
   const session = await getSession();
   if (session?.userId) {
-    const user = await getCurrentUser();
-    redirect(homePathFor(session.role, user?.allowedModules ?? []));
+    redirect(homePathFor(session.role));
   }
 
   return (

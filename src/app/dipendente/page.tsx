@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { verifySession } from "@/lib/dal";
+import { verifySession, getCurrentUser } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getTodayEntries } from "@/app/actions/timeEntries";
 import { currentStatus } from "@/lib/timeCalc";
@@ -8,6 +8,7 @@ import { logout } from "@/app/actions/auth";
 import { NotificationBell } from "@/app/NotificationBell";
 import { getRecentNotifications } from "@/lib/notifications";
 import { AutoRefresh } from "@/app/AutoRefresh";
+import { MODULE_GROUPS, MODULE_LABELS, MODULE_HREFS, isModuleKey } from "@/lib/modules";
 
 const STATUS_LABELS = {
   FREE: "Libera",
@@ -49,15 +50,24 @@ function PermessoIcon() {
 export default async function DipendentePage() {
   const session = await verifySession();
 
-  const [entries, pendingRequests, notifications] = await Promise.all([
+  const [entries, pendingRequests, notifications, user] = await Promise.all([
     getTodayEntries(session.userId),
     prisma.leaveRequest.count({
       where: { userId: session.userId, stato: "IN_ATTESA" },
     }),
     getRecentNotifications(session.userId),
+    getCurrentUser(),
   ]);
 
   const status = currentStatus(entries);
+
+  // Sezione "Gestione": le pagine del programma assegnate al collaboratore
+  // da Utenti → Pagine accessibili, raggruppate come nel menu laterale.
+  const allowed = new Set((user?.allowedModules ?? []).filter(isModuleKey));
+  const gestioneGroups = MODULE_GROUPS.map((group) => ({
+    label: group.label,
+    keys: group.keys.filter((key) => allowed.has(key)),
+  })).filter((group) => group.keys.length > 0);
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
@@ -126,6 +136,34 @@ export default async function DipendentePage() {
           </span>
         </Link>
       </div>
+
+      {gestioneGroups.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">
+            Gestione
+          </h2>
+          <div className="flex flex-col gap-4">
+            {gestioneGroups.map((group) => (
+              <div key={group.label} className="flex flex-col gap-2">
+                <p className="text-xs font-medium tracking-wide text-zinc-400 uppercase">
+                  {group.label}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {group.keys.map((key) => (
+                    <Link
+                      key={key}
+                      href={MODULE_HREFS[key]}
+                      className="rounded-lg border border-zinc-200 bg-white px-3 py-3 text-center text-sm font-medium text-zinc-700 shadow-sm active:bg-zinc-50"
+                    >
+                      {MODULE_LABELS[key]}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

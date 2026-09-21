@@ -44,7 +44,7 @@ export async function login(
 
   await createSession({ userId: user.id, role: user.role, name: user.name });
 
-  redirect(homePathFor(user.role, user.allowedModules));
+  redirect(homePathFor(user.role));
 }
 
 export async function logout() {
