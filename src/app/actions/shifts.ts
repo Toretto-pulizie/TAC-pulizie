@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import * as z from "zod";
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/dal";
 import { detectShiftConflicts } from "@/lib/shiftConflicts";
@@ -137,10 +138,20 @@ export async function moveShift(input: { groupId: string; start: string; end: st
     return { error: "Orario non valido." };
   }
 
-  await prisma.shift.updateMany({
-    where: { groupId: input.groupId },
-    data: { start, end, pinned: true },
-  });
+  try {
+    await prisma.shift.updateMany({
+      where: { groupId: input.groupId },
+      data: { start, end, pinned: true },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return {
+        error:
+          "Non è possibile spostare il turno qui: un'altra occorrenza dello stesso piano ricorrente è già pianificata in questo esatto giorno/orario.",
+      };
+    }
+    throw err;
+  }
 
   revalidatePath("/admin/pianificazione");
   revalidatePath("/dipendente");

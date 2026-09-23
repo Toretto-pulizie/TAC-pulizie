@@ -12,7 +12,12 @@ const HEADER_HEIGHT = 48;
 const SNAP_MINUTES = 15;
 const MIN_DURATION_MINUTES = 30;
 
-export type ShiftMember = { shiftId: string; userId: string; employeeName: string };
+export type ShiftMember = {
+  shiftId: string;
+  userId: string;
+  employeeName: string;
+  planId: string | null;
+};
 
 // Un turno può coinvolgere più collaboratori insieme sullo stesso
 // cantiere/orario (stesso groupId): in calendario è un unico blocco, non
@@ -147,6 +152,7 @@ export function WeekCalendar({
   );
   const totalHeight = (endHour - startHour) * ROW_HEIGHT;
   const columnRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
 
   const [dragGroupId, setDragGroupId] = useState<string | null>(null);
@@ -185,11 +191,20 @@ export function WeekCalendar({
 
       let targetDayIndex = state.originDayIndex;
       if (state.mode === "move") {
+        // Colonna più vicina al centro, non "quella che contiene esattamente
+        // il cursore": un rilascio anche di un solo pixel fuori dai bordi di
+        // una colonna (bordo, scrollbar, cursore leggermente più in alto o
+        // più a destra dell'ultima colonna) altrimenti non trova alcuna
+        // corrispondenza e il turno resta silenziosamente sul giorno di
+        // partenza, senza nessun avviso per l'utente.
+        let bestDistance = Infinity;
         for (let i = 0; i < columnRefs.current.length; i++) {
           const rect = columnRefs.current[i]?.getBoundingClientRect();
-          if (rect && clientX >= rect.left && clientX < rect.right) {
+          if (!rect) continue;
+          const distance = Math.abs(clientX - (rect.left + rect.width / 2));
+          if (distance < bestDistance) {
+            bestDistance = distance;
             targetDayIndex = i;
-            break;
           }
         }
       }
@@ -214,6 +229,23 @@ export function WeekCalendar({
       return { start: newStart, end: newEnd, dayIndex: targetDayIndex };
     }
 
+    // Se il calendario scorre orizzontalmente (più giorni di quanti ne
+    // stiano a schermo), trascinare verso il bordo sinistro/destro deve
+    // scorrerlo automaticamente — altrimenti un giorno fuori vista non è
+    // mai raggiungibile tenendo premuto il mouse.
+    const EDGE_PX = 48;
+    const SCROLL_SPEED = 16;
+    function autoScroll(clientX: number) {
+      const el = scrollRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (clientX < rect.left + EDGE_PX) {
+        el.scrollLeft -= SCROLL_SPEED;
+      } else if (clientX > rect.right - EDGE_PX) {
+        el.scrollLeft += SCROLL_SPEED;
+      }
+    }
+
     function handleMove(ev: PointerEvent) {
       const distance = Math.hypot(
         ev.clientX - state.pointerStartX,
@@ -221,6 +253,7 @@ export function WeekCalendar({
       );
       if (distance > 4) state.moved = true;
       if (!state.moved) return;
+      if (state.mode === "move") autoScroll(ev.clientX);
       setLiveRange(computeLiveRange(ev.clientX, ev.clientY));
     }
 
@@ -249,11 +282,12 @@ export function WeekCalendar({
         if (hasWarnings(conflicts)) {
           setPendingMove({ shift: state.shift, start: range.start, end: range.end, conflicts });
         } else {
-          void moveShift({
+          const result = await moveShift({
             groupId: state.shift.groupId,
             start: range.start.toISOString(),
             end: range.end.toISOString(),
           });
+          if (result && "error" in result) alert(result.error);
         }
       });
     }
@@ -264,12 +298,16 @@ export function WeekCalendar({
 
   function confirmPendingMove() {
     if (!pendingMove) return;
-    void moveShift({
-      groupId: pendingMove.shift.groupId,
-      start: pendingMove.start.toISOString(),
-      end: pendingMove.end.toISOString(),
-    });
+    const { shift, start, end } = pendingMove;
     setPendingMove(null);
+    startChecking(async () => {
+      const result = await moveShift({
+        groupId: shift.groupId,
+        start: start.toISOString(),
+        end: end.toISOString(),
+      });
+      if (result && "error" in result) alert(result.error);
+    });
   }
 
   const ghostColumnRect = liveRange
@@ -280,7 +318,10 @@ export function WeekCalendar({
 
   return (
     <>
-      <div className="flex overflow-x-auto rounded-xl border border-zinc-200 bg-white [contain:inline-size]">
+      <div
+        ref={scrollRef}
+        className="flex overflow-x-auto rounded-xl border border-zinc-200 bg-white [contain:inline-size]"
+      >
         <div className="flex w-14 shrink-0 flex-col border-r border-zinc-200">
           <div className="h-12 shrink-0 border-b border-zinc-200" />
           <div className="relative" style={{ height: totalHeight }}>

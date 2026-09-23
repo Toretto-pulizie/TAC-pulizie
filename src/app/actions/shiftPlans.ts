@@ -108,3 +108,19 @@ export async function deleteShiftPlan(id: string) {
   revalidatePath("/admin/pianificazione");
   revalidatePath("/dipendente");
 }
+
+// Come deleteShiftPlan, ma per più piani insieme — usata dal turno in
+// calendario quando coinvolge più collaboratori con un piano ciascuno
+// (stesso groupId sui turni generati, un ShiftPlan a testa).
+export async function deleteShiftPlans(ids: string[]) {
+  await requireModule("pianificazione");
+  if (ids.length === 0) return;
+
+  await prisma.shift.deleteMany({
+    where: { planId: { in: ids }, start: { gt: new Date() } },
+  });
+  await prisma.shiftPlan.deleteMany({ where: { id: { in: ids } } });
+
+  revalidatePath("/admin/pianificazione");
+  revalidatePath("/dipendente");
+}

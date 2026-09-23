@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { startOfDay, startOfWeek, addDays } from "@/lib/dates";
+import { startOfDay, startOfWeek, addDays, toDateInputValue } from "@/lib/dates";
 
 // Orizzonte di generazione: quanti giorni in avanti (da oggi) materializzare
 // come Shift reali. Ogni esecuzione (manuale o da cron) ripete la stessa
@@ -104,7 +104,15 @@ export async function generateShiftsForPlan(plan: PlanForGeneration) {
       userId: plan.userId,
       siteId: plan.siteId,
       planId: plan.id,
-      groupId: plan.groupId,
+      // plan.groupId lega tra loro i piani "fratelli" di collaboratori
+      // diversi creati insieme, ma ogni occorrenza (ogni data) deve restare
+      // un blocco a sé in calendario — altrimenti tutte le occorrenze
+      // future di un piano finirebbero raggruppate insieme. Aggiungendo la
+      // data alla chiave, i piani fratelli continuano a calcolare la
+      // stessa chiave per la stessa occorrenza (stesso plan.groupId,
+      // stessa data), restando così raggruppati tra loro ma non con le
+      // altre occorrenze.
+      groupId: `${plan.groupId}:${toDateInputValue(s.start)}`,
       start: s.start,
       end: s.end,
       notes: plan.note,

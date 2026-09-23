@@ -11,9 +11,7 @@ import {
 import { cadenzaLabel } from "@/lib/quotePrint";
 import { clientDisplayName } from "@/lib/clients";
 import { getServiceTypeLabels } from "@/lib/serviceTypeLabels";
-import { PianificazioneCalendar } from "./PianificazioneCalendar";
-import { ShiftPlanRow } from "./ShiftPlanRow";
-import { PianificazionePageActions } from "./PianificazionePageActions";
+import { PianificazionePanel } from "./PianificazionePanel";
 
 export default async function PianificazionePage({
   searchParams,
@@ -32,7 +30,6 @@ export default async function PianificazionePage({
     employees,
     sites,
     shifts,
-    shiftPlans,
     continuativeQuoteSites,
     allAcceptedQuoteSites,
     serviceTypeLabels,
@@ -48,10 +45,6 @@ export default async function PianificazionePage({
         where: { start: { gte: weekStart, lte: weekEnd } },
         include: { user: true, site: { include: { client: true } } },
         orderBy: { start: "asc" },
-      }),
-      prisma.shiftPlan.findMany({
-        include: { user: true, site: { include: { client: true } } },
-        orderBy: { createdAt: "desc" },
       }),
       prisma.quoteSite.findMany({
         where: {
@@ -80,6 +73,14 @@ export default async function PianificazionePage({
       }),
       getServiceTypeLabels(),
     ]);
+
+  // In Pianificazione si assegnano turni solo ai Collaboratori Operativi:
+  // gli Amministrativi non hanno una capacità fissa sul campo (stesso
+  // criterio già usato in Timbrature per l'inserimento manuale). Il
+  // titolare resta comunque assegnabile.
+  const assignableEmployees = employees.filter(
+    (e) => e.role !== "EMPLOYEE" || e.tipoCollaboratore === "OPERATIVO"
+  );
 
   sites.sort((a, b) => {
     const byClient = clientDisplayName(a.client).localeCompare(clientDisplayName(b.client), "it");
@@ -119,6 +120,7 @@ export default async function PianificazionePage({
         shiftId: m.id,
         userId: m.userId,
         employeeName: m.user.name,
+        planId: m.planId,
       })),
     };
   });
@@ -157,19 +159,6 @@ export default async function PianificazionePage({
     }
   }
 
-  const shiftPlanItems = shiftPlans.map((p) => ({
-    id: p.id,
-    employeeName: p.user.name,
-    siteLabel: `${clientDisplayName(p.site.client)} — ${p.site.name}`,
-    daysOfWeek: p.daysOfWeek,
-    intervalWeeks: p.intervalWeeks,
-    intervalDays: p.intervalDays,
-    startTime: p.startTime,
-    endTime: p.endTime,
-    dataInizioLabel: p.dataInizio.toLocaleDateString("it-IT"),
-    dataFineLabel: p.dataFine ? p.dataFine.toLocaleDateString("it-IT") : null,
-  }));
-
   const quoteSiteOptions = continuativeQuoteSites
     .map((qs) => ({
       id: qs.id,
@@ -182,32 +171,6 @@ export default async function PianificazionePage({
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
-        <PianificazionePageActions
-          employees={employees.map((e) => ({ id: e.id, name: e.name }))}
-          sites={sites.map((s) => ({
-            id: s.id,
-            label: `${clientDisplayName(s.client)} — ${s.name}`,
-          }))}
-          quoteSites={quoteSiteOptions}
-          frequenzaLabels={{
-            settimanale: serviceTypeLabels.PASS_SETTIMANALE,
-            mensile: serviceTypeLabels.PASS_MENSILE,
-          }}
-        />
-
-        {shiftPlanItems.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium text-zinc-700">
-              Turni ricorrenti attivi
-            </p>
-            <ul className="flex flex-col gap-2">
-              {shiftPlanItems.map((p) => (
-                <ShiftPlanRow key={p.id} plan={p} />
-              ))}
-            </ul>
-          </div>
-        )}
-
         <div className="flex items-center justify-between">
           <Link
             href={`/admin/pianificazione?week=${prevWeek}`}
@@ -226,8 +189,8 @@ export default async function PianificazionePage({
           </Link>
         </div>
 
-        <PianificazioneCalendar
-          employees={employees.map((e) => ({ id: e.id, name: e.name }))}
+        <PianificazionePanel
+          employees={assignableEmployees.map((e) => ({ id: e.id, name: e.name }))}
           sites={sites.map((s) => ({
             id: s.id,
             label: `${clientDisplayName(s.client)} — ${s.name}`,
@@ -236,6 +199,11 @@ export default async function PianificazionePage({
           }))}
           occupancy={occupancy}
           defaultDate={toDateInputValue(reference)}
+          quoteSites={quoteSiteOptions}
+          frequenzaLabels={{
+            settimanale: serviceTypeLabels.PASS_SETTIMANALE,
+            mensile: serviceTypeLabels.PASS_MENSILE,
+          }}
           days={days}
           shiftsByDay={shiftsByDay}
           startHour={startHour}
