@@ -19,6 +19,7 @@ function formatEuro(n: number) {
 export type EditingQuote = {
   id: string;
   clientId: string;
+  createdAt: string;
   condizioniPagamento: string | null;
   sites: SiteBlockInitial[];
   attachmentIds: string[];
@@ -34,6 +35,7 @@ export function QuoteForm({
   condizioniPagamento,
   attachments,
   editingQuote,
+  defaultCreatedAt,
 }: {
   clients: ClientOption[];
   phrases: Phrase[];
@@ -42,6 +44,7 @@ export function QuoteForm({
   condizioniPagamento: string[];
   attachments: AttachmentOption[];
   editingQuote?: EditingQuote;
+  defaultCreatedAt: string;
 }) {
   const router = useRouter();
   const [state, action, pending] = useActionState(saveQuote, undefined);
@@ -122,6 +125,16 @@ export function QuoteForm({
               </option>
             ))}
           </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Data creazione
+          <input
+            type="date"
+            name="createdAt"
+            required
+            defaultValue={editingQuote?.createdAt ?? defaultCreatedAt}
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
         </label>
         {selectedClient && (
           <div className="pt-6">

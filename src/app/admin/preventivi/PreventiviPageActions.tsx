@@ -23,6 +23,7 @@ export function PreventiviPageActions({
   condizioniPagamento,
   attachments,
   editingQuote,
+  defaultCreatedAt,
 }: {
   clients: ClientOption[];
   phrases: Phrase[];
@@ -31,6 +32,7 @@ export function PreventiviPageActions({
   condizioniPagamento: string[];
   attachments: AttachmentOption[];
   editingQuote?: EditingQuote;
+  defaultCreatedAt: string;
 }) {
   const [open, setOpen] = useState(!!editingQuote);
 
@@ -60,6 +62,7 @@ export function PreventiviPageActions({
           condizioniPagamento={condizioniPagamento}
           attachments={attachments}
           editingQuote={editingQuote}
+          defaultCreatedAt={defaultCreatedAt}
         />
       )}
     </>

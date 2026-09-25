@@ -1,5 +1,6 @@
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { toDateInputValue } from "@/lib/dates";
 import { computeListPrice, computeSoldAnnual, computeDiscountPct } from "@/lib/quotes";
 import { getServiceTypeLabels, getServiceTypeAbbreviazioni } from "@/lib/serviceTypeLabels";
 import { formatSedeAddress } from "@/lib/quotePrint";
@@ -74,6 +75,7 @@ export default async function PreventiviPage({
     ? {
         id: editingQuoteRaw.id,
         clientId: editingQuoteRaw.clientId,
+        createdAt: toDateInputValue(editingQuoteRaw.createdAt),
         condizioniPagamento: editingQuoteRaw.condizioniPagamento,
         attachmentIds: editingQuoteRaw.attachments.map((a) => a.attachmentId),
         sites: editingQuoteRaw.sites.map((s) => ({
@@ -227,6 +229,7 @@ export default async function PreventiviPage({
           condizioniPagamento={condizioniPagamento}
           attachments={attachments.map((a) => ({ id: a.id, nome: a.nome }))}
           editingQuote={editingQuote}
+          defaultCreatedAt={toDateInputValue(new Date())}
         />
 
         <QuoteList

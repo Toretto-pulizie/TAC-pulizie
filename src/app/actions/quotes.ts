@@ -11,6 +11,7 @@ import { clientDisplayName } from "@/lib/clients";
 
 const QuoteSchema = z.object({
   clientId: z.string().trim().min(1, "Seleziona un cliente"),
+  createdAt: z.string().trim().min(1, "Indica la data di creazione"),
   condizioniPagamento: z.string().trim().optional(),
 });
 
@@ -136,12 +137,17 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
 
   const parsedQuote = QuoteSchema.safeParse({
     clientId: formData.get("clientId"),
+    createdAt: formData.get("createdAt"),
     condizioniPagamento: formData.get("condizioniPagamento") || undefined,
   });
   if (!parsedQuote.success) {
     return { error: parsedQuote.error.issues[0]?.message ?? "Dati non validi" };
   }
   const { clientId, condizioniPagamento } = parsedQuote.data;
+  const createdAt = new Date(`${parsedQuote.data.createdAt}T00:00:00`);
+  if (Number.isNaN(createdAt.getTime())) {
+    return { error: "Data di creazione non valida" };
+  }
 
   const indexes = collectSiteBlockIndexes(formData);
   if (indexes.length === 0) {
@@ -222,6 +228,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
 
   const quoteBaseData = {
     clientId,
+    createdAt,
     condizioniPagamento: condizioniPagamento || null,
   };
 
