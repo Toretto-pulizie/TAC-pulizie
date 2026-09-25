@@ -5,17 +5,42 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/dal";
+import { lookupPartitaIva } from "@/lib/viesLookup";
+import { lookupCapFromAddress } from "@/lib/geocode";
 
 const FornitoreSchema = z.object({
   name: z.string().trim().min(1, "Nome richiesto"),
   partitaIva: z.string().trim().optional(),
   codiceFiscale: z.string().trim().optional(),
   indirizzo: z.string().trim().optional(),
+  cap: z.string().trim().optional(),
   citta: z.string().trim().optional(),
+  provincia: z.string().trim().optional(),
   telefono: z.string().trim().optional(),
   email: z.string().trim().optional(),
   note: z.string().trim().optional(),
 });
+
+// Stessa ricerca VIES già usata in Clienti (src/app/actions/admin.ts), qui
+// con il gate sul modulo Fornitori invece che Clienti.
+export async function checkPartitaIvaFornitore(piva: string) {
+  await requireModule("fornitori");
+  const result = await lookupPartitaIva(piva);
+  if (!result) {
+    return { error: "Partita IVA non trovata o non attiva (verifica VIES)" };
+  }
+  return { success: true as const, data: result };
+}
+
+export async function findCapFromAddressFornitore(address: string) {
+  await requireModule("fornitori");
+  if (!address.trim()) return { error: "Indirizzo vuoto" };
+  const result = await lookupCapFromAddress(address);
+  if (!result) {
+    return { error: "CAP non trovato per questo indirizzo" };
+  }
+  return { success: true as const, data: result };
+}
 
 function emptyToNull(v: string | undefined) {
   return v && v.length > 0 ? v : null;
@@ -46,7 +71,9 @@ export async function createFornitore(_prevState: unknown, formData: FormData) {
     partitaIva: formData.get("partitaIva") || undefined,
     codiceFiscale: formData.get("codiceFiscale") || undefined,
     indirizzo: formData.get("indirizzo") || undefined,
+    cap: formData.get("cap") || undefined,
     citta: formData.get("citta") || undefined,
+    provincia: formData.get("provincia") || undefined,
     telefono: formData.get("telefono") || undefined,
     email: formData.get("email") || undefined,
     note: formData.get("note") || undefined,
@@ -56,7 +83,7 @@ export async function createFornitore(_prevState: unknown, formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  const { name, partitaIva, codiceFiscale, indirizzo, citta, telefono, email, note } =
+  const { name, partitaIva, codiceFiscale, indirizzo, cap, citta, provincia, telefono, email, note } =
     parsed.data;
 
   const duplicate = await findDuplicateFornitore(partitaIva, codiceFiscale);
@@ -72,7 +99,9 @@ export async function createFornitore(_prevState: unknown, formData: FormData) {
       partitaIva: emptyToNull(partitaIva),
       codiceFiscale: emptyToNull(codiceFiscale),
       indirizzo: emptyToNull(indirizzo),
+      cap: emptyToNull(cap),
       citta: emptyToNull(citta),
+      provincia: emptyToNull(provincia),
       telefono: emptyToNull(telefono),
       email: emptyToNull(email),
       note: emptyToNull(note),
@@ -96,7 +125,9 @@ export async function updateFornitore(_prevState: unknown, formData: FormData) {
     partitaIva: formData.get("partitaIva") || undefined,
     codiceFiscale: formData.get("codiceFiscale") || undefined,
     indirizzo: formData.get("indirizzo") || undefined,
+    cap: formData.get("cap") || undefined,
     citta: formData.get("citta") || undefined,
+    provincia: formData.get("provincia") || undefined,
     telefono: formData.get("telefono") || undefined,
     email: formData.get("email") || undefined,
     note: formData.get("note") || undefined,
@@ -106,7 +137,7 @@ export async function updateFornitore(_prevState: unknown, formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  const { id, name, partitaIva, codiceFiscale, indirizzo, citta, telefono, email, note } =
+  const { id, name, partitaIva, codiceFiscale, indirizzo, cap, citta, provincia, telefono, email, note } =
     parsed.data;
 
   const duplicate = await findDuplicateFornitore(partitaIva, codiceFiscale, id);
@@ -123,7 +154,9 @@ export async function updateFornitore(_prevState: unknown, formData: FormData) {
       partitaIva: emptyToNull(partitaIva),
       codiceFiscale: emptyToNull(codiceFiscale),
       indirizzo: emptyToNull(indirizzo),
+      cap: emptyToNull(cap),
       citta: emptyToNull(citta),
+      provincia: emptyToNull(provincia),
       telefono: emptyToNull(telefono),
       email: emptyToNull(email),
       note: emptyToNull(note),

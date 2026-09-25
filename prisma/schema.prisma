@@ -229,7 +229,9 @@ model Fornitore {
   partitaIva      String?
   codiceFiscale   String?
   indirizzo       String?
+  cap             String?
   citta           String?
+  provincia       String?
   telefono        String?
   email           String?
   note            String?

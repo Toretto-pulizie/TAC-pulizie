@@ -22,7 +22,9 @@ export default async function EditFornitorePage({
         partitaIva={fornitore.partitaIva}
         codiceFiscale={fornitore.codiceFiscale}
         indirizzo={fornitore.indirizzo}
+        cap={fornitore.cap}
         citta={fornitore.citta}
+        provincia={fornitore.provincia}
         telefono={fornitore.telefono}
         email={fornitore.email}
         note={fornitore.note}
