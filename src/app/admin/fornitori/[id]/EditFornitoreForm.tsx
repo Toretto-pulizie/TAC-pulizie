@@ -29,6 +29,12 @@ export function EditFornitoreForm({
   provincia,
   telefono,
   email,
+  pec,
+  codiceUnivoco,
+  agenteNome,
+  agenteCognome,
+  agenteTelefono,
+  agenteEmail,
   note,
 }: {
   id: string;
@@ -41,11 +47,20 @@ export function EditFornitoreForm({
   provincia: string | null;
   telefono: string | null;
   email: string | null;
+  pec: string | null;
+  codiceUnivoco: string | null;
+  agenteNome: string | null;
+  agenteCognome: string | null;
+  agenteTelefono: string | null;
+  agenteEmail: string | null;
   note: string | null;
 }) {
   const [state, action, pending] = useActionState(updateFornitore, undefined);
   const [pivaStato, setPivaStato] = useState<PivaStato>(null);
   const [capStato, setCapStato] = useState<CapStato>(null);
+  const [showAgente, setShowAgente] = useState(
+    Boolean(agenteNome || agenteCognome || agenteTelefono || agenteEmail)
+  );
   const nameRef = useRef<HTMLInputElement>(null);
   const indirizzoRef = useRef<HTMLInputElement>(null);
   const capRef = useRef<HTMLInputElement>(null);
@@ -239,6 +254,88 @@ export function EditFornitoreForm({
           />
         </label>
       </div>
+
+      <div className="flex flex-wrap gap-3">
+        <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+          PEC
+          <input
+            name="pec"
+            type="email"
+            defaultValue={pec ?? ""}
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+          Codice SDI
+          <input
+            name="codiceUnivoco"
+            defaultValue={codiceUnivoco ?? ""}
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+      </div>
+
+      {!showAgente && (
+        <button
+          type="button"
+          onClick={() => setShowAgente(true)}
+          className="self-start rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-600"
+        >
+          + Inserisci agente
+        </button>
+      )}
+
+      {showAgente && (
+        <div className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-zinc-700">Agente</span>
+            <button
+              type="button"
+              onClick={() => setShowAgente(false)}
+              className="text-xs text-zinc-500"
+            >
+              ✕ Rimuovi
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+              Nome
+              <input
+                name="agenteNome"
+                defaultValue={agenteNome ?? ""}
+                className="rounded-lg border border-zinc-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+              Cognome
+              <input
+                name="agenteCognome"
+                defaultValue={agenteCognome ?? ""}
+                className="rounded-lg border border-zinc-300 px-3 py-2"
+              />
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+              Telefono
+              <input
+                name="agenteTelefono"
+                defaultValue={agenteTelefono ?? ""}
+                className="rounded-lg border border-zinc-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+              Email
+              <input
+                name="agenteEmail"
+                type="email"
+                defaultValue={agenteEmail ?? ""}
+                className="rounded-lg border border-zinc-300 px-3 py-2"
+              />
+            </label>
+          </div>
+        </div>
+      )}
 
       <label className="flex flex-col gap-1 text-sm">
         Note

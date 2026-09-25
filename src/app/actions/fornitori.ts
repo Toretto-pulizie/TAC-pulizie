@@ -18,6 +18,12 @@ const FornitoreSchema = z.object({
   provincia: z.string().trim().optional(),
   telefono: z.string().trim().optional(),
   email: z.string().trim().optional(),
+  pec: z.string().trim().optional(),
+  codiceUnivoco: z.string().trim().optional(),
+  agenteNome: z.string().trim().optional(),
+  agenteCognome: z.string().trim().optional(),
+  agenteTelefono: z.string().trim().optional(),
+  agenteEmail: z.string().trim().optional(),
   note: z.string().trim().optional(),
 });
 
@@ -76,6 +82,12 @@ export async function createFornitore(_prevState: unknown, formData: FormData) {
     provincia: formData.get("provincia") || undefined,
     telefono: formData.get("telefono") || undefined,
     email: formData.get("email") || undefined,
+    pec: formData.get("pec") || undefined,
+    codiceUnivoco: formData.get("codiceUnivoco") || undefined,
+    agenteNome: formData.get("agenteNome") || undefined,
+    agenteCognome: formData.get("agenteCognome") || undefined,
+    agenteTelefono: formData.get("agenteTelefono") || undefined,
+    agenteEmail: formData.get("agenteEmail") || undefined,
     note: formData.get("note") || undefined,
   });
 
@@ -83,8 +95,24 @@ export async function createFornitore(_prevState: unknown, formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  const { name, partitaIva, codiceFiscale, indirizzo, cap, citta, provincia, telefono, email, note } =
-    parsed.data;
+  const {
+    name,
+    partitaIva,
+    codiceFiscale,
+    indirizzo,
+    cap,
+    citta,
+    provincia,
+    telefono,
+    email,
+    pec,
+    codiceUnivoco,
+    agenteNome,
+    agenteCognome,
+    agenteTelefono,
+    agenteEmail,
+    note,
+  } = parsed.data;
 
   const duplicate = await findDuplicateFornitore(partitaIva, codiceFiscale);
   if (duplicate) {
@@ -104,6 +132,12 @@ export async function createFornitore(_prevState: unknown, formData: FormData) {
       provincia: emptyToNull(provincia),
       telefono: emptyToNull(telefono),
       email: emptyToNull(email),
+      pec: emptyToNull(pec),
+      codiceUnivoco: emptyToNull(codiceUnivoco),
+      agenteNome: emptyToNull(agenteNome),
+      agenteCognome: emptyToNull(agenteCognome),
+      agenteTelefono: emptyToNull(agenteTelefono),
+      agenteEmail: emptyToNull(agenteEmail),
       note: emptyToNull(note),
     },
   });
@@ -130,6 +164,12 @@ export async function updateFornitore(_prevState: unknown, formData: FormData) {
     provincia: formData.get("provincia") || undefined,
     telefono: formData.get("telefono") || undefined,
     email: formData.get("email") || undefined,
+    pec: formData.get("pec") || undefined,
+    codiceUnivoco: formData.get("codiceUnivoco") || undefined,
+    agenteNome: formData.get("agenteNome") || undefined,
+    agenteCognome: formData.get("agenteCognome") || undefined,
+    agenteTelefono: formData.get("agenteTelefono") || undefined,
+    agenteEmail: formData.get("agenteEmail") || undefined,
     note: formData.get("note") || undefined,
   });
 
@@ -137,8 +177,25 @@ export async function updateFornitore(_prevState: unknown, formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  const { id, name, partitaIva, codiceFiscale, indirizzo, cap, citta, provincia, telefono, email, note } =
-    parsed.data;
+  const {
+    id,
+    name,
+    partitaIva,
+    codiceFiscale,
+    indirizzo,
+    cap,
+    citta,
+    provincia,
+    telefono,
+    email,
+    pec,
+    codiceUnivoco,
+    agenteNome,
+    agenteCognome,
+    agenteTelefono,
+    agenteEmail,
+    note,
+  } = parsed.data;
 
   const duplicate = await findDuplicateFornitore(partitaIva, codiceFiscale, id);
   if (duplicate) {
@@ -159,6 +216,12 @@ export async function updateFornitore(_prevState: unknown, formData: FormData) {
       provincia: emptyToNull(provincia),
       telefono: emptyToNull(telefono),
       email: emptyToNull(email),
+      pec: emptyToNull(pec),
+      codiceUnivoco: emptyToNull(codiceUnivoco),
+      agenteNome: emptyToNull(agenteNome),
+      agenteCognome: emptyToNull(agenteCognome),
+      agenteTelefono: emptyToNull(agenteTelefono),
+      agenteEmail: emptyToNull(agenteEmail),
       note: emptyToNull(note),
     },
   });

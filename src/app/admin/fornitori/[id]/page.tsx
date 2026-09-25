@@ -27,6 +27,12 @@ export default async function EditFornitorePage({
         provincia={fornitore.provincia}
         telefono={fornitore.telefono}
         email={fornitore.email}
+        pec={fornitore.pec}
+        codiceUnivoco={fornitore.codiceUnivoco}
+        agenteNome={fornitore.agenteNome}
+        agenteCognome={fornitore.agenteCognome}
+        agenteTelefono={fornitore.agenteTelefono}
+        agenteEmail={fornitore.agenteEmail}
         note={fornitore.note}
       />
     </div>

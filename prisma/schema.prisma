@@ -234,6 +234,16 @@ model Fornitore {
   provincia       String?
   telefono        String?
   email           String?
+  pec             String?
+  // Codice Destinatario SDI per la fatturazione elettronica (stesso concetto
+  // di Client.codiceUnivoco).
+  codiceUnivoco   String?
+  // Agente commerciale di riferimento del fornitore: singolo contatto
+  // facoltativo, mostrato/gestito dal pulsante "+ Inserisci agente" nel form.
+  agenteNome      String?
+  agenteCognome   String?
+  agenteTelefono  String?
+  agenteEmail     String?
   note            String?
   codiceFornitore Int      @unique @default(autoincrement())
   createdAt       DateTime @default(now())

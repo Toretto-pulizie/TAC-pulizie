@@ -23,6 +23,7 @@ export function FornitoreForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [pivaStato, setPivaStato] = useState<PivaStato>(null);
   const [capStato, setCapStato] = useState<CapStato>(null);
+  const [showAgente, setShowAgente] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
   const indirizzoRef = useRef<HTMLInputElement>(null);
   const capRef = useRef<HTMLInputElement>(null);
@@ -34,6 +35,7 @@ export function FornitoreForm() {
       formRef.current?.reset();
       setPivaStato(null);
       setCapStato(null);
+      setShowAgente(false);
     }
   }, [state]);
 
@@ -213,6 +215,82 @@ export function FornitoreForm() {
           />
         </label>
       </div>
+
+      <div className="flex flex-wrap gap-3">
+        <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+          PEC
+          <input
+            name="pec"
+            type="email"
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+          Codice SDI
+          <input
+            name="codiceUnivoco"
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+      </div>
+
+      {!showAgente && (
+        <button
+          type="button"
+          onClick={() => setShowAgente(true)}
+          className="self-start rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-600"
+        >
+          + Inserisci agente
+        </button>
+      )}
+
+      {showAgente && (
+        <div className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-zinc-700">Agente</span>
+            <button
+              type="button"
+              onClick={() => setShowAgente(false)}
+              className="text-xs text-zinc-500"
+            >
+              ✕ Rimuovi
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+              Nome
+              <input
+                name="agenteNome"
+                className="rounded-lg border border-zinc-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+              Cognome
+              <input
+                name="agenteCognome"
+                className="rounded-lg border border-zinc-300 px-3 py-2"
+              />
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+              Telefono
+              <input
+                name="agenteTelefono"
+                className="rounded-lg border border-zinc-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-sm">
+              Email
+              <input
+                name="agenteEmail"
+                type="email"
+                className="rounded-lg border border-zinc-300 px-3 py-2"
+              />
+            </label>
+          </div>
+        </div>
+      )}
 
       <label className="flex flex-col gap-1 text-sm">
         Note
