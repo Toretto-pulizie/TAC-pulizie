@@ -1,0 +1,174 @@
+import Image from "next/image";
+import Link from "next/link";
+import { verifySession, getCurrentUser } from "@/lib/dal";
+import { prisma } from "@/lib/prisma";
+import { getTodayEntries } from "@/app/actions/timeEntries";
+import { currentStatus } from "@/lib/timeCalc";
+import { logout } from "@/app/actions/auth";
+import { NotificationBell } from "@/app/NotificationBell";
+import { getRecentNotifications } from "@/lib/notifications";
+import { AutoRefresh } from "@/app/AutoRefresh";
+import { MODULE_GROUPS, MODULE_LABELS, MODULE_HREFS, isModuleKey } from "@/lib/modules";
+
+const STATUS_LABELS = {
+  FREE: "Libera",
+  TRAVELING: "In spostamento",
+  WORKING: "Al lavoro",
+  SOPRALLUOGO: "In sopralluogo",
+} as const;
+
+function ClockIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      className="h-10 w-10"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function PermessoIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      className="h-10 w-10"
+    >
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M8 3v4M16 3v4M3 10h18" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export default async function ProduzionePage() {
+  const session = await verifySession();
+
+  const [entries, pendingRequests, notifications, user] = await Promise.all([
+    getTodayEntries(session.userId),
+    prisma.leaveRequest.count({
+      where: { userId: session.userId, stato: "IN_ATTESA" },
+    }),
+    getRecentNotifications(session.userId),
+    getCurrentUser(),
+  ]);
+
+  const status = currentStatus(entries);
+
+  // Sezione "Gestione": le pagine del programma assegnate al collaboratore
+  // da Utenti → Pagine accessibili, raggruppate come nel menu laterale.
+  const allowed = new Set((user?.allowedModules ?? []).filter(isModuleKey));
+  const gestioneGroups = MODULE_GROUPS.map((group) => ({
+    label: group.label,
+    keys: group.keys.filter((key) => allowed.has(key)),
+  })).filter((group) => group.keys.length > 0);
+
+  return (
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
+      <AutoRefresh intervalMs={150000} />
+      {allowed.has("amministrazione") && (
+        <Link href="/dipendente" className="-mb-2 text-sm text-zinc-500">
+          ← Indietro
+        </Link>
+      )}
+      <header className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-3">
+          <Image
+            src="/logo.png"
+            alt="Toretto"
+            width={90}
+            height={26}
+            priority
+            unoptimized
+            className="shrink-0"
+          />
+          <div className="min-w-0">
+            <p className="text-sm text-zinc-500">Ciao,</p>
+            <h1 className="truncate text-xl font-semibold text-zinc-900">
+              {session.name}
+            </h1>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <NotificationBell initial={notifications} />
+          <form action={logout}>
+            <button
+              type="submit"
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600"
+            >
+              Esci
+            </button>
+          </form>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Link
+          href="/dipendente/timbratura"
+          className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-green-800 bg-green-700 p-4 text-center shadow-sm active:bg-green-800"
+        >
+          <span className="text-yellow-300">
+            <ClockIcon />
+          </span>
+          <span className="text-base font-semibold text-yellow-300">
+            Timbratura
+          </span>
+          <span className="text-xs text-yellow-200">
+            {STATUS_LABELS[status.status]}
+          </span>
+        </Link>
+
+        <Link
+          href="/dipendente/permessi"
+          className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-green-800 bg-green-700 p-4 text-center shadow-sm active:bg-green-800"
+        >
+          <span className="text-yellow-300">
+            <PermessoIcon />
+          </span>
+          <span className="text-base font-semibold text-yellow-300">
+            Richiedi permesso
+          </span>
+          <span className="text-xs text-yellow-200">
+            {pendingRequests > 0
+              ? `${pendingRequests} in attesa`
+              : "Nessuna in attesa"}
+          </span>
+        </Link>
+      </div>
+
+      {gestioneGroups.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">
+            Gestione
+          </h2>
+          <div className="flex flex-col gap-4">
+            {gestioneGroups.map((group) => (
+              <div key={group.label} className="flex flex-col gap-2">
+                <p className="text-xs font-medium tracking-wide text-zinc-400 uppercase">
+                  {group.label}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {group.keys.map((key) => (
+                    <Link
+                      key={key}
+                      href={MODULE_HREFS[key]}
+                      className="rounded-lg border border-zinc-200 bg-white px-3 py-3 text-center text-sm font-medium text-zinc-700 shadow-sm active:bg-zinc-50"
+                    >
+                      {MODULE_LABELS[key]}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

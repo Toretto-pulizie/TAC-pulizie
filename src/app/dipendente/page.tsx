@@ -1,23 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { verifySession, getCurrentUser } from "@/lib/dal";
-import { prisma } from "@/lib/prisma";
-import { getTodayEntries } from "@/app/actions/timeEntries";
-import { currentStatus } from "@/lib/timeCalc";
 import { logout } from "@/app/actions/auth";
 import { NotificationBell } from "@/app/NotificationBell";
 import { getRecentNotifications } from "@/lib/notifications";
-import { AutoRefresh } from "@/app/AutoRefresh";
-import { MODULE_GROUPS, MODULE_LABELS, MODULE_HREFS, isModuleKey } from "@/lib/modules";
+import { isModuleKey } from "@/lib/modules";
 
-const STATUS_LABELS = {
-  FREE: "Libera",
-  TRAVELING: "In spostamento",
-  WORKING: "Al lavoro",
-  SOPRALLUOGO: "In sopralluogo",
-} as const;
-
-function ClockIcon() {
+function ProduzioneIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -26,13 +16,13 @@ function ClockIcon() {
       strokeWidth={1.5}
       className="h-10 w-10"
     >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 21V9l8-6 8 6v12" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 21v-7h6v7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-function PermessoIcon() {
+function AmministrazioneIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -41,8 +31,8 @@ function PermessoIcon() {
       strokeWidth={1.5}
       className="h-10 w-10"
     >
-      <rect x="3" y="5" width="18" height="16" rx="2" />
-      <path d="M8 3v4M16 3v4M3 10h18" strokeLinecap="round" />
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M3 9h18M8 4v5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -50,28 +40,18 @@ function PermessoIcon() {
 export default async function DipendentePage() {
   const session = await verifySession();
 
-  const [entries, pendingRequests, notifications, user] = await Promise.all([
-    getTodayEntries(session.userId),
-    prisma.leaveRequest.count({
-      where: { userId: session.userId, stato: "IN_ATTESA" },
-    }),
-    getRecentNotifications(session.userId),
+  const [user, notifications] = await Promise.all([
     getCurrentUser(),
+    getRecentNotifications(session.userId),
   ]);
 
-  const status = currentStatus(entries);
-
-  // Sezione "Gestione": le pagine del programma assegnate al collaboratore
-  // da Utenti → Pagine accessibili, raggruppate come nel menu laterale.
   const allowed = new Set((user?.allowedModules ?? []).filter(isModuleKey));
-  const gestioneGroups = MODULE_GROUPS.map((group) => ({
-    label: group.label,
-    keys: group.keys.filter((key) => allowed.has(key)),
-  })).filter((group) => group.keys.length > 0);
+  if (!allowed.has("amministrazione")) {
+    redirect("/dipendente/produzione");
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
-      <AutoRefresh intervalMs={150000} />
       <header className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-3">
           <Image
@@ -105,65 +85,29 @@ export default async function DipendentePage() {
 
       <div className="grid grid-cols-2 gap-3">
         <Link
-          href="/dipendente/timbratura"
+          href="/dipendente/produzione"
           className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-green-800 bg-green-700 p-4 text-center shadow-sm active:bg-green-800"
         >
           <span className="text-yellow-300">
-            <ClockIcon />
+            <ProduzioneIcon />
           </span>
           <span className="text-base font-semibold text-yellow-300">
-            Timbratura
-          </span>
-          <span className="text-xs text-yellow-200">
-            {STATUS_LABELS[status.status]}
+            Produzione
           </span>
         </Link>
 
         <Link
-          href="/dipendente/permessi"
-          className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-green-800 bg-green-700 p-4 text-center shadow-sm active:bg-green-800"
+          href="/dipendente/amministrazione"
+          className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white p-4 text-center shadow-sm active:bg-zinc-50"
         >
-          <span className="text-yellow-300">
-            <PermessoIcon />
+          <span className="text-zinc-700">
+            <AmministrazioneIcon />
           </span>
-          <span className="text-base font-semibold text-yellow-300">
-            Richiedi permesso
-          </span>
-          <span className="text-xs text-yellow-200">
-            {pendingRequests > 0
-              ? `${pendingRequests} in attesa`
-              : "Nessuna in attesa"}
+          <span className="text-base font-semibold text-zinc-800">
+            Amministrazione
           </span>
         </Link>
       </div>
-
-      {gestioneGroups.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">
-            Gestione
-          </h2>
-          <div className="flex flex-col gap-4">
-            {gestioneGroups.map((group) => (
-              <div key={group.label} className="flex flex-col gap-2">
-                <p className="text-xs font-medium tracking-wide text-zinc-400 uppercase">
-                  {group.label}
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {group.keys.map((key) => (
-                    <Link
-                      key={key}
-                      href={MODULE_HREFS[key]}
-                      className="rounded-lg border border-zinc-200 bg-white px-3 py-3 text-center text-sm font-medium text-zinc-700 shadow-sm active:bg-zinc-50"
-                    >
-                      {MODULE_LABELS[key]}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

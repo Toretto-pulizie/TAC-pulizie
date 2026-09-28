@@ -47,6 +47,8 @@ Accanto alla campanella, nella barra superiore, il cerchietto con l'iniziale e i
 
 ## Area personale del collaboratore (`/dipendente`)
 
+Se il titolare ha assegnato al collaboratore il permesso **Amministrazione** (da Utenti → Pagine accessibili), entrando in `/dipendente` compare prima un bivio con due pulsanti: **Produzione** (porta a tutto quanto descritto qui sotto: Timbratura, Richiedi permesso, Gestione, con in cima un link "← Indietro" per tornare al bivio) e **Amministrazione** (vedi sezione dedicata più sotto). Chi non ha questo permesso non vede il bivio né il link "← Indietro": entra direttamente nella propria area come sempre.
+
 **Timbratura** — si timbra in tre fasi:
 1. Si seleziona **Cliente / cantiere**.
 2. Si preme **Inizia spostamento** (se si deve raggiungere il cantiere), **Inizia lavoro (senza spostamento)**, oppure **Inizia sopralluogo**.
@@ -60,11 +62,16 @@ La pagina mostra anche i turni programmati nei prossimi 7 giorni e le timbrature
 
 **Gestione** — sotto ai due riquadri sopra, compare solo se il titolare ha assegnato al collaboratore l'accesso a una o più pagine del programma (da Utenti → Pagine accessibili): un pulsante per ciascuna pagina assegnata, raggruppati come nel menu laterale (es. Anagrafiche, Gestione, Produzione, Utilità). Aprono le stesse identiche pagine usate dal computer, adattate allo schermo del telefono; da lì si torna all'area personale con "La mia area" in fondo al menu. Se il collaboratore non ha nessun permesso assegnato, questa sezione non compare affatto.
 
+### Amministrazione (`/dipendente/amministrazione`)
+Visibile solo a chi ha il permesso **Amministrazione**. Due pulsanti:
+- **Sopralluoghi**: digitalizzazione del modulo cartaceo "scheda sopralluogo", da compilare sul posto per un potenziale cliente non ancora in anagrafica (dati cliente/luogo sempre a testo libero, nessun collegamento a un Cliente esistente). Sezioni: Richiesta di offerta (Verbale/Scritta/Telefonica + data), Dati del cliente, Dati del luogo del servizio, Contenuti ricevuti (Capitolati/Planimetrie/Altro/Note), Tipologia lavoro richiesto, Data sopralluogo, Descrizione dei locali (Mq complessivi, N° dipendenti, N° postazioni, Numero ambienti), **Caratteristiche generali** (una riga per ambiente — Ambiente, N°, Mq, Tipo pavimento, Finestre, Note — con "+ Aggiungi ambiente"/"✕ Rimuovi" per aggiungerne o toglierne quante servono), **Richieste specifiche del cliente** (11 voci fisse di pulizia con Frequenza/Attrezzature da compilare solo se richieste, più "+ Aggiungi voce" per altre righe libere rimovibili). Al salvataggio il titolare riceve una notifica e il modulo si svuota per un nuovo sopralluogo; "Effettuato da" e la data di compilazione si registrano da soli.
+- **Preventivi**: elenco di sola lettura di tutti i preventivi (numero offerta, cliente, data creazione, numero sedi) con lo stesso badge colorato di stato usato nell'elenco Preventivi del titolare (giallo "In trattativa", verde "Accettato", grigio "Rifiutato"). Nessun prezzo mostrato e nessuna possibilità di modifica da qui.
+
 ## Moduli del programma (menu laterale)
 
 Il menu è diviso in quattro gruppi, in quest'ordine:
 - **Anagrafiche**: Clienti, Fornitori, Collaboratori (le schede anagrafiche dei collaboratori — dati personali, non l'accesso al programma).
-- **Gestione**: Pianificazione, Preventivi, Consuntivi.
+- **Gestione**: Pianificazione, Preventivi, Consuntivi, Sopralluoghi.
 - **Produzione**: Timbrature, Presenze, Permessi (i moduli operativi che i collaboratori usano ogni giorno).
 - **Utilità**: Statistiche.
 
@@ -152,6 +159,9 @@ Scheda anagrafica dei collaboratori (dati personali: Cognome, Nome, Codice fisca
 
 Le righe degli elenchi di Clienti, Fornitori e Collaboratori sono compatte (una riga di testo ciascuna) per vederne di più senza scorrere.
 
+### Sopralluoghi (`/admin/sopralluoghi`)
+Elenco di sola lettura dei sopralluoghi compilati dai collaboratori dal loro telefono (area Amministrazione → Sopralluoghi): Data, Cliente, Luogo, Effettuato da, con i link **Vedi** (dettaglio completo, tutte le sezioni del modulo comprese le tabelle Ambienti e Richieste specifiche) ed **Elimina** (con conferma). Compilare un sopralluogo invia una notifica al titolare con link diretto a questo elenco.
+
 ### Statistiche (`/admin/statistiche`)
 Solo lettura. In cima, il box **Ore disponibili — mese corrente**: stesso calcolo di Consuntivi (giorni lavorativi del mese × 8 ore × Collaboratori Operativi attivi), con sotto un'etichetta che ricorda se è "Totale, senza sottrarre i permessi" oppure "Al netto dei permessi approvati (Ferie aziendali comprese)" — si decide da Impostazioni → Visualizzazione → Statistiche (vedi sotto). Seguono quattro tabelle: andamento preventivi ultimi 6 mesi (creati/accettati/conversione/sconto medio/valore) — raggruppato per la **Data creazione** del preventivo (quella modificabile nel modulo Preventivi, non la data di accettazione), marginalità cantieri del mese corrente, ore lavorate per collaboratore del mese corrente, qualità anagrafica (quanti clienti/cantieri hanno dati completi o sono georeferenziati).
 
@@ -159,7 +169,7 @@ Solo lettura. In cima, il box **Ore disponibili — mese corrente**: stesso calc
 Raggiungibile da **Gestione utenti** nel menu utente in alto a destra (non più dal menu laterale).
 - Elenco utenti (Nome, Cognome, Telefono, Email, Ruolo, **Tipo** — Operativo/Amministrativo per i Collaboratori, "—" per l'Amministratore, Stato).
 - **Aggiungi utente** / **Modifica utente**: Nome, Cognome, Telefono, Email, Password (o "Nuova password" in modifica, vuoto per non cambiarla), Ruolo (Collaboratore o Amministratore). Per il Ruolo Collaboratore compare anche **Tipo**: **Operativo** (lavora sul campo, valore di default) o **Amministrativo** (lavoro d'ufficio, senza timbrature sul campo). Un Collaboratore Amministrativo non compare tra le opzioni di "+ Aggiungi timbratura manuale" in Timbrature (resta comunque selezionabile nel filtro della pagina) e non pesa su "Ore disponibili" in Consuntivi; conta comunque normalmente se mai avesse delle Ore lavorate registrate. La scheda "Modifica utente" mostra il proprio titolo nell'intestazione in alto (dove di solito compare "Utenti"), con accanto, a destra, "← Torna all'elenco".
-- Per i Collaboratori, sezione **Pagine accessibili** con un interruttore per ogni pagina, raggruppate come nel menu (Anagrafiche / Gestione / Produzione / Utilità). Utenti e Impostazioni non sono mai assegnabili. Pulsante **Salva permessi**.
+- Per i Collaboratori, sezione **Pagine accessibili** con un interruttore per ogni pagina, raggruppate come nel menu (Anagrafiche / Gestione / Produzione / Utilità), più una card separata **Area riservata** con l'interruttore **Amministrazione** (vedi sopra, area personale del collaboratore). Utenti e Impostazioni non sono mai assegnabili. Pulsante **Salva permessi**.
 
 ### Impostazioni (`/admin/impostazioni`, solo titolare)
 - **Frequenza**: per ciascuna delle tre frequenze (una tantum/passaggio settimanale/passaggio mensile), un'**Abbreviazione** (mostrata nella colonna Cadenza dell'elenco Preventivi insieme al numero inserito — es. "PS 1"; se non impostata si usa l'Etichetta per intero) e un'**Etichetta** (il nome usato nei preventivi — cambia solo il nome mostrato, non i calcoli). Per ciascuna, l'interruttore **"Mostra cadenza/riepilogo in stampa"** decide cosa compare nel PDF al posto della semplice etichetta: acceso mostra il dettaglio (es. "Cadenza: n° 2 passaggi settimanali così distribuiti", oppure per una tantum "Intervento una tantum di pulizia (1 intervento)."), spento mostra solo l'etichetta — mai entrambi insieme, e senza mai citare ore o spostamento. Di default acceso per i passaggi settimanali/mensili, spento per una tantum.

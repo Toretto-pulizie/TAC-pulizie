@@ -89,6 +89,7 @@ model User {
   shiftPlans   ShiftPlan[]
   leaveRequests LeaveRequest[]
   notifications Notification[]
+  sopralluoghi  Sopralluogo[]
 }
 
 model Notification {
@@ -440,4 +441,78 @@ model TimeEntry {
   sessionId String?
 
   @@index([sessionId])
+}
+
+enum TipoRichiestaSopralluogo {
+  VERBALE
+  SCRITTA
+  TELEFONICA
+}
+
+// Scheda sopralluogo digitalizzata (ex modulo cartaceo "scheda sopralluogo"):
+// compilata dal collaboratore per un potenziale cliente non ancora in
+// anagrafica, per questo i dati cliente/luogo sono testo libero e non
+// collegati a un Client/Site.
+model Sopralluogo {
+  id                   String                    @id @default(cuid())
+  effettuatoDa         User                      @relation(fields: [effettuatoDaId], references: [id])
+  effettuatoDaId       String
+  richiestaTipo        TipoRichiestaSopralluogo?
+  richiestaData        DateTime?
+  clienteNome          String?
+  clienteIndirizzo     String?
+  clienteCap           String?
+  clienteCitta         String?
+  clienteTelefono      String?
+  clienteEmail         String?
+  clientePec           String?
+  clientePartitaIva    String?
+  clienteCodiceUnivoco String?
+  luogoIndirizzo       String?
+  luogoCitta           String?
+  referenteNome        String?
+  referenteCellulare   String?
+  referenteEmail       String?
+  contenutiCapitolati  Boolean                   @default(false)
+  contenutiPlanimetrie Boolean                   @default(false)
+  contenutiAltro       String?
+  note                 String?
+  tipologiaLavoro      String?
+  dataSopralluogo      DateTime?
+  mqComplessivi        Float?
+  numDipendenti        Int?
+  numPostazioni        Int?
+  numeroAmbienti       Int?
+  ambienti             SopralluogoAmbiente[]
+  richieste            SopralluogoRichiesta[]
+  createdAt            DateTime                  @default(now())
+
+  @@index([effettuatoDaId])
+}
+
+model SopralluogoAmbiente {
+  id            String      @id @default(cuid())
+  sopralluogo   Sopralluogo @relation(fields: [sopralluogoId], references: [id], onDelete: Cascade)
+  sopralluogoId String
+  ambiente      String
+  numero        String?
+  mq            String?
+  pavimento     String?
+  finestre      String?
+  note          String?
+  ordine        Int         @default(0)
+
+  @@index([sopralluogoId])
+}
+
+model SopralluogoRichiesta {
+  id            String      @id @default(cuid())
+  sopralluogo   Sopralluogo @relation(fields: [sopralluogoId], references: [id], onDelete: Cascade)
+  sopralluogoId String
+  tipo          String
+  frequenza     String?
+  attrezzature  String?
+  ordine        Int         @default(0)
+
+  @@index([sopralluogoId])
 }

@@ -67,6 +67,21 @@ export function PermissionsEditor({
         ))}
       </div>
 
+      <div className="rounded-lg border border-zinc-200 p-3">
+        <p className="mb-2 text-xs font-medium tracking-wide text-zinc-500 uppercase">
+          Area riservata
+        </p>
+        <Toggle
+          checked={allowed.has("amministrazione")}
+          onChange={() => toggle("amministrazione")}
+          label={MODULE_LABELS.amministrazione}
+        />
+        <p className="mt-2 text-xs text-zinc-400">
+          Aggiunge, nella sua area personale, un bivio Produzione/Amministrazione con
+          Sopralluoghi e Preventivi.
+        </p>
+      </div>
+
       <p className="text-xs text-zinc-400">
         &ldquo;Utenti&rdquo; e &ldquo;Impostazioni&rdquo; restano visibili solo al titolare.
       </p>
