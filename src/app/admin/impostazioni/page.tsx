@@ -7,6 +7,7 @@ import {
 } from "@/lib/serviceTypeLabels";
 import { getHomeSettings } from "@/lib/homeSettings";
 import { getStatisticheSettings } from "@/lib/statisticheSettings";
+import { getNotificationSettings } from "@/lib/notificationSettings";
 import { getBankSettings } from "@/lib/bankSettings";
 import { ServiceTypeLabelRow } from "./ServiceTypeLabelRow";
 import { TipoPrestazioneForm } from "./TipoPrestazioneForm";
@@ -15,6 +16,7 @@ import { CondizionePagamentoForm } from "./CondizionePagamentoForm";
 import { CondizionePagamentoRow } from "./CondizionePagamentoRow";
 import { HomeSettingsForm } from "./HomeSettingsForm";
 import { StatisticheSettingsForm } from "./StatisticheSettingsForm";
+import { NotificationSettingsForm } from "./NotificationSettingsForm";
 import { BankSettingsForm } from "./BankSettingsForm";
 import { AttachmentForm } from "./AttachmentForm";
 import { AttachmentRow } from "./AttachmentRow";
@@ -33,6 +35,7 @@ export default async function ImpostazioniPage() {
     tipiPrestazione,
     homeSettings,
     statisticheSettings,
+    notificationSettings,
     bankSettings,
     attachments,
     phrases,
@@ -44,6 +47,7 @@ export default async function ImpostazioniPage() {
     prisma.tipoPrestazione.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
     getHomeSettings(),
     getStatisticheSettings(),
+    getNotificationSettings(),
     getBankSettings(),
     prisma.attachment.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.quotePhrase.findMany({ orderBy: [{ ordine: "asc" }, { titolo: "asc" }] }),
@@ -184,6 +188,13 @@ export default async function ImpostazioniPage() {
                 <StatisticheSettingsForm
                   initial={{
                     oreDisponibiliNette: statisticheSettings.oreDisponibiliNette,
+                  }}
+                />
+                <NotificationSettingsForm
+                  initial={{
+                    amministrativoPermessi: notificationSettings.amministrativoPermessi,
+                    amministrativoPreventivi: notificationSettings.amministrativoPreventivi,
+                    amministrativoSopralluoghi: notificationSettings.amministrativoSopralluoghi,
                   }}
                 />
               </section>

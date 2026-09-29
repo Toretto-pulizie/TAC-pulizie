@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import { notFound } from "next/navigation";
-import { requireModule } from "@/lib/dal";
+import { requireAnyModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeDiscountPct } from "@/lib/quotes";
 import {
@@ -64,7 +64,7 @@ export default async function StampaPreventivoPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ pdf?: string; totale?: string }>;
 }) {
-  await requireModule("preventivi");
+  await requireAnyModule("preventivi", "amministrazione");
   const { id } = await params;
   const { pdf, totale } = await searchParams;
   const isPdfMode = pdf === "1";

@@ -58,6 +58,14 @@ export default async function PreventiviDipendentePage() {
               {formatDateLabel(q.createdAt)} · {q.sites.length}{" "}
               {q.sites.length === 1 ? "sede" : "sedi"}
             </p>
+            <a
+              href={`/admin/preventivi/${q.id}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 self-start text-xs text-zinc-500 underline"
+            >
+              Vedi anteprima
+            </a>
           </li>
         ))}
       </ul>

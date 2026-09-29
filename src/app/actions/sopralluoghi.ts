@@ -4,7 +4,7 @@ import * as z from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { verifySession, requireModule } from "@/lib/dal";
-import { notifyAdmins } from "@/lib/notifications";
+import { notifyAdmins, notifyAmministrativiIfEnabled } from "@/lib/notifications";
 
 const SopralluogoSchema = z.object({
   richiestaTipo: z.enum(["VERBALE", "SCRITTA", "TELEFONICA"]).optional(),
@@ -156,7 +156,9 @@ export async function createSopralluogo(_prevState: unknown, formData: FormData)
     },
   });
 
-  await notifyAdmins(`${session.name} ha compilato un sopralluogo`, "/admin/sopralluoghi");
+  const messaggioSopralluogo = `${session.name} ha compilato un sopralluogo`;
+  await notifyAdmins(messaggioSopralluogo, "/admin/sopralluoghi");
+  await notifyAmministrativiIfEnabled("sopralluoghi", messaggioSopralluogo, "/admin/sopralluoghi");
 
   revalidatePath("/admin/sopralluoghi");
   return { success: true as const };

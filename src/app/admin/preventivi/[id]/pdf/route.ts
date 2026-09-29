@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument } from "pdf-lib";
-import { requireModule } from "@/lib/dal";
+import { requireAnyModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { buildLineItem } from "@/lib/quotePrint";
 import {
@@ -27,7 +27,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  await requireModule("preventivi");
+  await requireAnyModule("preventivi", "amministrazione");
   const { id } = await params;
 
   const [quote, serviceLabels, mostraCadenzaSettings, bankSettings] =

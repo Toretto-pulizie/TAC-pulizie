@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/dal";
 import { geocodeAddress } from "@/lib/geocode";
 import { computeListPrice } from "@/lib/quotes";
-import { notifyAdmins } from "@/lib/notifications";
+import { notifyAdmins, notifyAmministrativiIfEnabled } from "@/lib/notifications";
 import { clientDisplayName } from "@/lib/clients";
 
 const QuoteSchema = z.object({
@@ -287,10 +287,9 @@ export async function setQuoteStatus(
 
   if (status === "ACCETTATO" || status === "RIFIUTATO") {
     const sedi = quote.sites.map((s) => s.site.name).join(", ");
-    await notifyAdmins(
-      `Preventivo ${status === "ACCETTATO" ? "accettato" : "rifiutato"}: ${clientDisplayName(quote.client)} — ${sedi}`,
-      "/admin/preventivi"
-    );
+    const messaggio = `Preventivo ${status === "ACCETTATO" ? "accettato" : "rifiutato"}: ${clientDisplayName(quote.client)} — ${sedi}`;
+    await notifyAdmins(messaggio, "/admin/preventivi");
+    await notifyAmministrativiIfEnabled("preventivi", messaggio, "/admin/preventivi");
   }
 
   revalidatePath("/admin/preventivi");

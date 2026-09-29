@@ -4,7 +4,7 @@ import * as z from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { verifySession, requireModule } from "@/lib/dal";
-import { notifyAdmins, notifyUser } from "@/lib/notifications";
+import { notifyAdmins, notifyUser, notifyAmministrativiIfEnabled } from "@/lib/notifications";
 import { TIPO_LABELS } from "@/lib/leaveRequests";
 
 const LeaveRequestSchema = z
@@ -54,10 +54,9 @@ export async function createLeaveRequest(_prevState: unknown, formData: FormData
     },
   });
 
-  await notifyAdmins(
-    `${session.name} ha richiesto: ${TIPO_LABELS[tipo]}`,
-    "/admin/permessi"
-  );
+  const messaggio = `${session.name} ha richiesto: ${TIPO_LABELS[tipo]}`;
+  await notifyAdmins(messaggio, "/admin/permessi");
+  await notifyAmministrativiIfEnabled("permessi", messaggio, "/admin/permessi");
 
   revalidatePath("/dipendente/permessi");
   revalidatePath("/admin/permessi");

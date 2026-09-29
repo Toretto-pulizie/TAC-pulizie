@@ -311,6 +311,16 @@ model StatisticheSettings {
   oreDisponibiliNette Boolean @default(false)
 }
 
+// Riga singola: decide quali notifiche gestionali (oggi visibili solo al
+// titolare) vengono inviate anche ai Collaboratori Amministrativi. Gli
+// Operativi non le vedono mai — non sono configurabili per loro.
+model NotificationSettings {
+  id                         String  @id @default("singleton")
+  amministrativoPermessi     Boolean @default(false)
+  amministrativoPreventivi   Boolean @default(false)
+  amministrativoSopralluoghi Boolean @default(false)
+}
+
 model BankSettings {
   id           String  @id @default("singleton")
   nomeBanca    String  @default("")

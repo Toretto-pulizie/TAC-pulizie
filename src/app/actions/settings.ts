@@ -85,6 +85,22 @@ export async function updateStatisticheSettings(settings: {
   revalidatePath("/admin/statistiche");
 }
 
+export async function updateNotificationSettings(settings: {
+  amministrativoPermessi: boolean;
+  amministrativoPreventivi: boolean;
+  amministrativoSopralluoghi: boolean;
+}) {
+  await requireAdmin();
+
+  await prisma.notificationSettings.upsert({
+    where: { id: "singleton" },
+    update: settings,
+    create: { id: "singleton", ...settings },
+  });
+
+  revalidatePath("/admin/impostazioni");
+}
+
 const BankSettingsSchema = z.object({
   nomeBanca: z.string().trim(),
   iban: z.string().trim(),
