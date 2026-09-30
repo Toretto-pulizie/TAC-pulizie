@@ -63,7 +63,7 @@ export async function GET(
     .map(
       (r) => `
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #e4e4e7;">${escapeHtml(r.descrizione)}</td>
+        <td style="padding:6px 8px; border-bottom:1px solid #e4e4e7; white-space:pre-line;">${escapeHtml(r.descrizione)}</td>
         <td style="padding:6px 8px; border-bottom:1px solid #e4e4e7; text-align:right;">${r.quantita}</td>
         <td style="padding:6px 8px; border-bottom:1px solid #e4e4e7; text-align:right;">${escapeHtml(formatEuro(r.prezzoUnitario))}</td>
         <td style="padding:6px 8px; border-bottom:1px solid #e4e4e7; text-align:right;">${escapeHtml(formatEuro(r.importo))}</td>

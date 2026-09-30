@@ -3,27 +3,32 @@ import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { clientDisplayName } from "@/lib/clients";
 import { computeListPrice } from "@/lib/quotes";
+import { buildDescriptionBlocks, flattenDescriptionBlocks } from "@/lib/quotePrint";
+import { getServiceTypeLabels, getServiceTypeMostraCadenza } from "@/lib/serviceTypeLabels";
 import { InvoiceForm } from "../InvoiceForm";
 
 export default async function NuovaFatturaPage() {
   await requireModule("fatturazione");
 
-  const [clientsRaw, quotesRaw] = await Promise.all([
+  const [clientsRaw, quotesRaw, serviceLabels, mostraCadenzaSettings] = await Promise.all([
     prisma.client.findMany(),
     prisma.quote.findMany({
       where: { status: "ACCETTATO" },
       include: { sites: { include: { site: true } } },
       orderBy: { numeroOfferta: "desc" },
     }),
+    getServiceTypeLabels(),
+    getServiceTypeMostraCadenza(),
   ]);
 
   const clients = clientsRaw
     .map((c) => ({ id: c.id, name: clientDisplayName(c), tipo: c.tipo }))
     .sort((a, b) => a.name.localeCompare(b.name, "it"));
 
-  // Una voce per Preventivo accettato, con una riga per ciascuna sede
-  // (descrizione = tipo prestazione + sede, importo = Adeguamento se
-  // presente altrimenti Netto altrimenti il listino calcolato).
+  // Una voce per Preventivo accettato, con una riga per ciascuna sede:
+  // descrizione ripresa identica da quella del PDF Preventivo (sede, tipo
+  // servizio, cadenza, note), importo = Adeguamento se presente altrimenti
+  // Netto altrimenti il listino calcolato.
   const quotes = quotesRaw.map((q) => ({
     quoteId: q.id,
     clientId: q.clientId,
@@ -31,8 +36,13 @@ export default async function NuovaFatturaPage() {
     righe: q.sites.map((qs) => {
       const listPrice = computeListPrice(qs);
       const importo = qs.adeguamento ?? qs.prezzoVenduto ?? listPrice;
+      const blocks = buildDescriptionBlocks(
+        qs,
+        serviceLabels[qs.serviceType],
+        mostraCadenzaSettings[qs.serviceType]
+      );
       return {
-        descrizione: `${qs.tipoPrestazione} — ${qs.site.name}`,
+        descrizione: flattenDescriptionBlocks(blocks),
         importo,
       };
     }),

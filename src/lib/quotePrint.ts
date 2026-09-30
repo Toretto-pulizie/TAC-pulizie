@@ -196,6 +196,51 @@ export function buildDescriptionBlocks(
   return blocks;
 }
 
+// Riduce l'HTML dell'editor note (grassetto/corsivo/sottolineato) a testo
+// semplice, per i punti in cui serve il solo contenuto testuale (es. la
+// descrizione di una riga fattura, che è un campo di solo testo).
+function stripHtml(html: string): string {
+  return html
+    .replace(/<\/(p|div|li)>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+// Stesso identico contenuto mostrato nella tabella descrizione del PDF
+// Preventivo (vedi buildDescriptionBlocks), appiattito in testo semplice su
+// più righe: usato per precompilare la descrizione di una riga fattura senza
+// dover riscrivere a mano tipo servizio/cadenza/note già scritte nel
+// preventivo.
+export function flattenDescriptionBlocks(blocks: DescriptionBlock[]): string {
+  return blocks
+    .map((b) => {
+      switch (b.type) {
+        case "address":
+          return `${b.label} ${b.value}`;
+        case "tipo":
+          return b.text;
+        case "line":
+          return `${b.label} ${b.boldValue}${b.rest}`;
+        case "line-plain":
+          return b.text;
+        case "note-title":
+          return b.text;
+        case "note":
+          return b.text;
+        case "note-html":
+          return stripHtml(b.html);
+      }
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
 export function buildLineItem(q: QuotePricingInput, serviceLabel: string) {
   const listPrice = computeListPrice(q);
   const isOneShot = q.serviceType === "ONE_SHOT";

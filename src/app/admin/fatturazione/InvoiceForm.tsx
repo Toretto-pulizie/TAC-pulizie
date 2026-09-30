@@ -175,11 +175,12 @@ export function InvoiceForm({
           <div key={i} className="flex items-end gap-2">
             <label className="flex flex-1 flex-col gap-1 text-xs">
               Descrizione
-              <input
+              <textarea
                 name={`righe.${i}.descrizione`}
                 value={r.descrizione}
                 onChange={(e) => updateLine(i, { descrizione: e.target.value })}
                 required
+                rows={3}
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
             </label>

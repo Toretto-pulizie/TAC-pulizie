@@ -4,6 +4,8 @@ import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { clientDisplayName } from "@/lib/clients";
 import { computeListPrice } from "@/lib/quotes";
+import { buildDescriptionBlocks, flattenDescriptionBlocks } from "@/lib/quotePrint";
+import { getServiceTypeLabels, getServiceTypeMostraCadenza } from "@/lib/serviceTypeLabels";
 import { InvoiceForm } from "../InvoiceForm";
 import { EmettiButton } from "./EmettiButton";
 
@@ -26,7 +28,7 @@ export default async function FatturaDetailPage({
   await requireModule("fatturazione");
   const { id } = await params;
 
-  const [invoice, clientsRaw, quotesRaw] = await Promise.all([
+  const [invoice, clientsRaw, quotesRaw, serviceLabels, mostraCadenzaSettings] = await Promise.all([
     prisma.invoice.findUnique({
       where: { id },
       include: { righe: { orderBy: { ordine: "asc" } } },
@@ -37,6 +39,8 @@ export default async function FatturaDetailPage({
       include: { sites: { include: { site: true } } },
       orderBy: { numeroOfferta: "desc" },
     }),
+    getServiceTypeLabels(),
+    getServiceTypeMostraCadenza(),
   ]);
 
   if (!invoice) notFound();
@@ -52,8 +56,13 @@ export default async function FatturaDetailPage({
     righe: q.sites.map((qs) => {
       const listPrice = computeListPrice(qs);
       const importo = qs.adeguamento ?? qs.prezzoVenduto ?? listPrice;
+      const blocks = buildDescriptionBlocks(
+        qs,
+        serviceLabels[qs.serviceType],
+        mostraCadenzaSettings[qs.serviceType]
+      );
       return {
-        descrizione: `${qs.tipoPrestazione} — ${qs.site.name}`,
+        descrizione: flattenDescriptionBlocks(blocks),
         importo,
       };
     }),
