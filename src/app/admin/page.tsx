@@ -96,10 +96,10 @@ export default async function AdminHomePage() {
 
   const [activeEmployees, todayEntries, quotesByStatus, homeSettings] =
     await Promise.all([
-      // "Liberi" = tutti gli attivi meno chi risulta al lavoro/in
-      // spostamento oggi: questi ultimi due contano chiunque abbia timbrato
-      // (anche un Amministratore), quindi il totale deve farlo altrettanto,
-      // altrimenti "Liberi" risulta sballato quando un Amministratore timbra.
+      // "Liberi" = tutti gli attivi meno chi risulta al lavoro/in pausa
+      // oggi: questi ultimi due contano chiunque abbia timbrato (anche un
+      // Amministratore), quindi il totale deve farlo altrettanto, altrimenti
+      // "Liberi" risulta sballato quando un Amministratore timbra.
       prisma.user.count({ where: { active: true } }),
       prisma.timeEntry.findMany({
         where: { timestamp: { gte: startOfToday() } },
@@ -113,9 +113,11 @@ export default async function AdminHomePage() {
   const lastStatusByUser = new Map<string, string>();
   for (const e of todayEntries) lastStatusByUser.set(e.userId, e.type);
   const statuses = [...lastStatusByUser.values()];
-  const atWork = statuses.filter((t) => t === "WORK_START").length;
-  const traveling = statuses.filter((t) => t === "TRAVEL_START").length;
-  const free = activeEmployees - atWork - traveling;
+  const atWork = statuses.filter(
+    (t) => t === "WORK_START" || t === "SOPRALLUOGO_START"
+  ).length;
+  const onBreak = statuses.filter((t) => t === "PAUSE_START").length;
+  const free = activeEmployees - atWork - onBreak;
 
   const quoteCount = (status: string) =>
     quotesByStatus.find((r) => r.status === status)?._count ?? 0;
@@ -130,7 +132,7 @@ export default async function AdminHomePage() {
         showBar: homeSettings.showAlLavoroBar,
         segments: [
           { label: "Al lavoro", count: atWork, color: "bg-emerald-500" },
-          { label: "In spostamento", count: traveling, color: "bg-amber-400" },
+          { label: "In pausa", count: onBreak, color: "bg-amber-400" },
           { label: "Liberi", count: free, color: "bg-zinc-300" },
         ],
       },
