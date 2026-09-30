@@ -4,7 +4,18 @@ import { useState, useTransition } from "react";
 import { punch } from "@/app/actions/timeEntries";
 
 type Site = { id: string; label: string };
-type Status = "FREE" | "TRAVELING" | "WORKING" | "SOPRALLUOGO";
+type Status = "NESSUNA_GIORNATA" | "SCEGLI_CANTIERE" | "LAVORO" | "SOPRALLUOGO" | "HUB";
+type PunchType =
+  | "DAY_START"
+  | "DAY_END"
+  | "WORK_START"
+  | "WORK_END"
+  | "SOPRALLUOGO_START"
+  | "SOPRALLUOGO_END"
+  | "PAUSE_START"
+  | "PAUSE_END";
+
+const SOPRALLUOGO_VALUE = "__sopralluogo__";
 
 function getPosition(): Promise<{ lat?: number; lng?: number }> {
   return new Promise((resolve) => {
@@ -24,124 +35,179 @@ function getPosition(): Promise<{ lat?: number; lng?: number }> {
   });
 }
 
+// Scelta del cantiere (o del sopralluogo) in sospeso, in attesa della
+// conferma esplicita prima di avviare davvero il lavoro.
+type PendingChoice = { siteId: string | null; label: string; sopralluogo: boolean };
+
 export function ClockPanel({
   sites,
   status,
+  inPausa,
   currentSiteLabel,
 }: {
   sites: Site[];
   status: Status;
+  inPausa: boolean;
   currentSiteLabel: string | null;
 }) {
-  const [siteId, setSiteId] = useState(sites[0]?.id ?? "");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [pendingChoice, setPendingChoice] = useState<PendingChoice | null>(null);
 
-  function doPunch(
-    type: "TRAVEL_START" | "WORK_START" | "WORK_END" | "SOPRALLUOGO_START" | "SOPRALLUOGO_END"
-  ) {
+  function doPunch(type: PunchType, siteId?: string) {
     setError(null);
-    const isEndType = type === "WORK_END" || type === "SOPRALLUOGO_END";
-    if (!isEndType && !siteId) {
-      setError("Seleziona prima un cliente/cantiere.");
-      return;
-    }
     startTransition(async () => {
       const coords = await getPosition();
-      await punch({ type, siteId: isEndType ? undefined : siteId, ...coords });
+      await punch({ type, siteId, ...coords });
     });
   }
 
+  function handleSelect(e: React.ChangeEvent<HTMLSelectElement>) {
+    const value = e.target.value;
+    if (!value) return;
+    if (value === SOPRALLUOGO_VALUE) {
+      setPendingChoice({ siteId: null, label: "Sopralluogo", sopralluogo: true });
+    } else {
+      const site = sites.find((s) => s.id === value);
+      if (site) setPendingChoice({ siteId: site.id, label: site.label, sopralluogo: false });
+    }
+  }
+
+  function confirmChoice() {
+    if (!pendingChoice) return;
+    doPunch(
+      pendingChoice.sopralluogo ? "SOPRALLUOGO_START" : "WORK_START",
+      pendingChoice.siteId ?? undefined
+    );
+    setPendingChoice(null);
+  }
+
+  const siteOptions = (
+    <>
+      <option value="">Seleziona...</option>
+      {sites.length === 0 && <option value="">Nessun cantiere</option>}
+      {sites.map((s) => (
+        <option key={s.id} value={s.id}>
+          {s.label}
+        </option>
+      ))}
+      <option value={SOPRALLUOGO_VALUE}>Sopralluogo</option>
+    </>
+  );
+
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-      {status === "FREE" && (
+      {pendingChoice ? (
         <>
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-zinc-700">
-              Cliente / cantiere
-            </span>
-            <select
-              value={siteId}
-              onChange={(e) => setSiteId(e.target.value)}
-              className="rounded-lg border border-zinc-300 px-3 py-3 text-base"
+          <p className="text-sm text-zinc-500">Confermi?</p>
+          <p className="text-lg font-semibold text-zinc-900">{pendingChoice.label}</p>
+          <button
+            disabled={isPending}
+            onClick={confirmChoice}
+            className="rounded-lg bg-zinc-900 px-4 py-4 text-base font-medium text-white disabled:opacity-50"
+          >
+            Conferma
+          </button>
+          <button
+            disabled={isPending}
+            onClick={() => setPendingChoice(null)}
+            className="rounded-lg border border-zinc-300 px-4 py-4 text-base font-medium text-zinc-800 disabled:opacity-50"
+          >
+            Annulla
+          </button>
+        </>
+      ) : (
+        <>
+          {status === "NESSUNA_GIORNATA" && (
+            <button
+              disabled={isPending}
+              onClick={() => doPunch("DAY_START")}
+              className="rounded-lg bg-zinc-900 px-4 py-4 text-base font-medium text-white disabled:opacity-50"
             >
-              {sites.length === 0 && <option value="">Nessun cantiere</option>}
-              {sites.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            disabled={isPending}
-            onClick={() => doPunch("TRAVEL_START")}
-            className="rounded-lg bg-zinc-900 px-4 py-4 text-base font-medium text-white disabled:opacity-50"
-          >
-            Inizia spostamento
-          </button>
-          <button
-            disabled={isPending}
-            onClick={() => doPunch("WORK_START")}
-            className="rounded-lg border border-zinc-300 px-4 py-4 text-base font-medium text-zinc-800 disabled:opacity-50"
-          >
-            Inizia lavoro (senza spostamento)
-          </button>
-          <button
-            disabled={isPending}
-            onClick={() => doPunch("SOPRALLUOGO_START")}
-            className="rounded-lg border border-zinc-300 px-4 py-4 text-base font-medium text-zinc-800 disabled:opacity-50"
-          >
-            Inizia sopralluogo
-          </button>
-        </>
-      )}
+              Inizio giornata
+            </button>
+          )}
 
-      {status === "TRAVELING" && (
-        <>
-          <p className="text-sm text-zinc-500">In spostamento verso</p>
-          <p className="text-lg font-semibold text-zinc-900">
-            {currentSiteLabel}
-          </p>
-          <button
-            disabled={isPending}
-            onClick={() => doPunch("WORK_START")}
-            className="rounded-lg bg-zinc-900 px-4 py-4 text-base font-medium text-white disabled:opacity-50"
-          >
-            Sono arrivato, inizio lavoro
-          </button>
-        </>
-      )}
+          {status === "SCEGLI_CANTIERE" && (
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-zinc-700">
+                Scegli il cantiere
+              </span>
+              <select
+                defaultValue=""
+                onChange={handleSelect}
+                className="rounded-lg border border-zinc-300 px-3 py-3 text-base"
+              >
+                {siteOptions}
+              </select>
+            </label>
+          )}
 
-      {status === "WORKING" && (
-        <>
-          <p className="text-sm text-zinc-500">Al lavoro presso</p>
-          <p className="text-lg font-semibold text-zinc-900">
-            {currentSiteLabel}
-          </p>
-          <button
-            disabled={isPending}
-            onClick={() => doPunch("WORK_END")}
-            className="rounded-lg bg-red-600 px-4 py-4 text-base font-medium text-white disabled:opacity-50"
-          >
-            Fine lavoro
-          </button>
-        </>
-      )}
+          {status === "LAVORO" && (
+            <>
+              <p className="text-sm text-zinc-500">Al lavoro presso</p>
+              <p className="text-lg font-semibold text-zinc-900">{currentSiteLabel}</p>
+              <button
+                disabled={isPending}
+                onClick={() => doPunch("WORK_END")}
+                className="rounded-lg bg-red-600 px-4 py-4 text-base font-medium text-white disabled:opacity-50"
+              >
+                Fine lavoro
+              </button>
+            </>
+          )}
 
-      {status === "SOPRALLUOGO" && (
-        <>
-          <p className="text-sm text-zinc-500">In sopralluogo presso</p>
-          <p className="text-lg font-semibold text-zinc-900">
-            {currentSiteLabel}
-          </p>
-          <button
-            disabled={isPending}
-            onClick={() => doPunch("SOPRALLUOGO_END")}
-            className="rounded-lg bg-red-600 px-4 py-4 text-base font-medium text-white disabled:opacity-50"
-          >
-            Fine sopralluogo
-          </button>
+          {status === "SOPRALLUOGO" && (
+            <>
+              <p className="text-sm text-zinc-500">In sopralluogo presso</p>
+              <p className="text-lg font-semibold text-zinc-900">{currentSiteLabel}</p>
+              <button
+                disabled={isPending}
+                onClick={() => doPunch("SOPRALLUOGO_END")}
+                className="rounded-lg bg-red-600 px-4 py-4 text-base font-medium text-white disabled:opacity-50"
+              >
+                Fine sopralluogo
+              </button>
+            </>
+          )}
+
+          {status === "HUB" && (
+            <>
+              <p className="text-sm text-zinc-500">Cantiere concluso. Cosa fai adesso?</p>
+              <button
+                disabled={isPending}
+                onClick={() => doPunch(inPausa ? "PAUSE_END" : "PAUSE_START")}
+                className={
+                  inPausa
+                    ? "rounded-lg border border-amber-400 bg-amber-50 px-4 py-4 text-base font-medium text-amber-800 disabled:opacity-50"
+                    : "rounded-lg border border-zinc-300 px-4 py-4 text-base font-medium text-zinc-800 disabled:opacity-50"
+                }
+              >
+                {inPausa ? "Fine pausa" : "Pausa"}
+              </button>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-sm font-medium text-zinc-700">
+                  Prossimo cantiere
+                </span>
+                <select
+                  defaultValue=""
+                  onChange={handleSelect}
+                  className="rounded-lg border border-zinc-300 px-3 py-3 text-base"
+                >
+                  {siteOptions}
+                </select>
+              </label>
+
+              <button
+                disabled={isPending}
+                onClick={() => doPunch("DAY_END")}
+                className="rounded-lg bg-zinc-900 px-4 py-4 text-base font-medium text-white disabled:opacity-50"
+              >
+                Fine giornata
+              </button>
+            </>
+          )}
         </>
       )}
 

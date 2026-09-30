@@ -17,6 +17,25 @@ export type PunchInput = {
 export async function punch({ type, siteId, lat, lng }: PunchInput) {
   const session = await verifySession();
 
+  const last = await prisma.timeEntry.findFirst({
+    where: { userId: session.userId },
+    orderBy: { timestamp: "desc" },
+  });
+
+  // Se si preme "Inizio lavoro"/"Inizio sopralluogo" mentre una pausa è
+  // ancora aperta, la chiudiamo qui allo stesso istante invece di richiedere
+  // un secondo tocco su "Fine pausa": lo storico resta comunque coerente per
+  // il calcolo dello spostamento automatico (vedi timeCalc.ts).
+  if (
+    (type === "WORK_START" || type === "SOPRALLUOGO_START") &&
+    last?.type === "PAUSE_START" &&
+    last.sessionId
+  ) {
+    await prisma.timeEntry.create({
+      data: { userId: session.userId, type: "PAUSE_END", sessionId: last.sessionId },
+    });
+  }
+
   // Ogni timbratura porta con sé l'id della sessione a cui appartiene, così
   // Inizio/Fine (ed eventuale Spostamento) restano legati anche se in
   // seguito finiscono per condividere lo stesso orario con un'altra
@@ -25,12 +44,10 @@ export async function punch({ type, siteId, lat, lng }: PunchInput) {
   // chiudendo uno spostamento appena iniziato dallo stesso collaboratore
   // (in tal caso ne eredita l'id); WORK_END eredita sempre l'id dell'ultima
   // voce del collaboratore, che a quel punto dev'essere l'Inizio da chiudere.
+  // DAY_START/DAY_END/PAUSE_START/PAUSE_END ottengono sempre una sessione
+  // propria: non serve legarli a nessun'altra voce.
   let sessionId: string = randomUUID();
   if (type === "WORK_START" || type === "WORK_END" || type === "SOPRALLUOGO_END") {
-    const last = await prisma.timeEntry.findFirst({
-      where: { userId: session.userId },
-      orderBy: { timestamp: "desc" },
-    });
     const isEndType = type === "WORK_END" || type === "SOPRALLUOGO_END";
     if (last && (isEndType || last.type === "TRAVEL_START") && last.sessionId) {
       sessionId = last.sessionId;

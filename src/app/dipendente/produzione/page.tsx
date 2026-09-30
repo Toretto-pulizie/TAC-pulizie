@@ -11,10 +11,11 @@ import { AutoRefresh } from "@/app/AutoRefresh";
 import { MODULE_GROUPS, MODULE_LABELS, MODULE_HREFS, isModuleKey } from "@/lib/modules";
 
 const STATUS_LABELS = {
-  FREE: "Libera",
-  TRAVELING: "In spostamento",
-  WORKING: "Al lavoro",
+  NESSUNA_GIORNATA: "Libera",
+  SCEGLI_CANTIERE: "Giornata iniziata",
+  LAVORO: "Al lavoro",
   SOPRALLUOGO: "In sopralluogo",
+  HUB: "Libera",
 } as const;
 
 function ClockIcon() {
@@ -120,7 +121,7 @@ export default async function ProduzionePage() {
             Timbratura
           </span>
           <span className="text-xs text-yellow-200">
-            {STATUS_LABELS[status.status]}
+            {status.status === "HUB" && status.inPausa ? "In pausa" : STATUS_LABELS[status.status]}
           </span>
         </Link>
 

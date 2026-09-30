@@ -30,6 +30,37 @@ type Entry = {
   sessionId?: string | null;
 };
 
+// Confini validi da cui far partire il conteggio automatico dello
+// spostamento: fine turno precedente del tutto (DAY_START), fine di un
+// lavoro/sopralluogo, o fine di una pausa.
+const BOUNDARY_TYPES = new Set<EntryType>([
+  "DAY_START",
+  "WORK_END",
+  "SOPRALLUOGO_END",
+  "PAUSE_END",
+]);
+
+// Nuovo flusso "Inizio/Fine giornata": quando un Inizio lavoro/sopralluogo
+// non ha un proprio TRAVEL_START nella stessa sessione (sempre il caso per i
+// dati registrati col nuovo flusso), lo spostamento si calcola da solo come
+// tempo trascorso dalla voce immediatamente precedente dello stesso
+// collaboratore, se è un confine valido (vedi BOUNDARY_TYPES). Se la voce
+// precedente è una PAUSE_START ancora aperta (mai chiusa: non dovrebbe
+// capitare, punch() la chiude sempre prima di un nuovo Inizio) lo
+// spostamento resta 0, per sicurezza. I dati storici (con un TRAVEL_START
+// esplicito nella stessa sessione) non passano mai di qui: quel calcolo
+// resta quello di sempre.
+function autoTravelMinutes<T extends { type: EntryType; timestamp: Date }>(
+  sortedList: T[],
+  target: T
+): number {
+  const idx = sortedList.indexOf(target);
+  if (idx <= 0) return 0;
+  const prev = sortedList[idx - 1];
+  if (!BOUNDARY_TYPES.has(prev.type)) return 0;
+  return (target.timestamp.getTime() - prev.timestamp.getTime()) / 60000;
+}
+
 export type UserTotals = { travelMinutes: number; workMinutes: number };
 
 export function computeTotals(entries: Entry[]): Map<string, UserTotals> {
@@ -59,6 +90,8 @@ export function computeTotals(entries: Entry[]): Map<string, UserTotals> {
       }
       if (travelStart && workStart) {
         travelMinutes += (workStart.timestamp.getTime() - travelStart.timestamp.getTime()) / 60000;
+      } else if (workStart) {
+        travelMinutes += autoTravelMinutes(list, workStart);
       }
     }
 
@@ -132,6 +165,8 @@ export function computeSiteTotals(entries: SiteEntry[]): Map<string, UserTotals>
       }
       if (travelStart && workStart) {
         add(siteId, (workStart.timestamp.getTime() - travelStart.timestamp.getTime()) / 60000, "travelMinutes");
+      } else if (workStart) {
+        add(siteId, autoTravelMinutes(list, workStart), "travelMinutes");
       }
     }
 
@@ -235,7 +270,7 @@ export function pairSessions<TSite, TUser>(
       const activityType: ActivityType = start.type === "SOPRALLUOGO_START" ? "SOPRALLUOGO" : "LAVORO";
       const travelMinutes = travelStart
         ? Math.round((start.timestamp.getTime() - travelStart.timestamp.getTime()) / 60000)
-        : 0;
+        : Math.round(autoTravelMinutes(list, start));
       sessions.push({
         startId: start.id,
         endId: end ? end.id : null,
@@ -359,16 +394,30 @@ type EntryWithSite = {
   } | null;
 };
 
+// Nuovo flusso "Inizio/Fine giornata": lo stato del collaboratore ora ha più
+// sfumature di prima (FREE/TRAVELING/WORKING/SOPRALLUOGO). NESSUNA_GIORNATA
+// = non ha ancora premuto "Inizio giornata" (o l'ha già conclusa).
+// SCEGLI_CANTIERE = giornata iniziata, deve ancora scegliere il cantiere.
+// HUB = tra un cantiere e l'altro (dopo un Fine lavoro/sopralluogo, o in
+// pausa) — inPausa distingue se in quel momento è in pausa.
 export function currentStatus<T extends EntryWithSite>(entries: T[]) {
   const last = entries[entries.length - 1];
-  if (!last || last.type === "WORK_END" || last.type === "SOPRALLUOGO_END") {
-    return { status: "FREE" as const, site: null };
+  if (!last || last.type === "DAY_END") {
+    return { status: "NESSUNA_GIORNATA" as const, site: null, inPausa: false };
   }
-  if (last.type === "TRAVEL_START") {
-    return { status: "TRAVELING" as const, site: last.site };
+  // TRAVEL_START qui è solo un residuo del vecchio flusso (dato che non
+  // viene più creato da questo punto in poi): lo si tratta come DAY_START,
+  // così chi si trovasse a metà di un vecchio "Inizia spostamento" proprio
+  // al momento del rilascio può comunque scegliere un cantiere e continuare.
+  if (last.type === "DAY_START" || last.type === "TRAVEL_START") {
+    return { status: "SCEGLI_CANTIERE" as const, site: null, inPausa: false };
+  }
+  if (last.type === "WORK_START") {
+    return { status: "LAVORO" as const, site: last.site, inPausa: false };
   }
   if (last.type === "SOPRALLUOGO_START") {
-    return { status: "SOPRALLUOGO" as const, site: last.site };
+    return { status: "SOPRALLUOGO" as const, site: last.site, inPausa: false };
   }
-  return { status: "WORKING" as const, site: last.site };
+  // WORK_END, SOPRALLUOGO_END, PAUSE_START, PAUSE_END.
+  return { status: "HUB" as const, site: null, inPausa: last.type === "PAUSE_START" };
 }

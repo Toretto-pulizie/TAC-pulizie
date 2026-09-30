@@ -49,10 +49,15 @@ Accanto alla campanella, nella barra superiore, il cerchietto con l'iniziale e i
 
 Se il titolare ha assegnato al collaboratore il permesso **Amministrazione** (da Utenti → Pagine accessibili), entrando in `/dipendente` compare prima un bivio con due pulsanti: **Produzione** (porta a tutto quanto descritto qui sotto: Timbratura, Richiedi permesso, Gestione, con in cima un link "← Indietro" per tornare al bivio) e **Amministrazione** (vedi sezione dedicata più sotto). Chi non ha questo permesso non vede il bivio né il link "← Indietro": entra direttamente nella propria area come sempre.
 
-**Timbratura** — si timbra in tre fasi:
-1. Si seleziona **Cliente / cantiere**.
-2. Si preme **Inizia spostamento** (se si deve raggiungere il cantiere), **Inizia lavoro (senza spostamento)**, oppure **Inizia sopralluogo**.
-3. Arrivati sul posto, si preme **Sono arrivato, inizio lavoro**; a fine turno/sopralluogo, **Fine lavoro** / **Fine sopralluogo**.
+**Timbratura** — pensata per il minor numero di tocchi possibile: lo spostamento tra un cantiere e l'altro non si segna più con un tasto dedicato, si calcola da solo come tempo trascorso dall'ultimo momento segnato.
+1. A inizio turno si preme **Inizio giornata** (un solo tasto, una volta al giorno).
+2. Si sceglie il cantiere da una tendina (comprende anche la voce **Sopralluogo**); appare subito **"Confermi? [nome cantiere]"** con **Conferma**/**Annulla** — confermando si è già "al lavoro", senza altro tocco.
+3. A fine cantiere si preme **Fine lavoro** (o **Fine sopralluogo**): si apre una schermata con tre possibilità, in qualsiasi combinazione e ordine:
+   - **Pausa** (diventa **Fine pausa**; se invece si sceglie subito il prossimo cantiere mentre la pausa è aperta, si chiude da sola in quell'istante, senza doverla chiudere a mano prima);
+   - la tendina **Prossimo cantiere** (stessa lista, comprende anche il Sopralluogo): selezionarlo avvia subito il lavoro lì, con lo stesso popup di conferma del punto 2;
+   - **Fine giornata**, quando non ci sono altri cantieri.
+
+Il periodo Inizio giornata → Fine giornata (spostamenti compresi, pause escluse) è quello che alimenta Presenze e l'Excel per il consulente del lavoro; il dettaglio per singolo cantiere (lavoro, spostamento, sopralluoghi) resta in Timbrature come prima.
 
 Il **Sopralluogo** è un'attività distinta dal lavoro vero e proprio (es. un preventivo da valutare sul posto): il tempo che dura conta come presenza/ore pagate al collaboratore (compare in Presenze), ma **non** entra nei totali di "Ore lavoro" fatturabili al cliente (Consuntivi, Statistiche, e il totale ore mostrato in cima a Timbrature) — resta un dato a sé.
 

@@ -33,6 +33,16 @@ enum EntryType {
   WORK_END
   SOPRALLUOGO_START
   SOPRALLUOGO_END
+  // Nuovo flusso "Inizio/Fine giornata": DAY_START segna l'inizio turno
+  // (prima ancora di scegliere il cantiere), DAY_END la sua fine. Sostituisce
+  // TRAVEL_START come riferimento per lo spostamento verso il primo
+  // cantiere; TRAVEL_START resta solo per i dati storici già registrati.
+  DAY_START
+  DAY_END
+  // Pausa tra un cantiere e l'altro: il tempo tra PAUSE_START e PAUSE_END non
+  // conta né come spostamento né come presenza.
+  PAUSE_START
+  PAUSE_END
 }
 
 enum ServiceType {

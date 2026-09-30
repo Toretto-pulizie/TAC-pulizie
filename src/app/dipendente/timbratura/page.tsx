@@ -13,6 +13,10 @@ const typeLabels: Record<string, string> = {
   WORK_END: "Fine lavoro",
   SOPRALLUOGO_START: "Inizio sopralluogo",
   SOPRALLUOGO_END: "Fine sopralluogo",
+  DAY_START: "Inizio giornata",
+  DAY_END: "Fine giornata",
+  PAUSE_START: "Pausa",
+  PAUSE_END: "Fine pausa",
 };
 
 export default async function TimbraturaPage() {
@@ -82,6 +86,7 @@ export default async function TimbraturaPage() {
           label: `${clientDisplayName(s.client)} — ${s.name}`,
         }))}
         status={status.status}
+        inPausa={status.inPausa}
         currentSiteLabel={
           status.site ? `${clientDisplayName(status.site.client)} — ${status.site.name}` : null
         }
