@@ -82,24 +82,47 @@ enum StatoRichiesta {
   RIFIUTATO
 }
 
+enum InvoiceStatus {
+  BOZZA
+  // Numerata (anno/numero assegnati) ma non ancora inviata allo SDI: stato
+  // finale di questa fase, finché l'invio reale via Aruba non è collegato.
+  EMESSA
+  INVIATA
+  SCARTATA
+  CONSEGNATA
+  ACCETTATA
+  RIFIUTATA
+  ERRORE_INVIO
+}
+
+// STANDARD: 22% addebitata in fattura (clienti PERSONA_FISICA). REVERSE_CHARGE:
+// non addebitata, art. 17 c.6 lett. a-ter DPR 633/72 (clienti con P.IVA) —
+// stessa regola già usata per i Preventivi (vedi src/lib/pdf/stampaConstants.ts).
+// ESENTE riservata a casi futuri, non usata di default.
+enum RegimeIva {
+  STANDARD
+  REVERSE_CHARGE
+  ESENTE
+}
+
 model User {
-  id           String      @id @default(cuid())
-  email        String      @unique
-  passwordHash String
-  name         String
-  cognome      String?
-  telefono     String?
-  role         Role        @default(EMPLOYEE)
+  id                String            @id @default(cuid())
+  email             String            @unique
+  passwordHash      String
+  name              String
+  cognome           String?
+  telefono          String?
+  role              Role              @default(EMPLOYEE)
   tipoCollaboratore TipoCollaboratore @default(OPERATIVO)
-  allowedModules String[]  @default([])
-  active       Boolean     @default(true)
-  createdAt    DateTime    @default(now())
-  timeEntries  TimeEntry[]
-  shifts       Shift[]
-  shiftPlans   ShiftPlan[]
-  leaveRequests LeaveRequest[]
-  notifications Notification[]
-  sopralluoghi  Sopralluogo[]
+  allowedModules    String[]          @default([])
+  active            Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+  timeEntries       TimeEntry[]
+  shifts            Shift[]
+  shiftPlans        ShiftPlan[]
+  leaveRequests     LeaveRequest[]
+  notifications     Notification[]
+  sopralluoghi      Sopralluogo[]
 }
 
 model Notification {
@@ -130,39 +153,44 @@ model LeaveRequest {
 }
 
 model Client {
-  id                 String     @id @default(cuid())
-  tipo               ClientTipo @default(AZIENDA)
-  name               String
-  ragioneSociale     String?
-  nome               String?
-  cognome            String?
-  indirizzo          String?
-  citta              String?
-  cap                String?
-  provincia          String?
+  id                  String     @id @default(cuid())
+  tipo                ClientTipo @default(AZIENDA)
+  name                String
+  ragioneSociale      String?
+  nome                String?
+  cognome             String?
+  indirizzo           String?
+  citta               String?
+  cap                 String?
+  provincia           String?
   // Nullo per i clienti "interni" (es. uso personale del titolare) creati
   // senza codice, che non seguono la numerazione progressiva dei clienti
   // veri.
-  codiceCliente      Int?       @unique @default(autoincrement())
-  partitaIva         String?
-  codiceFiscale      String?
+  codiceCliente       Int?       @unique @default(autoincrement())
+  partitaIva          String?
+  codiceFiscale       String?
   // Codice Destinatario SDI per la fatturazione elettronica.
-  codiceUnivoco      String?
+  codiceUnivoco       String?
   // Condizioni di pagamento predefinite di questo cliente (es. "30 gg data
   // fattura"): proposta come punto di partenza nei preventivi, restano comunque
   // modificabili preventivo per preventivo.
   condizioniPagamento String?
-  personaRiferimento String?
+  personaRiferimento  String?
   // Contatto della persona di riferimento, distinto da telefono/email del
   // cliente (es. centralino aziendale vs. recapito diretto della persona).
   telefonoRiferimento String?
-  emailRiferimento   String?
-  telefono           String?
-  email              String?
-  notes              String?
-  createdAt          DateTime   @default(now())
-  sites              Site[]
-  quotes             Quote[]
+  emailRiferimento    String?
+  telefono            String?
+  email               String?
+  notes               String?
+  // PEC del cliente: canale alternativo al Codice Destinatario (codiceUnivoco)
+  // per instradare la fattura elettronica allo SDI quando il cliente non ne
+  // ha uno (stesso concetto già presente su Fornitore.pec).
+  pec                 String?
+  createdAt           DateTime   @default(now())
+  sites               Site[]
+  quotes              Quote[]
+  invoices            Invoice[]
 }
 
 // Voci preimpostate per il campo "Condizioni di pagamento", gestibili da
@@ -192,16 +220,17 @@ model Site {
 }
 
 model Quote {
-  id                  String      @id @default(cuid())
-  numeroOfferta       Int         @default(autoincrement())
-  client              Client      @relation(fields: [clientId], references: [id])
+  id                  String            @id @default(cuid())
+  numeroOfferta       Int               @default(autoincrement())
+  client              Client            @relation(fields: [clientId], references: [id])
   clientId            String
   sites               QuoteSite[]
   attachments         QuoteAttachment[]
   condizioniPagamento String?
-  status              QuoteStatus @default(IN_TRATTATIVA)
-  createdAt           DateTime    @default(now())
+  status              QuoteStatus       @default(IN_TRATTATIVA)
+  createdAt           DateTime          @default(now())
   closedAt            DateTime?
+  invoices            Invoice[]
 
   @@index([clientId, status])
 }
@@ -300,16 +329,16 @@ model ServiceTypeLabel {
 
 // Riga singola: decide quali sezioni compaiono nella home del programma.
 model HomeSettings {
-  id                       String  @id @default("singleton")
-  showAlLavoro             Boolean @default(true)
-  showPermessi             Boolean @default(true)
-  showPreventivi           Boolean @default(true)
-  showTurni                Boolean @default(true)
+  id                            String  @id @default("singleton")
+  showAlLavoro                  Boolean @default(true)
+  showPermessi                  Boolean @default(true)
+  showPreventivi                Boolean @default(true)
+  showTurni                     Boolean @default(true)
   showTotalePreventiviAccettati Boolean @default(true)
-  showTotaleConsuntivi     Boolean @default(true)
-  showAlLavoroBar          Boolean @default(true)
-  showPreventiviBar        Boolean @default(true)
-  showTotaleConsuntiviBar  Boolean @default(true)
+  showTotaleConsuntivi          Boolean @default(true)
+  showAlLavoroBar               Boolean @default(true)
+  showPreventiviBar             Boolean @default(true)
+  showTotaleConsuntiviBar       Boolean @default(true)
 }
 
 // Riga singola: decide come si comporta "Ore disponibili" in Statistiche.
@@ -332,11 +361,11 @@ model NotificationSettings {
 }
 
 model BankSettings {
-  id           String  @id @default("singleton")
-  nomeBanca    String  @default("")
-  iban         String  @default("")
-  intestatario String  @default("")
-  swiftBic     String  @default("")
+  id           String @id @default("singleton")
+  nomeBanca    String @default("")
+  iban         String @default("")
+  intestatario String @default("")
+  swiftBic     String @default("")
 }
 
 model Attachment {
@@ -434,31 +463,31 @@ model ShiftPlan {
 }
 
 model TimeEntry {
-  id        String    @id @default(cuid())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  site      Site?     @relation(fields: [siteId], references: [id])
-  siteId    String?
-  type      EntryType
-  timestamp DateTime  @default(now())
+  id            String    @id @default(cuid())
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  site          Site?     @relation(fields: [siteId], references: [id])
+  siteId        String?
+  type          EntryType
+  timestamp     DateTime  @default(now())
   // Vero quando questo orario è solo un segnaposto (inserimento manuale con
   // sole "Ore lavorate", senza Inizio/Fine noti): in griglia va mostrato
   // vuoto finché non viene impostato esplicitamente un orario reale.
-  orarioStimato Boolean @default(false)
-  lat       Float?
-  lng       Float?
-  note      String?
+  orarioStimato Boolean   @default(false)
+  lat           Float?
+  lng           Float?
+  note          String?
   // Descrizione libera del luogo, usata per i Sopralluoghi fatti presso
   // potenziali clienti non ancora in anagrafica (senza un Cliente/Sede
   // collegato).
-  luogo     String?
+  luogo         String?
   // Lega tra loro le voci (Spostamento/Inizio/Fine) create per la stessa
   // sessione, così l'abbinamento non deve più essere indovinato dall'ordine
   // cronologico: indispensabile quando due sessioni diverse hanno lo stesso
   // orario (es. inserimenti manuali con lo stesso orario segnaposto). Nullo
   // sui dati storici precedenti a questo campo, che restano abbinati con la
   // vecchia logica basata sull'orario.
-  sessionId String?
+  sessionId     String?
 
   @@index([sessionId])
 }
@@ -535,4 +564,91 @@ model SopralluogoRichiesta {
   ordine        Int         @default(0)
 
   @@index([sopralluogoId])
+}
+
+model Invoice {
+  id                  String         @id @default(cuid())
+  // Numerazione progressiva per anno solare (obbligo di legge: nessun buco
+  // entro l'anno). Assegnata solo all'emissione (uscita da BOZZA), cercando
+  // il massimo esistente per quell'anno: una bozza eliminata non lascia
+  // quindi un buco nella numerazione. Nulla finché la fattura resta bozza.
+  anno                Int?
+  numero              Int?
+  tipoDocumento       String         @default("TD01")
+  client              Client         @relation(fields: [clientId], references: [id])
+  clientId            String
+  quote               Quote?         @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  quoteId             String?
+  data                DateTime       @default(now())
+  condizioniPagamento String?
+  // Regime IVA dell'intera fattura (non per singola riga), stessa scelta
+  // già fatta per i Preventivi: un solo regime per documento.
+  regimeIva           RegimeIva      @default(STANDARD)
+  note                String?
+  stato               InvoiceStatus  @default(BOZZA)
+  righe               InvoiceLine[]
+  eventi              InvoiceEvent[]
+  // Popolati solo dall'invio reale allo SDI (fase successiva, quando saranno
+  // disponibili le credenziali Aruba): non usati finché stato=BOZZA.
+  arubaUploadFileName String?
+  sdiIdentificativo   String?
+  xmlGenerato         Bytes?
+  createdAt           DateTime       @default(now())
+
+  @@unique([anno, numero])
+  @@index([clientId])
+  @@index([quoteId])
+}
+
+model InvoiceLine {
+  id             String  @id @default(cuid())
+  invoice        Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId      String
+  descrizione    String
+  quantita       Float   @default(1)
+  prezzoUnitario Float
+  // quantita * prezzoUnitario, salvato esplicitamente (stesso approccio di
+  // QuoteSite.prezzoVenduto) invece di ricalcolarlo ogni volta.
+  importo        Float
+  ordine         Int     @default(0)
+
+  @@index([invoiceId])
+}
+
+// Storico stati/ricevute SDI (audit trail): una riga per ogni cambio di
+// stato o notifica ricevuta da Aruba. Popolato dalla fase di invio reale.
+model InvoiceEvent {
+  id        String   @id @default(cuid())
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId String
+  tipo      String
+  dettaglio String?
+  createdAt DateTime @default(now())
+
+  @@index([invoiceId])
+}
+
+// Dati fiscali dell'azienda emittente delle fatture (oggi hard-coded come
+// stringa in src/lib/pdf/stampaConstants.ts::SIGNATURE_LINE per i Preventivi):
+// qui servono come campi strutturati, sia per l'header del PDF fattura sia
+// per il blocco CedentePrestatore dell'XML FatturaPA. Singleton come
+// BankSettings/HomeSettings.
+model CompanySettings {
+  id            String  @id @default("singleton")
+  // Ditta individuale: valorizzare nome+cognome; società: valorizzare
+  // denominazione. Il generatore XML/PDF usa denominazione se presente,
+  // altrimenti nome+cognome.
+  denominazione String?
+  nome          String?
+  cognome       String?
+  partitaIva    String  @default("")
+  codiceFiscale String  @default("")
+  indirizzo     String  @default("")
+  cap           String  @default("")
+  citta         String  @default("")
+  provincia     String  @default("")
+  regimeFiscale String  @default("RF01")
+  telefono      String  @default("")
+  email         String  @default("")
+  pec           String  @default("")
 }

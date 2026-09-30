@@ -9,6 +9,7 @@ import { getHomeSettings } from "@/lib/homeSettings";
 import { getStatisticheSettings } from "@/lib/statisticheSettings";
 import { getNotificationSettings } from "@/lib/notificationSettings";
 import { getBankSettings } from "@/lib/bankSettings";
+import { getCompanySettings } from "@/lib/companySettings";
 import { ServiceTypeLabelRow } from "./ServiceTypeLabelRow";
 import { TipoPrestazioneForm } from "./TipoPrestazioneForm";
 import { TipoPrestazioneRow } from "./TipoPrestazioneRow";
@@ -18,6 +19,7 @@ import { HomeSettingsForm } from "./HomeSettingsForm";
 import { StatisticheSettingsForm } from "./StatisticheSettingsForm";
 import { NotificationSettingsForm } from "./NotificationSettingsForm";
 import { BankSettingsForm } from "./BankSettingsForm";
+import { CompanySettingsForm } from "./CompanySettingsForm";
 import { AttachmentForm } from "./AttachmentForm";
 import { AttachmentRow } from "./AttachmentRow";
 import { ImpostazioniTabs } from "./ImpostazioniTabs";
@@ -37,6 +39,7 @@ export default async function ImpostazioniPage() {
     statisticheSettings,
     notificationSettings,
     bankSettings,
+    companySettings,
     attachments,
     phrases,
     condizioniPagamento,
@@ -49,6 +52,7 @@ export default async function ImpostazioniPage() {
     getStatisticheSettings(),
     getNotificationSettings(),
     getBankSettings(),
+    getCompanySettings(),
     prisma.attachment.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.quotePhrase.findMany({ orderBy: [{ ordine: "asc" }, { titolo: "asc" }] }),
     prisma.condizionePagamento.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
@@ -211,6 +215,31 @@ export default async function ImpostazioniPage() {
                     iban: bankSettings.iban,
                     intestatario: bankSettings.intestatario,
                     swiftBic: bankSettings.swiftBic,
+                  }}
+                />
+              </section>
+            ),
+          },
+          {
+            id: "azienda",
+            label: "Azienda",
+            content: (
+              <section className="flex flex-col gap-3">
+                <CompanySettingsForm
+                  initial={{
+                    denominazione: companySettings.denominazione,
+                    nome: companySettings.nome,
+                    cognome: companySettings.cognome,
+                    partitaIva: companySettings.partitaIva,
+                    codiceFiscale: companySettings.codiceFiscale,
+                    indirizzo: companySettings.indirizzo,
+                    cap: companySettings.cap,
+                    citta: companySettings.citta,
+                    provincia: companySettings.provincia,
+                    regimeFiscale: companySettings.regimeFiscale,
+                    telefono: companySettings.telefono,
+                    email: companySettings.email,
+                    pec: companySettings.pec,
                   }}
                 />
               </section>

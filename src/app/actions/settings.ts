@@ -135,3 +135,72 @@ export async function updateBankSettings(
   revalidatePath("/admin/preventivi");
   return { success: true };
 }
+
+const CompanySettingsSchema = z.object({
+  denominazione: z.string().trim().optional(),
+  nome: z.string().trim().optional(),
+  cognome: z.string().trim().optional(),
+  partitaIva: z.string().trim(),
+  codiceFiscale: z.string().trim(),
+  indirizzo: z.string().trim(),
+  cap: z.string().trim(),
+  citta: z.string().trim(),
+  provincia: z.string().trim(),
+  regimeFiscale: z.string().trim().min(1, "Indica il regime fiscale"),
+  telefono: z.string().trim(),
+  email: z.string().trim(),
+  pec: z.string().trim(),
+});
+
+export async function updateCompanySettings(
+  _prevState: unknown,
+  formData: FormData
+) {
+  await requireAdmin();
+
+  const parsed = CompanySettingsSchema.safeParse({
+    denominazione: formData.get("denominazione") || undefined,
+    nome: formData.get("nome") || undefined,
+    cognome: formData.get("cognome") || undefined,
+    partitaIva: formData.get("partitaIva"),
+    codiceFiscale: formData.get("codiceFiscale"),
+    indirizzo: formData.get("indirizzo"),
+    cap: formData.get("cap"),
+    citta: formData.get("citta"),
+    provincia: formData.get("provincia"),
+    regimeFiscale: formData.get("regimeFiscale"),
+    telefono: formData.get("telefono"),
+    email: formData.get("email"),
+    pec: formData.get("pec"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
+  }
+
+  const data = {
+    denominazione: parsed.data.denominazione ?? null,
+    nome: parsed.data.nome ?? null,
+    cognome: parsed.data.cognome ?? null,
+    partitaIva: parsed.data.partitaIva,
+    codiceFiscale: parsed.data.codiceFiscale,
+    indirizzo: parsed.data.indirizzo,
+    cap: parsed.data.cap,
+    citta: parsed.data.citta,
+    provincia: parsed.data.provincia,
+    regimeFiscale: parsed.data.regimeFiscale,
+    telefono: parsed.data.telefono,
+    email: parsed.data.email,
+    pec: parsed.data.pec,
+  };
+
+  await prisma.companySettings.upsert({
+    where: { id: "singleton" },
+    update: data,
+    create: { id: "singleton", ...data },
+  });
+
+  revalidatePath("/admin/impostazioni");
+  revalidatePath("/admin/fatturazione");
+  return { success: true };
+}
