@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveInvoice } from "@/app/actions/invoices";
 
@@ -132,9 +132,11 @@ export function InvoiceForm({
   );
   const quoteId = sourceQuoteIds.size === 1 ? [...sourceQuoteIds][0] : undefined;
 
-  if (state && "success" in state && state.success && state.id) {
-    router.push(`/admin/fatturazione/${state.id}`);
-  }
+  useEffect(() => {
+    if (state && "success" in state && state.success && state.id) {
+      router.push(`/admin/fatturazione/${state.id}`);
+    }
+  }, [state, router]);
 
   return (
     <form action={action} className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">

@@ -59,6 +59,8 @@ function infoCol(
 }
 
 export type HeaderTemplateData = {
+  // Nome storico del campo (risale a quando esisteva solo l'Offerta): per
+  // una Fattura contiene il numero fattura ("3/2026"), non un'offerta.
   numeroOfferta: number | string;
   dataDocumento: string;
   clientName: string;
@@ -72,6 +74,9 @@ export type HeaderTemplateData = {
   personaRiferimento?: string | null;
   condizioniPagamento?: string | null;
   bancaAppoggio?: string;
+  // Etichetta del riquadro in alto a sinistra ("Offerta" di default, usata
+  // anche per la stampa delle Fatture passando "Fattura").
+  docLabel?: string;
 };
 
 export async function buildHeaderTemplate(
@@ -88,7 +93,7 @@ export async function buildHeaderTemplate(
         <div style="display:flex; flex-direction:column; gap:8px;">
           <img src="${logoDataUri}" alt="Toretto" style="width:260px; height:75px;" />
           <div style="margin-top:30px; width:176px; border-radius:8px; border:1px solid ${ZINC_300};">
-            <p style="margin:0; border-bottom:1px solid ${ZINC_300}; background:${ZINC_50}; padding:2px 6px; text-align:center; font-size:9px; font-weight:600; text-transform:uppercase; line-height:1; letter-spacing:0.025em; color:${ZINC_700};">Offerta</p>
+            <p style="margin:0; border-bottom:1px solid ${ZINC_300}; background:${ZINC_50}; padding:2px 6px; text-align:center; font-size:9px; font-weight:600; text-transform:uppercase; line-height:1; letter-spacing:0.025em; color:${ZINC_700};">${escapeHtml(data.docLabel ?? "Offerta")}</p>
             <div style="display:flex;">
               ${infoCol("N. Doc.", String(data.numeroOfferta), { bold: true, flex: 1, center: true })}
               ${infoCol("Data", data.dataDocumento, { bold: true, flex: 1.4, center: true })}
@@ -165,6 +170,43 @@ export function buildFooterTemplate(data: FooterTemplateData): string {
           <div style="width:224px; border-left:1px solid ${ZINC_300}; padding:2px 8px 8px; text-align:center;">
             <p style="margin:0; font-size:10px; font-weight:500; color:${ZINC_500};">Timbro e firma per accettazione</p>
           </div>
+        </div>
+      </div>
+
+      <div style="text-align:center; font-size:10px; color:${ZINC_900};">
+        <p style="margin:4px 0 0; font-weight:700;">${escapeHtml(SIGNATURE_LINE)}</p>
+        <p style="margin:0; font-weight:700;">${escapeHtml(SITE_LINE)}</p>
+      </div>
+    </div>`;
+}
+
+export type FatturaFooterTemplateData = {
+  totaleLabel: string;
+  isStandardIva: boolean;
+  totaleIva: number;
+  totaleConIva: number;
+};
+
+// Stesso riquadro Totale del Preventivo (stessa resa grafica, stesso
+// trattamento IVA standard/reverse charge), ma senza le clausole che non
+// riguardano una fattura: niente "Valida fino al" (le fatture non scadono
+// come un'offerta) né "Firma per accettazione" (una fattura non si
+// accetta).
+export function buildFatturaFooterTemplate(data: FatturaFooterTemplateData): string {
+  return `
+    <div style="width:100%; box-sizing:border-box; font-family:sans-serif; font-size:11px; color:${ZINC_900}; padding:4mm ${CONTENT_PADDING_RIGHT_MM}mm 6mm ${CONTENT_PADDING_LEFT_MM}mm;">
+      <div style="border-radius:8px; border:1px solid ${ZINC_300}; display:flex; justify-content:flex-end;">
+        <div style="width:224px; padding:8px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <p style="margin:0; font-size:12px; color:${ZINC_500};">Imponibile</p>
+            <p style="margin:0; font-size:18px; font-weight:600; color:${ZINC_900};">${escapeHtml(data.totaleLabel)}</p>
+          </div>
+          ${
+            data.isStandardIva
+              ? `<p style="margin:4px 0 0; font-size:12px; color:${ZINC_500};">IVA 22%: ${escapeHtml(formatEuro(data.totaleIva))}</p>
+                 <p style="margin:0; font-size:14px; font-weight:600; color:${ZINC_900};">Totale documento: ${escapeHtml(formatEuro(data.totaleConIva))}</p>`
+              : `<p style="margin:4px 0 0; font-size:12px; color:${ZINC_500};">IVA non addebitata</p>`
+          }
         </div>
       </div>
 
