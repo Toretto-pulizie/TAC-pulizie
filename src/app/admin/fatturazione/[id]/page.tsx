@@ -3,10 +3,9 @@ import { notFound } from "next/navigation";
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { clientDisplayName } from "@/lib/clients";
-import { computeListPrice } from "@/lib/quotes";
-import { buildDescriptionBlocks, flattenDescriptionBlocks } from "@/lib/quotePrint";
 import { getServiceTypeLabels, getServiceTypeMostraCadenza } from "@/lib/serviceTypeLabels";
 import { InvoiceForm } from "../InvoiceForm";
+import { buildSiteOptions } from "../buildSiteOptions";
 import { EmettiButton } from "./EmettiButton";
 
 const STATO_LABELS: Record<string, string> = {
@@ -49,24 +48,7 @@ export default async function FatturaDetailPage({
     .map((c) => ({ id: c.id, name: clientDisplayName(c), tipo: c.tipo }))
     .sort((a, b) => a.name.localeCompare(b.name, "it"));
 
-  const quotes = quotesRaw.map((q) => ({
-    quoteId: q.id,
-    clientId: q.clientId,
-    numeroOfferta: q.numeroOfferta,
-    righe: q.sites.map((qs) => {
-      const listPrice = computeListPrice(qs);
-      const importo = qs.adeguamento ?? qs.prezzoVenduto ?? listPrice;
-      const blocks = buildDescriptionBlocks(
-        qs,
-        serviceLabels[qs.serviceType],
-        mostraCadenzaSettings[qs.serviceType]
-      );
-      return {
-        descrizione: flattenDescriptionBlocks(blocks),
-        importo,
-      };
-    }),
-  }));
+  const sites = buildSiteOptions(quotesRaw, serviceLabels, mostraCadenzaSettings);
 
   const numeroLabel = invoice.numero != null ? `${invoice.numero}/${invoice.anno}` : "Bozza";
 
@@ -97,7 +79,7 @@ export default async function FatturaDetailPage({
       {invoice.stato === "BOZZA" ? (
         <InvoiceForm
           clients={clients}
-          quotes={quotes}
+          sites={sites}
           defaultData={invoice.data.toISOString().slice(0, 10)}
           editing={{
             id: invoice.id,
