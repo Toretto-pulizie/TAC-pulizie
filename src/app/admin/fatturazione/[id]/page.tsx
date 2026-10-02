@@ -8,6 +8,7 @@ import { InvoiceForm } from "../InvoiceForm";
 import { buildSiteOptions } from "../buildSiteOptions";
 import { EmettiButton } from "./EmettiButton";
 import { CreditNoteButton } from "./CreditNoteButton";
+import { SentButton } from "./SentButton";
 
 const STATO_LABELS: Record<string, string> = {
   BOZZA: "Bozza",
@@ -35,6 +36,7 @@ export default async function FatturaDetailPage({
         righe: { orderBy: { ordine: "asc" } },
         rettificaDi: true,
         noteDiCredito: { include: { righe: true }, orderBy: { createdAt: "asc" } },
+        eventi: { orderBy: { createdAt: "asc" } },
       },
     }),
     prisma.client.findMany(),
@@ -86,6 +88,8 @@ export default async function FatturaDetailPage({
             Vedi PDF
           </a>
           {invoice.stato === "BOZZA" && <EmettiButton id={id} />}
+          {invoice.stato === "EMESSA" && <SentButton id={id} sent={false} />}
+          {invoice.stato === "INVIATA" && !invoice.arubaUploadFileName && <SentButton id={id} sent />}
           {invoice.stato !== "BOZZA" && !isCreditNote && <CreditNoteButton id={id} />}
         </div>
       </div>
@@ -147,6 +151,23 @@ export default async function FatturaDetailPage({
                 <span className="text-zinc-500">
                   {r.quantita} × {r.prezzoUnitario.toLocaleString("it-IT", { style: "currency", currency: "EUR" })} ={" "}
                   {r.importo.toLocaleString("it-IT", { style: "currency", currency: "EUR" })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {invoice.eventi.length > 0 && (
+        <section className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-zinc-900">Storico</h2>
+          <ul className="flex flex-col gap-1 text-sm text-zinc-600">
+            {invoice.eventi.map((e) => (
+              <li key={e.id} className="flex justify-between gap-3 border-b border-zinc-100 py-1 last:border-0">
+                <span>{e.dettaglio ?? e.tipo}</span>
+                <span className="shrink-0 text-zinc-400">
+                  {e.createdAt.toLocaleDateString("it-IT")}{" "}
+                  {e.createdAt.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
                 </span>
               </li>
             ))}

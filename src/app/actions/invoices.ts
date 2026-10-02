@@ -189,6 +189,59 @@ export async function createCreditNote(invoiceId: string) {
   return { success: true, id: nota.id };
 }
 
+// Segna a mano una fattura emessa come "inviata" (es. spedita con un altro
+// sistema): serve a tenerla allineata finché l'invio allo SDI non è collegato.
+// Resta traccia nello storico degli eventi.
+export async function markInvoiceSent(id: string) {
+  await requireModule("fatturazione");
+
+  const invoice = await prisma.invoice.findUnique({ where: { id } });
+  if (!invoice) return { error: "Fattura non trovata" };
+  if (invoice.stato !== "EMESSA") {
+    return { error: "Solo una fattura emessa può essere segnata come inviata" };
+  }
+
+  await prisma.$transaction([
+    prisma.invoice.update({ where: { id }, data: { stato: "INVIATA" } }),
+    prisma.invoiceEvent.create({
+      data: {
+        invoiceId: id,
+        tipo: "INVIATA_MANUALMENTE",
+        dettaglio: "Segnata come inviata a mano (fuori da Toretto)",
+      },
+    }),
+  ]);
+
+  revalidatePath("/admin/fatturazione");
+  return { success: true };
+}
+
+// Annulla un "segna come inviata" fatto per errore. Possibile solo se
+// l'invio non è passato da Aruba (nessun identificativo di caricamento).
+export async function undoMarkInvoiceSent(id: string) {
+  await requireModule("fatturazione");
+
+  const invoice = await prisma.invoice.findUnique({ where: { id } });
+  if (!invoice) return { error: "Fattura non trovata" };
+  if (invoice.stato !== "INVIATA" || invoice.arubaUploadFileName) {
+    return { error: "Questa fattura non può essere riportata a emessa" };
+  }
+
+  await prisma.$transaction([
+    prisma.invoice.update({ where: { id }, data: { stato: "EMESSA" } }),
+    prisma.invoiceEvent.create({
+      data: {
+        invoiceId: id,
+        tipo: "RIPORTATA_A_EMESSA",
+        dettaglio: "Segnalazione di invio annullata",
+      },
+    }),
+  ]);
+
+  revalidatePath("/admin/fatturazione");
+  return { success: true };
+}
+
 export async function deleteInvoice(id: string) {
   await requireModule("fatturazione");
 
