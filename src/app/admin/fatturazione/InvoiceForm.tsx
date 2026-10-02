@@ -62,11 +62,15 @@ export function InvoiceForm({
   sites,
   defaultData,
   editing,
+  isCreditNote = false,
 }: {
   clients: ClientOption[];
   sites: SiteOption[];
   defaultData: string;
   editing?: EditingInvoice;
+  // Nota di credito: il cliente è quello della fattura stornata e non si
+  // sceglie; le righe si tolgono o riducono a mano (niente cantieri).
+  isCreditNote?: boolean;
 }) {
   const router = useRouter();
   const [state, action, pending] = useActionState(saveInvoice, undefined);
@@ -145,12 +149,14 @@ export function InvoiceForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm">
           Cliente
+          {isCreditNote && <input type="hidden" name="clientId" value={clientId} />}
           <select
-            name="clientId"
+            name={isCreditNote ? undefined : "clientId"}
             value={clientId}
             onChange={(e) => handleClientChange(e.target.value)}
             required
-            className="rounded-lg border border-zinc-300 px-3 py-2"
+            disabled={isCreditNote}
+            className="rounded-lg border border-zinc-300 px-3 py-2 disabled:bg-zinc-100"
           >
             <option value="">Seleziona...</option>
             {clients.map((c) => (
@@ -195,7 +201,7 @@ export function InvoiceForm({
         </label>
       </div>
 
-      {clientId && (
+      {clientId && !isCreditNote && (
         <div className="flex flex-col gap-2 rounded-lg border border-zinc-200 bg-zinc-50/60 p-3">
           <p className="text-sm font-medium text-zinc-700">
             Cantieri da preventivi accettati

@@ -574,7 +574,12 @@ model Invoice {
   // quindi un buco nella numerazione. Nulla finché la fattura resta bozza.
   anno                Int?
   numero              Int?
+  // TD01 = fattura, TD04 = nota di credito (stessa numerazione progressiva).
   tipoDocumento       String         @default("TD01")
+  // Solo per le note di credito: la fattura che rettificano/stornano.
+  rettificaDi         Invoice?       @relation("Rettifica", fields: [rettificaDiId], references: [id], onDelete: Restrict)
+  rettificaDiId       String?
+  noteDiCredito       Invoice[]      @relation("Rettifica")
   client              Client         @relation(fields: [clientId], references: [id])
   clientId            String
   quote               Quote?         @relation(fields: [quoteId], references: [id], onDelete: SetNull)
@@ -598,6 +603,7 @@ model Invoice {
   @@unique([anno, numero])
   @@index([clientId])
   @@index([quoteId])
+  @@index([rettificaDiId])
 }
 
 model InvoiceLine {

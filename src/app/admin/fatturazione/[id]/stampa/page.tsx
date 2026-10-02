@@ -69,7 +69,7 @@ export default async function StampaFatturaPage({
   const [invoice, bankSettings] = await Promise.all([
     prisma.invoice.findUnique({
       where: { id },
-      include: { client: true, righe: { orderBy: { ordine: "asc" } } },
+      include: { client: true, righe: { orderBy: { ordine: "asc" } }, rettificaDi: true },
     }),
     getBankSettings(),
   ]);
@@ -79,6 +79,15 @@ export default async function StampaFatturaPage({
   const client = invoice.client;
   const clientName = clientDisplayName(client);
   const numeroLabel = invoice.numero != null ? `${invoice.numero}/${invoice.anno}` : "BOZZA";
+  const isCreditNote = invoice.tipoDocumento === "TD04";
+  const docLabel = isCreditNote ? "Nota di credito" : "Fattura";
+  const rettificaLabel = invoice.rettificaDi
+    ? `Rettifica la fattura n. ${
+        invoice.rettificaDi.numero != null
+          ? `${invoice.rettificaDi.numero}/${invoice.rettificaDi.anno}`
+          : "(bozza)"
+      } del ${invoice.rettificaDi.data.toLocaleDateString("it-IT")}`
+    : null;
   const dataDocumento = invoice.data.toLocaleDateString("it-IT");
 
   const multiRiga = invoice.righe.length > 1;
@@ -102,7 +111,7 @@ export default async function StampaFatturaPage({
           <img src="/logo.png" alt="Toretto" width={260} height={75} />
           <div className="mt-[30px] w-[176px] rounded-lg border border-zinc-300">
             <p className="border-b border-zinc-300 bg-zinc-50 px-1.5 py-0.5 text-center text-[9px] font-semibold uppercase leading-none tracking-wide text-zinc-700">
-              Fattura
+              {docLabel}
             </p>
             <div className="flex">
               <InfoCol label="N. Doc." value={numeroLabel} bold flex={1} center />
@@ -178,6 +187,13 @@ export default async function StampaFatturaPage({
         {colgroupEl}
         {theadEl}
         <tbody>
+          {rettificaLabel && (
+            <tr>
+              <td colSpan={4} className="border-b border-zinc-300 px-2 py-2 font-semibold text-zinc-900">
+                {rettificaLabel}
+              </td>
+            </tr>
+          )}
           {invoice.righe.map((r, i) => (
             <Fragment key={r.id}>
               <tr>

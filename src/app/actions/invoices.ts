@@ -89,7 +89,8 @@ export async function saveInvoice(_prevState: unknown, formData: FormData) {
       prisma.invoice.update({
         where: { id },
         data: {
-          clientId,
+          // Una nota di credito resta intestata al cliente della fattura stornata.
+          clientId: existing.tipoDocumento === "TD04" ? existing.clientId : clientId,
           quoteId: quoteId || null,
           data,
           condizioniPagamento: condizioniPagamento || null,
@@ -145,6 +146,47 @@ export async function emettiFattura(id: string) {
 
   revalidatePath("/admin/fatturazione");
   return { success: true };
+}
+
+// Crea una nota di credito (TD04) in bozza a partire da una fattura già
+// emessa: copia cliente, regime IVA e righe, che poi si possono togliere o
+// ridurre per stornare solo una parte. Il numero si assegna all'emissione,
+// nella stessa sequenza delle fatture.
+export async function createCreditNote(invoiceId: string) {
+  await requireModule("fatturazione");
+
+  const original = await prisma.invoice.findUnique({
+    where: { id: invoiceId },
+    include: { righe: { orderBy: { ordine: "asc" } } },
+  });
+  if (!original) return { error: "Fattura non trovata" };
+  if (original.tipoDocumento !== "TD01") {
+    return { error: "Si può stornare solo una fattura" };
+  }
+  if (original.stato === "BOZZA") {
+    return { error: "Una bozza si modifica direttamente: la nota di credito serve per una fattura già emessa" };
+  }
+
+  const nota = await prisma.invoice.create({
+    data: {
+      tipoDocumento: "TD04",
+      rettificaDiId: original.id,
+      clientId: original.clientId,
+      regimeIva: original.regimeIva,
+      righe: {
+        create: original.righe.map((r, ordine) => ({
+          descrizione: r.descrizione,
+          quantita: r.quantita,
+          prezzoUnitario: r.prezzoUnitario,
+          importo: r.importo,
+          ordine,
+        })),
+      },
+    },
+  });
+
+  revalidatePath("/admin/fatturazione");
+  return { success: true, id: nota.id };
 }
 
 export async function deleteInvoice(id: string) {

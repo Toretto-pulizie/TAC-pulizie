@@ -36,6 +36,7 @@ export async function GET(
   const client = invoice.client;
   const clientName = clientDisplayName(client);
   const numeroLabel = invoice.numero != null ? `${invoice.numero}/${invoice.anno}` : "BOZZA";
+  const isCreditNote = invoice.tipoDocumento === "TD04";
 
   const imponibile = invoice.righe.reduce((sum, r) => sum + r.importo, 0);
   const isStandard = invoice.regimeIva === "STANDARD";
@@ -59,7 +60,7 @@ export async function GET(
       personaRiferimento: client.personaRiferimento,
       condizioniPagamento: invoice.condizioniPagamento ?? CONDIZIONI_PAGAMENTO_DEFAULT,
       bancaAppoggio: formatBancaAppoggio(bankSettings),
-      docLabel: "Fattura",
+      docLabel: isCreditNote ? "Nota di credito" : "Fattura",
     },
     origin
   );
@@ -99,7 +100,7 @@ export async function GET(
     return new NextResponse(Buffer.from(buf), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="FATTURA ${numeroLabel.replace("/", "-")}.pdf"`,
+        "Content-Disposition": `inline; filename="${isCreditNote ? "NOTA DI CREDITO" : "FATTURA"} ${numeroLabel.replace("/", "-")}.pdf"`,
         "Cache-Control": "no-store",
       },
     });

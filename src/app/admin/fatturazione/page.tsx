@@ -43,7 +43,11 @@ export default async function FatturazionePage() {
     numero: inv.numero != null ? `${inv.numero}/${inv.anno}` : "—",
     clientName: clientDisplayName(inv.client),
     data: inv.data.toLocaleDateString("it-IT"),
-    totale: inv.righe.reduce((sum, r) => sum + r.importo, 0),
+    isCreditNote: inv.tipoDocumento === "TD04",
+    // Una nota di credito riduce il totale: gli importi sono salvati positivi.
+    totale:
+      (inv.tipoDocumento === "TD04" ? -1 : 1) *
+      inv.righe.reduce((sum, r) => sum + r.importo, 0),
     stato: inv.stato,
   }));
 
@@ -57,7 +61,7 @@ export default async function FatturazionePage() {
         <div>
           <h1 className="text-lg font-semibold text-zinc-900">Fatturazione</h1>
           <p className="text-sm text-zinc-500">
-            Fatture emesse: {formatEuro(totaleAnnoCorrente)} totali (bozze escluse).
+            Fatture emesse: {formatEuro(totaleAnnoCorrente)} totali, note di credito sottratte (bozze escluse).
           </p>
         </div>
         <Link
@@ -86,6 +90,11 @@ export default async function FatturazionePage() {
                   <Link href={`/admin/fatturazione/${r.id}`} className="font-medium text-zinc-900 hover:underline">
                     {r.numero}
                   </Link>
+                  {r.isCreditNote && (
+                    <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+                      Nota di credito
+                    </span>
+                  )}
                 </td>
                 <td className="px-3 py-2 text-zinc-700">{r.clientName}</td>
                 <td className="px-3 py-2 text-zinc-500">{r.data}</td>
