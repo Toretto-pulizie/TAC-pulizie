@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { notFound } from "next/navigation";
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +16,14 @@ import {
 import { PrintButton } from "./PrintButton";
 
 const NOTA_ESENTE = "Operazione esente da IVA.";
+
+// Etichetta di una riga nel "Valore del servizio" quando le righe sono più
+// d'una: l'indirizzo della sede se la descrizione viene da un preventivo
+// ("Sede dell'intervento: ..."), altrimenti il numero di riga.
+function riga(index: number, descrizione: string): string {
+  const m = descrizione.match(/^Sede dell'intervento:\s*(.+)$/m);
+  return m ? m[1].trim() : `riga ${index + 1}`;
+}
 
 function InfoCol({
   label,
@@ -72,6 +81,7 @@ export default async function StampaFatturaPage({
   const numeroLabel = invoice.numero != null ? `${invoice.numero}/${invoice.anno}` : "BOZZA";
   const dataDocumento = invoice.data.toLocaleDateString("it-IT");
 
+  const multiRiga = invoice.righe.length > 1;
   const imponibile = invoice.righe.reduce((sum, r) => sum + r.importo, 0);
   const isStandard = invoice.regimeIva === "STANDARD";
   const totaleIva = isStandard ? imponibile * ALIQUOTA_IVA : 0;
@@ -168,22 +178,44 @@ export default async function StampaFatturaPage({
         {colgroupEl}
         {theadEl}
         <tbody>
-          {invoice.righe.map((r) => (
-            <tr key={r.id}>
-              <td className="border-r border-t border-zinc-300 px-2 py-2 align-top whitespace-pre-line break-words">
-                {r.descrizione}
+          {invoice.righe.map((r, i) => (
+            <Fragment key={r.id}>
+              <tr>
+                <td className="border-r border-zinc-300 px-2 py-2 align-top whitespace-pre-line break-words">
+                  {r.descrizione}
+                </td>
+                <td className="border-r border-zinc-300 px-2 py-2"></td>
+                <td className="border-r border-zinc-300 px-2 py-2"></td>
+                <td className="px-2 py-2"></td>
+              </tr>
+              <tr>
+                <td className="border-r border-t border-b border-zinc-300 px-2 py-2 font-semibold text-zinc-900">
+                  {multiRiga ? `Valore del servizio — ${riga(i, r.descrizione)}` : "Valore del servizio"}
+                </td>
+                <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right">
+                  {r.quantita}
+                </td>
+                <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right">
+                  {formatEuro(r.prezzoUnitario)}
+                </td>
+                <td className="border-t border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
+                  {formatEuro(r.importo)}
+                </td>
+              </tr>
+            </Fragment>
+          ))}
+          {multiRiga && (
+            <tr>
+              <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
+                Totale complessivo
               </td>
-              <td className="border-r border-t border-zinc-300 px-2 py-2 text-right align-top">
-                {r.quantita}
-              </td>
-              <td className="border-r border-t border-zinc-300 px-2 py-2 text-right align-top">
-                {formatEuro(r.prezzoUnitario)}
-              </td>
-              <td className="border-t border-zinc-300 px-2 py-2 text-right align-top">
-                {formatEuro(r.importo)}
+              <td className="border-r border-t border-b border-zinc-300 px-2 py-2"></td>
+              <td className="border-r border-t border-b border-zinc-300 px-2 py-2"></td>
+              <td className="border-t border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
+                {formatEuro(imponibile)}
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>
