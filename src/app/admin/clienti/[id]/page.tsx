@@ -37,6 +37,7 @@ export default async function EditClientPage({
           partitaIva={client.partitaIva}
           codiceFiscale={client.codiceFiscale}
           codiceUnivoco={client.codiceUnivoco}
+          pec={client.pec}
           condizioniPagamento={client.condizioniPagamento}
           condizioniPagamentoOptions={condizioniPagamento.map((c) => c.etichetta)}
           personaRiferimento={client.personaRiferimento}

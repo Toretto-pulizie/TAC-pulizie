@@ -300,6 +300,16 @@ export function NewClientForm({
               className="w-40 rounded-lg border border-zinc-300 px-3 py-2"
             />
           </label>
+          <label className="flex min-w-[14rem] flex-col gap-1 text-sm">
+            <Tooltip text="PEC del cliente: usata per inviare la fattura elettronica quando non ha un Codice Destinatario">
+              PEC
+            </Tooltip>
+            <input
+              name="pec"
+              type="email"
+              className="rounded-lg border border-zinc-300 px-3 py-2"
+            />
+          </label>
           <label className="flex min-w-[16rem] flex-1 flex-col gap-1 text-sm">
             Condizioni di pagamento
             <input
