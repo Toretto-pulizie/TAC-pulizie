@@ -1,9 +1,11 @@
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeTotals, pairSessions } from "@/lib/timeCalc";
+import { summarizeDay } from "@/lib/giornate";
 import { toDateInputValue } from "@/lib/dates";
 import { clientDisplayName } from "@/lib/clients";
 import { TimbratureGrid, type SessionRow, type EmployeeTotal } from "./TimbratureGrid";
+import { GiornateGrid, type GiornataRow } from "./GiornateGrid";
 
 export default async function TimbraturePage({
   searchParams,
@@ -52,6 +54,48 @@ export default async function TimbraturePage({
       const t = totals.get(e.id) ?? { travelMinutes: 0, workMinutes: 0 };
       return { userId: e.id, name: e.name, workMinutes: t.workMinutes, travelMinutes: t.travelMinutes };
     });
+
+  // Giornate del nuovo flusso: una riga per collaboratore e giorno che ha un
+  // Inizio o una Fine giornata. I giorni registrati col vecchio flusso (senza
+  // nessuna delle due) non compaiono.
+  const entriesByDay = new Map<string, typeof entries>();
+  for (const e of [...entries].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())) {
+    const key = `${e.userId}|${toDateInputValue(e.timestamp)}`;
+    const list = entriesByDay.get(key) ?? [];
+    list.push(e);
+    entriesByDay.set(key, list);
+  }
+  const hhmm = (d: Date) =>
+    d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  const giornate: GiornataRow[] = [];
+  for (const [key, dayEntries] of entriesByDay) {
+    const summary = summarizeDay(dayEntries);
+    if (!summary.start && !summary.end) continue;
+    const first = dayEntries[0];
+    giornate.push({
+      key,
+      userId: first.userId,
+      userName: first.user.name,
+      dateValue: toDateInputValue(first.timestamp),
+      dateLabel: first.timestamp.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }),
+      startId: summary.start?.id ?? null,
+      startTime: summary.start ? hhmm(summary.start.timestamp) : null,
+      endId: summary.end?.id ?? null,
+      endTime: summary.end ? hhmm(summary.end.timestamp) : null,
+      pauses: summary.pauses.map((p) => ({
+        startId: p.start.id,
+        endId: p.end?.id ?? null,
+        from: hhmm(p.start.timestamp),
+        to: p.end ? hhmm(p.end.timestamp) : null,
+      })),
+      pauseMinutes: summary.pauseMinutes,
+      presenceMinutes: summary.presenceMinutes,
+      open: summary.open,
+    });
+  }
+  giornate.sort(
+    (a, b) => b.dateValue.localeCompare(a.dateValue) || a.userName.localeCompare(b.userName, "it")
+  );
 
   const sessionRows: SessionRow[] = sessions.map((s) => ({
     startId: s.startId,
@@ -123,6 +167,8 @@ export default async function TimbraturePage({
           Filtra
         </button>
       </form>
+
+      {giornate.length > 0 && <GiornateGrid rows={giornate} />}
 
       <TimbratureGrid
         sessions={sessionRows}

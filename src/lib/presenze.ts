@@ -1,6 +1,7 @@
 import type { EntryType, StatoRichiesta, TipoAssenza } from "@prisma/client";
 import { TIPO_CODES, expandDateRange } from "@/lib/leaveRequests";
 import { splitBySessionId } from "@/lib/timeCalc";
+import { summarizeDay } from "@/lib/giornate";
 
 export type DayCell = { day: number; hours: number | null; code: string | null };
 
@@ -58,23 +59,10 @@ function hoursPerDay(entries: TimeEntryLite[]): Map<number, number> {
   const map = new Map<number, number>();
 
   for (const [day, dayEntries] of byDay) {
-    const dayStart = dayEntries.find((e) => e.type === "DAY_START");
+    const summary = summarizeDay(dayEntries);
 
-    if (dayStart) {
-      const dayEnds = dayEntries.filter((e) => e.type === "DAY_END");
-      const dayEnd = dayEnds[dayEnds.length - 1] ?? null;
-      const endTime = dayEnd ? dayEnd.timestamp : dayEntries[dayEntries.length - 1].timestamp;
-      let minutes = (endTime.getTime() - dayStart.timestamp.getTime()) / 60000;
-
-      let pauseStart: Date | null = null;
-      for (const e of dayEntries) {
-        if (e.type === "PAUSE_START") {
-          pauseStart = e.timestamp;
-        } else if (e.type === "PAUSE_END" && pauseStart) {
-          minutes -= (e.timestamp.getTime() - pauseStart.getTime()) / 60000;
-          pauseStart = null;
-        }
-      }
+    if (summary.start) {
+      const minutes = summary.presenceMinutes ?? 0;
       if (minutes > 0) {
         map.set(day, (map.get(day) ?? 0) + minutes / 60);
       }

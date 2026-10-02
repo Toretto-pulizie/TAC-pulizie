@@ -24,7 +24,18 @@ export default async function PresenzePage({
     prisma.timeEntry.findMany({
       where: {
         timestamp: { gte: start, lte: end },
-        type: { in: ["WORK_START", "WORK_END", "SOPRALLUOGO_START", "SOPRALLUOGO_END"] },
+        type: {
+          in: [
+            "WORK_START",
+            "WORK_END",
+            "SOPRALLUOGO_START",
+            "SOPRALLUOGO_END",
+            "DAY_START",
+            "DAY_END",
+            "PAUSE_START",
+            "PAUSE_END",
+          ],
+        },
       },
       select: { userId: true, type: true, timestamp: true, sessionId: true },
     }),

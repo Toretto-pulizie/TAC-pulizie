@@ -206,6 +206,96 @@ export async function updateSessionTime(input: {
   return { success: true };
 }
 
+// Corregge Inizio o Fine giornata di un collaboratore in un dato giorno (da
+// cui dipendono le ore di Presenze). Se la voce esiste ne cambia l'orario,
+// altrimenti la crea (es. una Fine giornata dimenticata). Un orario vuoto è
+// ammesso solo per la Fine: elimina la voce e riporta la giornata "aperta".
+export async function updateDayBoundary(input: {
+  userId: string;
+  date: string;
+  kind: "start" | "end";
+  time: string;
+  entryId: string | null;
+}) {
+  await requireModule("timbrature");
+
+  const type: EntryType = input.kind === "start" ? "DAY_START" : "DAY_END";
+  const time = input.time.trim();
+
+  if (input.entryId) {
+    const existing = await prisma.timeEntry.findUnique({ where: { id: input.entryId } });
+    if (!existing || existing.type !== type || existing.userId !== input.userId) {
+      return { error: "Voce non valida" };
+    }
+  }
+
+  if (!time) {
+    if (input.kind === "end" && input.entryId) {
+      await prisma.timeEntry.delete({ where: { id: input.entryId } });
+      revalidatePath("/admin/timbrature");
+      revalidatePath("/admin/presenze");
+      return { success: true };
+    }
+    return { error: "Indica l'orario" };
+  }
+  if (!/^\d{1,2}:\d{2}$/.test(time)) return { error: "Orario non valido" };
+
+  const when = combineDate(input.date, time);
+  if (Number.isNaN(when.getTime())) return { error: "Orario non valido" };
+
+  const dayFrom = combineDate(input.date, "00:00");
+  const dayTo = combineDate(input.date, "23:59");
+  dayTo.setSeconds(59, 999);
+  const other = await prisma.timeEntry.findFirst({
+    where: {
+      userId: input.userId,
+      type: input.kind === "start" ? "DAY_END" : "DAY_START",
+      timestamp: { gte: dayFrom, lte: dayTo },
+    },
+    // Presenze usa la prima Inizio giornata e l'ultima Fine giornata del giorno.
+    orderBy: { timestamp: input.kind === "start" ? "desc" : "asc" },
+  });
+  if (other) {
+    if (input.kind === "start" && when >= other.timestamp) {
+      return { error: "L'inizio giornata deve essere prima della fine" };
+    }
+    if (input.kind === "end" && when <= other.timestamp) {
+      return { error: "La fine giornata deve essere dopo l'inizio" };
+    }
+  }
+
+  if (input.entryId) {
+    await prisma.timeEntry.update({
+      where: { id: input.entryId },
+      data: { timestamp: when, orarioStimato: false },
+    });
+  } else {
+    await prisma.timeEntry.create({
+      data: { userId: input.userId, type, timestamp: when, sessionId: randomUUID() },
+    });
+  }
+
+  revalidatePath("/admin/timbrature");
+  revalidatePath("/admin/presenze");
+  return { success: true };
+}
+
+// Elimina una pausa (PAUSE_START + eventuale PAUSE_END). Il tempo della pausa
+// smette di essere sottratto dalle ore di presenza e, se segue un altro
+// cantiere, torna a contare come spostamento verso di esso.
+export async function deletePause(input: { startId: string; endId: string | null }) {
+  await requireModule("timbrature");
+
+  const ids = [input.startId, input.endId].filter((id): id is string => id != null);
+  await prisma.timeEntry.deleteMany({
+    where: { id: { in: ids }, type: { in: ["PAUSE_START", "PAUSE_END"] } },
+  });
+
+  revalidatePath("/admin/timbrature");
+  revalidatePath("/admin/presenze");
+  return { success: true };
+}
+
 // Elimina un'intera sessione (Inizio/Fine/eventuale Spostamento).
 export async function deleteSession(input: {
   startId: string;
