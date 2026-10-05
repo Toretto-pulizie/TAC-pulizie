@@ -247,16 +247,21 @@ export function QuoteSiteFieldset({
         )}
       </div>
 
-      <div className="flex flex-wrap items-start gap-3">
+      {/* Due colonne su schermo largo: a sinistra i dati della sede (servizio,
+          tariffe, prezzi), a destra le Note con la stessa larghezza della
+          stampa; su schermo stretto si impilano. */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+      <div className="grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {selectedClient && (
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-sm xl:col-span-2">
             Sede
             <select
               name={name("siteSelection")}
               required
               value={siteSelection}
               onChange={(e) => setSiteSelection(e.target.value)}
-              className="rounded-lg border border-zinc-300 px-3 py-2"
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             >
               <option value="">Seleziona...</option>
               {selectedClient.sites.map((s) => (
@@ -284,7 +289,7 @@ export function QuoteSiteFieldset({
                 className="rounded-lg border border-zinc-300 px-3 py-2"
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm">
+            <label className="flex flex-col gap-1 text-sm xl:col-span-2">
               Indirizzo
               <input
                 name={name("nuovoIndirizzo")}
@@ -296,13 +301,13 @@ export function QuoteSiteFieldset({
           </>
         )}
 
-        <label className="flex min-w-[14rem] flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1 text-sm xl:col-span-2">
           Tipo servizio
           <select
             name={name("tipoPrestazione")}
             required
             defaultValue={initial?.tipoPrestazione ?? ""}
-            className="rounded-lg border border-zinc-300 px-3 py-2"
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           >
             <option value="">Seleziona...</option>
             {initial?.tipoPrestazione &&
@@ -325,7 +330,7 @@ export function QuoteSiteFieldset({
             name={name("serviceType")}
             value={serviceType}
             onChange={(e) => setServiceType(e.target.value as ServiceType)}
-            className="rounded-lg border border-zinc-300 px-3 py-2"
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2"
           >
             <option value="ONE_SHOT">{serviceLabels.ONE_SHOT}</option>
             <option value="PASS_SETTIMANALE">
@@ -473,9 +478,7 @@ export function QuoteSiteFieldset({
             className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
           />
         </label>
-      </div>
 
-      <div className="flex flex-wrap items-end gap-3 border-t border-zinc-200 pt-3">
         <div className="flex flex-col gap-1 text-sm">
           Totale
           <div className="w-28 rounded-lg border border-zinc-200 bg-white px-3 py-2 font-medium text-zinc-900">
@@ -529,7 +532,9 @@ export function QuoteSiteFieldset({
         </label>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-zinc-200 pt-3">
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-zinc-200 pt-3 lg:w-[453px] lg:shrink-0 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-4">
         <div className="flex flex-col gap-1 text-sm">
           Note
           {/* Larghezza e carattere identici alla colonna Descrizione del PDF
@@ -682,6 +687,7 @@ export function QuoteSiteFieldset({
             </dialog>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
