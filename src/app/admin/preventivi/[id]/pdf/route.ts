@@ -46,7 +46,7 @@ export async function GET(
     ]);
   if (!quote) {
     return NextResponse.json(
-      { error: "Preventivo non trovato" },
+      { error: "Offerta non trovata" },
       { status: 404 }
     );
   }

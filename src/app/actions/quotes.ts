@@ -151,7 +151,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
 
   const indexes = collectSiteBlockIndexes(formData);
   if (indexes.length === 0) {
-    return { error: "Aggiungi almeno una sede al preventivo" };
+    return { error: "Aggiungi almeno una sede all'offerta" };
   }
 
   const siteBlocksData: {
@@ -287,7 +287,7 @@ export async function setQuoteStatus(
 
   if (status === "ACCETTATO" || status === "RIFIUTATO") {
     const sedi = quote.sites.map((s) => s.site.name).join(", ");
-    const messaggio = `Preventivo ${status === "ACCETTATO" ? "accettato" : "rifiutato"}: ${clientDisplayName(quote.client)} — ${sedi}`;
+    const messaggio = `Offerta ${status === "ACCETTATO" ? "accettata" : "rifiutata"}: ${clientDisplayName(quote.client)} — ${sedi}`;
     await notifyAdmins(messaggio, "/admin/preventivi");
     await notifyAmministrativiIfEnabled("preventivi", messaggio, "/admin/preventivi");
   }

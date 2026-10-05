@@ -45,7 +45,7 @@ export function NotificationSettingsForm({ initial }: { initial: Settings }) {
         <Toggle
           checked={settings.amministrativoPreventivi}
           onChange={() => toggle("amministrativoPreventivi")}
-          label="Preventivo accettato/rifiutato"
+          label="Offerta accettata/rifiutata"
         />
         <Toggle
           checked={settings.amministrativoSopralluoghi}

@@ -6,8 +6,8 @@ import { formatDateLabel } from "@/lib/dates";
 
 const STATUS_LABELS = {
   IN_TRATTATIVA: "In trattativa",
-  ACCETTATO: "Accettato",
-  RIFIUTATO: "Rifiutato",
+  ACCETTATO: "Accettata",
+  RIFIUTATO: "Rifiutata",
 } as const;
 
 const STATUS_COLORS = {
@@ -30,11 +30,11 @@ export default async function PreventiviDipendentePage() {
         <Link href="/dipendente/amministrazione" className="shrink-0 text-sm text-zinc-500">
           ← Indietro
         </Link>
-        <h1 className="text-xl font-semibold text-zinc-900">Preventivi</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">Offerte</h1>
       </header>
 
       {quotes.length === 0 && (
-        <p className="text-sm text-zinc-400">Nessun preventivo.</p>
+        <p className="text-sm text-zinc-400">Nessuna offerta.</p>
       )}
 
       <ul className="flex flex-col gap-3">

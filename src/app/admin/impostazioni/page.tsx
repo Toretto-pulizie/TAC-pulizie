@@ -72,7 +72,7 @@ export default async function ImpostazioniPage() {
                     Frequenza
                   </h1>
                   <p className="text-sm text-zinc-500">
-                    Rinomina come vuoi le frequenze usate nei preventivi. Il
+                    Rinomina come vuoi le frequenze usate nelle offerte. Il
                     calcolo del prezzo resta invariato, cambia solo il nome
                     mostrato.
                   </p>
@@ -102,11 +102,11 @@ export default async function ImpostazioniPage() {
                   </h1>
                   <p className="text-sm text-zinc-500">
                     Le voci che compaiono come prima riga della descrizione
-                    nei preventivi (es. "PRESTAZIONE ORDINARIA DI PULIZIA
-                    UFFICI"). Modificare o eliminare una voce non cambia i
-                    preventivi già creati con quel testo. L'Abbreviazione è
+                    nelle offerte (es. "PRESTAZIONE ORDINARIA DI PULIZIA
+                    UFFICI"). Modificare o eliminare una voce non cambia le
+                    offerte già create con quel testo. L'Abbreviazione è
                     quella mostrata nella colonna "Tipo servizio" dell'elenco
-                    preventivi, per non appesantirlo col testo completo.
+                    offerte, per non appesantirlo col testo completo.
                   </p>
                 </div>
                 <TipoPrestazioneForm />
@@ -140,7 +140,7 @@ export default async function ImpostazioniPage() {
                   <p className="text-sm text-zinc-500">
                     Voci proposte per il campo "Condizioni di pagamento", sia
                     nella scheda Cliente (come valore predefinito per quel
-                    cliente) sia nel modulo Preventivo — restano comunque
+                    cliente) sia nel modulo Offerta — restano comunque
                     campi liberi, puoi sempre scriverne uno diverso.
                   </p>
                 </div>
@@ -256,11 +256,11 @@ export default async function ImpostazioniPage() {
                   </h1>
                   <p className="text-sm text-zinc-500">
                     Documenti PDF, PNG o JPG (es. clausole contrattuali,
-                    condizioni generali) da poter allegare ai preventivi.
+                    condizioni generali) da poter allegare alle offerte.
                     Restano invariati, con la formattazione con cui sono
                     stati creati, e vengono aggiunti come pagine finali del
-                    PDF — a parte rispetto al contenuto del preventivo. Si
-                    scelgono da un elenco direttamente nel modulo preventivo.
+                    PDF — a parte rispetto al contenuto dell'offerta. Si
+                    scelgono da un elenco direttamente nel modulo offerta.
                   </p>
                 </div>
                 <AttachmentForm />
@@ -292,8 +292,8 @@ export default async function ImpostazioniPage() {
                     Frasi preimpostate
                   </h1>
                   <p className="text-sm text-zinc-500">
-                    Le frasi richiamabili nelle note dei preventivi.
-                    Raggiungibili anche da Preventivi → Gestisci frasi
+                    Le frasi richiamabili nelle note delle offerte.
+                    Raggiungibili anche da Offerte → Gestisci frasi
                     preimpostate.
                   </p>
                 </div>

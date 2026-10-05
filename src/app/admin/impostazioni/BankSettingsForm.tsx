@@ -18,7 +18,7 @@ export function BankSettingsForm({ initial }: { initial: Settings }) {
       <div>
         <h2 className="text-sm font-semibold text-zinc-900">Banca</h2>
         <p className="text-xs text-zinc-500">
-          Dati della banca d&apos;appoggio mostrati nel PDF dei preventivi.
+          Dati della banca d&apos;appoggio mostrati nel PDF delle offerte.
         </p>
       </div>
       <div className="flex max-w-sm flex-col gap-3 rounded-lg border border-zinc-200 p-3">

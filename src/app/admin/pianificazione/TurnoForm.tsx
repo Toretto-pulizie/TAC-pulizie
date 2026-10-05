@@ -319,7 +319,7 @@ export function TurnoForm({
 
       {isRicorrente && quoteSites.length > 0 && (
         <label className="flex flex-col gap-1 text-sm">
-          Da preventivo continuativo (opzionale)
+          Da offerta continuativa (opzionale)
           <select
             name="quoteSiteId"
             value={quoteSiteId}
@@ -470,7 +470,7 @@ export function TurnoForm({
         </label>
         {!isRicorrente && selectedUserIds.length > 1 && activeQuoteSites.length > 0 && (
           <label className="flex flex-col gap-1 text-sm">
-            Preventivo / servizio
+            Offerta / servizio
             <select
               value={selectedQuoteSiteId}
               onChange={(e) => setSelectedQuoteSiteId(e.target.value)}
@@ -545,10 +545,10 @@ export function TurnoForm({
             ? `${selectedUserIds.length} collaboratori × ${(oreNum / selectedUserIds.length).toFixed(2)}h ciascuno = ${oreNum}h intervento totali${isRicorrente ? ", ad ogni occorrenza." : "."}`
             : isRicorrente
               ? quoteSites.some((q) => q.siteId === siteId)
-                ? "Scegli il preventivo continuativo qui sopra per calcolare automaticamente l'orario di fine di ciascun collaboratore."
+                ? "Scegli l'offerta continuativa qui sopra per calcolare automaticamente l'orario di fine di ciascun collaboratore."
                 : "Inserisci le ore totali dell'intervento per calcolare automaticamente l'orario di fine di ciascun collaboratore."
               : activeQuoteSites.length > 0
-                ? "Seleziona il preventivo/servizio per calcolare automaticamente l'orario di fine di ciascun collaboratore."
+                ? "Seleziona l'offerta/servizio per calcolare automaticamente l'orario di fine di ciascun collaboratore."
                 : "Inserisci le ore totali dell'intervento per calcolare automaticamente l'orario di fine di ciascun collaboratore."}
         </p>
       )}

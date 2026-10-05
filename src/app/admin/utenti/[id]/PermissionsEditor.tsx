@@ -78,7 +78,7 @@ export function PermissionsEditor({
         />
         <p className="mt-2 text-xs text-zinc-400">
           Aggiunge, nella sua area personale, un bivio Produzione/Amministrazione con
-          Sopralluoghi e Preventivi.
+          Sopralluoghi e Offerte.
         </p>
       </div>
 

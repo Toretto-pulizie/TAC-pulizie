@@ -196,7 +196,7 @@ export default async function PreventiviPage({
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
         <section className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <p className="text-sm text-zinc-500">Preventivi in trattativa</p>
+            <p className="text-sm text-zinc-500">Offerte in trattativa</p>
             <p className="text-xl font-semibold text-zinc-900">
               {formatEuro(inTrattativaValore)}
             </p>

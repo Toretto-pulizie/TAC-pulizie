@@ -59,7 +59,7 @@ export function HomeSettingsForm({ initial }: { initial: Settings }) {
         <Toggle
           checked={settings.showPreventivi}
           onChange={() => toggle("showPreventivi")}
-          label="Preventivi in trattativa"
+          label="Offerte in trattativa"
         />
         {settings.showPreventivi && (
           <div className="ml-4 border-l border-zinc-200 pl-3">
@@ -83,7 +83,7 @@ export function HomeSettingsForm({ initial }: { initial: Settings }) {
         <Toggle
           checked={settings.showTotalePreventiviAccettati}
           onChange={() => toggle("showTotalePreventiviAccettati")}
-          label="Totale € preventivi accettati"
+          label="Totale € offerte accettate"
         />
         <Toggle
           checked={settings.showTotaleConsuntivi}

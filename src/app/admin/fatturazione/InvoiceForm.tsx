@@ -204,13 +204,13 @@ export function InvoiceForm({
       {clientId && !isCreditNote && (
         <div className="flex flex-col gap-2 rounded-lg border border-zinc-200 bg-zinc-50/60 p-3">
           <p className="text-sm font-medium text-zinc-700">
-            Cantieri da preventivi accettati
+            Cantieri da offerte accettate
           </p>
           <p className="text-xs text-zinc-500">
             Spunta un solo cantiere per fatturarlo a parte, oppure più cantieri per unificarli in questa fattura.
           </p>
           {sitesForClient.length === 0 && (
-            <p className="text-sm text-zinc-400">Nessun cantiere con preventivo accettato per questo cliente.</p>
+            <p className="text-sm text-zinc-400">Nessun cantiere con offerta accettata per questo cliente.</p>
           )}
           {sitesForClient.map((s) => (
             <label key={s.siteId} className="flex items-center gap-2 text-sm">

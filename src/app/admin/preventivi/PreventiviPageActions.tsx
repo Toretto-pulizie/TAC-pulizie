@@ -50,7 +50,7 @@ export function PreventiviPageActions({
           onClick={() => setOpen((o) => !o)}
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white"
         >
-          {open ? "✕ Chiudi modulo" : "+ Nuovo preventivo"}
+          {open ? "✕ Chiudi modulo" : "+ Nuova offerta"}
         </button>
       </PageHeaderActions>
       {open && (

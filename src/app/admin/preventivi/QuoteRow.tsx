@@ -6,8 +6,8 @@ import { setQuoteStatus, deleteQuote } from "@/app/actions/quotes";
 
 const statusLabels: Record<string, string> = {
   IN_TRATTATIVA: "In trattativa",
-  ACCETTATO: "Accettato",
-  RIFIUTATO: "Rifiutato",
+  ACCETTATO: "Accettata",
+  RIFIUTATO: "Rifiutata",
 };
 
 const statusClasses: Record<string, string> = {
@@ -32,6 +32,7 @@ function formatEuro(n: number) {
 
 export function QuoteRow({
   id,
+  numeroOfferta,
   clientName,
   tipoServizio,
   siteCount,
@@ -44,6 +45,7 @@ export function QuoteRow({
   status,
 }: {
   id: string;
+  numeroOfferta: number;
   clientName: string;
   tipoServizio: string | null;
   siteCount: number;
@@ -65,6 +67,7 @@ export function QuoteRow({
   return (
     <>
       <tr className="border-b border-zinc-100 last:border-0">
+        <td className="px-4 py-3 font-medium text-zinc-900">{numeroOfferta}</td>
         <td className="px-4 py-3">
           <p className="font-medium text-zinc-900">{clientName}</p>
         </td>
@@ -139,7 +142,7 @@ export function QuoteRow({
             <button
               disabled={isPending}
               onClick={() => {
-                if (confirm("Eliminare questo preventivo?")) {
+                if (confirm("Eliminare questa offerta?")) {
                   startTransition(() => deleteQuote(id));
                 }
               }}
@@ -154,6 +157,7 @@ export function QuoteRow({
         canExpand &&
         perSite.map((s, i) => (
           <tr key={i} className="border-b border-zinc-100 bg-zinc-50/60 last:border-0">
+            <td className="px-4 py-3"></td>
             <td className="px-4 py-3"></td>
             <td className="px-4 py-3 text-zinc-500">{s.siteAddress}</td>
             <td className="px-4 py-3 text-zinc-500">{s.tipoServizio}</td>

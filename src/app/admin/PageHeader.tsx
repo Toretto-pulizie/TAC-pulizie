@@ -54,7 +54,7 @@ export function PageHeader() {
   } else if (isFrasiList) {
     title = "Frasi preimpostate";
     backHref = "/admin/preventivi";
-    backLabel = "← Torna ai preventivi";
+    backLabel = "← Torna alle offerte";
   } else if (isAnagraficaSubpage) {
     title =
       subSegment === "nuovo" && anagrafica!.nuovo ? anagrafica!.nuovo : anagrafica!.edit;

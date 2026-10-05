@@ -21,7 +21,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   pianificazione: "Pianificazione",
   presenze: "Presenze",
   permessi: "Permessi",
-  preventivi: "Preventivi",
+  preventivi: "Offerte",
   consuntivi: "Consuntivi",
   clienti: "Clienti",
   fornitori: "Fornitori",

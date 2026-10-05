@@ -139,13 +139,13 @@ export default async function AdminHomePage() {
       {
         moduleKey: "preventivi",
         settingKey: "showPreventivi",
-        label: "Preventivi in trattativa",
+        label: "Offerte in trattativa",
         value: quoteCount("IN_TRATTATIVA"),
         showBar: homeSettings.showPreventiviBar,
         segments: [
           { label: "In trattativa", count: quoteCount("IN_TRATTATIVA"), color: "bg-amber-400" },
-          { label: "Accettati", count: quoteCount("ACCETTATO"), color: "bg-emerald-500" },
-          { label: "Rifiutati", count: quoteCount("RIFIUTATO"), color: "bg-rose-400" },
+          { label: "Accettate", count: quoteCount("ACCETTATO"), color: "bg-emerald-500" },
+          { label: "Rifiutate", count: quoteCount("RIFIUTATO"), color: "bg-rose-400" },
         ],
       },
     ] as const
@@ -267,7 +267,7 @@ export default async function AdminHomePage() {
           ))}
           {showTotalePreventivi && (
             <SimpleStatCard
-              label="Totale preventivi accettati"
+              label="Totale offerte accettate"
               value={formatEuro(totalePreventiviAccettati)}
             />
           )}

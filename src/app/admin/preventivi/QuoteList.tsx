@@ -36,8 +36,8 @@ type QuoteRowData = {
 
 const statusLabels: Record<QuoteRowData["status"], string> = {
   IN_TRATTATIVA: "In trattativa",
-  ACCETTATO: "Accettato",
-  RIFIUTATO: "Rifiutato",
+  ACCETTATO: "Accettata",
+  RIFIUTATO: "Rifiutata",
 };
 
 function formatEuro(n: number) {
@@ -54,6 +54,7 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
   const rowsForFilter = rows.map((r) => ({
     ...r,
     statusLabel: statusLabels[r.status],
+    numeroLabel: String(r.numeroOfferta),
     siteCountLabel: String(r.siteCount),
     tipoServizioLabel: r.tipoServizio ?? "Vario",
     cadenzaLabel: r.cadenza ?? "Vario",
@@ -90,6 +91,7 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
         <table className="w-full min-w-[960px] text-left text-sm">
           <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
             <tr>
+              <ExcelHeader label="N°" active={filters.numeroLabel} onFilterChange={(v) => handleFilterChange("numeroLabel", v)} sortDir={sortDirFor("numeroOfferta")} onSort={(d) => handleSort("numeroOfferta", d)} />
               <ExcelHeader label="Cliente" active={filters.clientName} onFilterChange={(v) => handleFilterChange("clientName", v)} sortDir={sortDirFor("clientName")} onSort={(d) => handleSort("clientName", d)} />
               <ExcelHeader label="N° sedi/cantieri" active={filters.siteCountLabel} onFilterChange={(v) => handleFilterChange("siteCountLabel", v)} sortDir={sortDirFor("siteCount")} onSort={(d) => handleSort("siteCount", d)} />
               <ExcelHeader label="Tipo servizio" active={filters.tipoServizioLabel} onFilterChange={(v) => handleFilterChange("tipoServizioLabel", v)} sortDir={sortDirFor("tipoServizioLabel")} onSort={(d) => handleSort("tipoServizioLabel", d)} />
@@ -107,6 +109,7 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
               <QuoteRow
                 key={r.id}
                 id={r.id}
+                numeroOfferta={r.numeroOfferta}
                 clientName={r.clientName}
                 siteCount={r.siteCount}
                 perSite={r.perSite}
@@ -121,9 +124,9 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
             ))}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-6 text-center text-zinc-400">
+                <td colSpan={11} className="px-4 py-6 text-center text-zinc-400">
                   {rows.length === 0
-                    ? "Nessun preventivo ancora creato."
+                    ? "Nessuna offerta ancora creata."
                     : "Nessun risultato."}
                 </td>
               </tr>

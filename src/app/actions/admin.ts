@@ -482,7 +482,7 @@ export async function deleteSite(siteId: string) {
 
   if (quoteCount > 0 || shiftCount > 0 || timeEntryCount > 0) {
     return {
-      error: `Impossibile eliminare: ci sono ${quoteCount} preventivi, ${shiftCount} turni e ${timeEntryCount} timbrature collegati a questo cantiere.`,
+      error: `Impossibile eliminare: ci sono ${quoteCount} offerte, ${shiftCount} turni e ${timeEntryCount} timbrature collegati a questo cantiere.`,
     };
   }
 
@@ -504,7 +504,7 @@ export async function deleteClient(clientId: string) {
 
   if (quoteCount > 0 || shiftCount > 0 || timeEntryCount > 0) {
     return {
-      error: `Impossibile eliminare: ci sono ${quoteCount} preventivi, ${shiftCount} turni e ${timeEntryCount} timbrature collegati alle sedi di questo cliente.`,
+      error: `Impossibile eliminare: ci sono ${quoteCount} offerte, ${shiftCount} turni e ${timeEntryCount} timbrature collegati alle sedi di questo cliente.`,
     };
   }
 

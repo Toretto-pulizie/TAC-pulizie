@@ -103,7 +103,7 @@ export function QuoteForm({
         <>
           <input type="hidden" name="id" value={editingQuote.id} />
           <p className="text-sm font-medium text-amber-700">
-            Stai modificando un preventivo esistente
+            Stai modificando un&apos;offerta esistente
           </p>
         </>
       )}
@@ -172,7 +172,7 @@ export function QuoteForm({
           onClick={addBlock}
           className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700"
         >
-          + Aggiungi sede al preventivo
+          + Aggiungi sede all&apos;offerta
         </button>
         {blockIds.length > 1 && (
           <p className="text-sm text-zinc-600">
@@ -248,7 +248,7 @@ export function QuoteForm({
             ? "Salvataggio..."
             : editingQuote
               ? "Salva modifiche"
-              : "Crea preventivo"}
+              : "Crea offerta"}
         </button>
       </div>
 

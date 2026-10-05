@@ -35,7 +35,7 @@ export function PhraseForm() {
           name="testo"
           required
           rows={3}
-          placeholder="Testo che verrà inserito nel preventivo"
+          placeholder="Testo che verrà inserito nell'offerta"
           className="rounded-lg border border-zinc-300 px-3 py-2"
         />
       </label>

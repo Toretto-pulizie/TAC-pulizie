@@ -162,15 +162,15 @@ export default async function StatistichePage() {
 
         <section className="flex flex-col gap-3">
           <h1 className="text-lg font-semibold text-zinc-900">
-            Andamento preventivi (ultimi 6 mesi)
+            Andamento offerte (ultimi 6 mesi)
           </h1>
           <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white [contain:inline-size]">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
                 <tr>
                   <th className="px-4 py-3 font-medium">Mese</th>
-                  <th className="px-4 py-3 font-medium">Creati</th>
-                  <th className="px-4 py-3 font-medium">Accettati</th>
+                  <th className="px-4 py-3 font-medium">Create</th>
+                  <th className="px-4 py-3 font-medium">Accettate</th>
                   <th className="px-4 py-3 font-medium">Tasso conversione</th>
                   <th className="px-4 py-3 font-medium">Sconto medio</th>
                   <th className="px-4 py-3 font-medium">Valore venduto</th>

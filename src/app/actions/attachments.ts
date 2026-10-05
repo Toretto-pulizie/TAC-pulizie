@@ -40,7 +40,7 @@ export async function deleteAttachment(id: string) {
   });
   if (usageCount > 0) {
     return {
-      error: `Impossibile eliminare: è allegato a ${usageCount} preventivo/i.`,
+      error: `Impossibile eliminare: è allegato a ${usageCount} offerta/e.`,
     };
   }
 
