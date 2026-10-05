@@ -120,15 +120,15 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
             {col("Cliente", "clientName", "clientName")}
             {col("Stato", "statoLabel", "statoLabel")}
             {col("Cantieri", "cantieriLabel", "cantieri")}
-            {col("Mensile", "mensileLabel", "mensile")}
-            {col("Annuo", "annuoLabel", "annuo")}
             {col("Ore lavorate", "oreLabel", "oreLavorate")}
             {col("Ore spost.", "spostLabel", "oreSpostamento")}
+            {col("N° FT", "nFattureLabel", "nFatture")}
+            {col("Ultima FT", "ultimaFattura", "ultimaFatturaTs")}
+            {col("Mensile", "mensileLabel", "mensile")}
+            {col("Annuo", "annuoLabel", "annuo")}
             {col("Consuntivo", "consuntivoLabel", "consuntivo")}
             {col("Scostamento", "scostamentoLabel", "scostamento")}
-            {col("N° FT", "nFattureLabel", "nFatture")}
             {col("Fatturato", "fatturatoLabel", "fatturato")}
-            {col("Ultima FT", "ultimaFattura", "ultimaFatturaTs")}
             {col("Da fatturare", "daFatturareLabel", "daFatturare")}
           </tr>
         </thead>
@@ -143,6 +143,10 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
                 </span>
               </td>
               <td className="px-3 py-3 text-zinc-500">{r.cantieri || "—"}</td>
+              <td className="px-3 py-3 text-zinc-500">{r.oreLabel}</td>
+              <td className="px-3 py-3 text-zinc-500">{r.spostLabel}</td>
+              <td className="px-3 py-3 text-zinc-500">{r.nFatture || "—"}</td>
+              <td className="px-3 py-3 whitespace-nowrap text-zinc-500">{r.ultimaFattura ?? "—"}</td>
               <td
                 className={`px-3 py-3 ${r.amountsFromPending ? "italic text-zinc-400" : "text-zinc-500"}`}
                 title={r.amountsFromPending ? "Importo dell'offerta in trattativa" : undefined}
@@ -155,8 +159,6 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
               >
                 {r.annuoLabel}
               </td>
-              <td className="px-3 py-3 text-zinc-500">{r.oreLabel}</td>
-              <td className="px-3 py-3 text-zinc-500">{r.spostLabel}</td>
               <td className="px-3 py-3 text-zinc-500">{r.consuntivoLabel}</td>
               <td
                 className={`px-3 py-3 font-medium ${
@@ -170,9 +172,7 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
               >
                 {r.scostamentoLabel}
               </td>
-              <td className="px-3 py-3 text-zinc-500">{r.nFatture || "—"}</td>
               <td className="px-3 py-3 text-zinc-500">{r.fatturatoLabel}</td>
-              <td className="px-3 py-3 whitespace-nowrap text-zinc-500">{r.ultimaFattura ?? "—"}</td>
               <td
                 className="px-3 py-3 font-medium text-zinc-900"
                 title="Contrattualizzato nel periodo meno quanto già fatturato"
