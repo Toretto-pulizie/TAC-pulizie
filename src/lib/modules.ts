@@ -12,6 +12,7 @@ export const MODULE_KEYS = [
   "amministrazione",
   "sopralluoghi",
   "fatturazione",
+  "commesse",
 ] as const;
 
 export type ModuleKey = (typeof MODULE_KEYS)[number];
@@ -30,11 +31,12 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   amministrazione: "Amministrazione",
   sopralluoghi: "Sopralluoghi",
   fatturazione: "Fatturazione",
+  commesse: "Commesse",
 };
 
 export const MODULE_GROUPS: { label: string; keys: ModuleKey[] }[] = [
   { label: "Anagrafiche", keys: ["clienti", "fornitori", "collaboratori"] },
-  { label: "Gestione", keys: ["pianificazione", "preventivi", "consuntivi", "sopralluoghi"] },
+  { label: "Gestione", keys: ["pianificazione", "preventivi", "consuntivi", "commesse", "sopralluoghi"] },
   { label: "Produzione", keys: ["timbrature", "presenze", "permessi"] },
   { label: "Contabilità", keys: ["fatturazione"] },
   { label: "Utilità", keys: ["statistiche"] },
@@ -53,6 +55,7 @@ export const MODULE_HREFS: Record<ModuleKey, string> = {
   statistiche: "/admin/statistiche",
   sopralluoghi: "/admin/sopralluoghi",
   fatturazione: "/admin/fatturazione",
+  commesse: "/admin/commesse",
   // Non fa parte di MODULE_GROUPS (niente sidebar admin / sezione Gestione
   // dipendente): è l'hub interno a /dipendente per chi ha questo permesso.
   amministrazione: "/dipendente/amministrazione",
