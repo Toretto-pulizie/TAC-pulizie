@@ -1,11 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { clientDisplayName } from "@/lib/clients";
-import { computeCommesse } from "@/lib/commesse";
+import { computeCommesse, computeCommessePerOfferta } from "@/lib/commesse";
 
-// Carica i dati e calcola le righe delle Commesse (una per cliente) per un
-// periodo; senza periodo = dall'inizio a oggi. Condiviso da Commesse e dalla
-// sezione "Da fatturare" di Fatturazione, così i numeri sono sempre gli stessi.
-export async function loadCommesse(range: { start: Date; end: Date } | null) {
+async function loadInputs(range: { start: Date; end: Date } | null) {
   const [clients, quotes, entries, invoices] = await Promise.all([
     prisma.client.findMany(),
     prisma.quote.findMany({ include: { sites: true } }),
@@ -17,6 +14,7 @@ export async function loadCommesse(range: { start: Date; end: Date } | null) {
       where: range ? { data: { gte: range.start, lte: range.end } } : {},
       select: {
         clientId: true,
+        quoteId: true,
         tipoDocumento: true,
         stato: true,
         anno: true,
@@ -27,12 +25,13 @@ export async function loadCommesse(range: { start: Date; end: Date } | null) {
     }),
   ]);
 
-  return computeCommesse({
+  return {
     clients: clients.map((c) => ({ id: c.id, name: clientDisplayName(c) })),
     quotes,
     entries,
     invoices: invoices.map((i) => ({
       clientId: i.clientId,
+      quoteId: i.quoteId,
       tipoDocumento: i.tipoDocumento,
       stato: i.stato,
       anno: i.anno,
@@ -40,5 +39,16 @@ export async function loadCommesse(range: { start: Date; end: Date } | null) {
       data: i.data,
       importo: i.righe.reduce((s, r) => s + r.importo, 0),
     })),
-  });
+  };
+}
+
+// Una riga per cliente per un periodo; senza periodo = dall'inizio a oggi.
+// Usata dalla sezione "Da fatturare" di Fatturazione.
+export async function loadCommesse(range: { start: Date; end: Date } | null) {
+  return computeCommesse(await loadInputs(range));
+}
+
+// Una riga per offerta (ogni offerta è una commessa): usata da Commesse.
+export async function loadCommessePerOfferta(range: { start: Date; end: Date } | null) {
+  return computeCommessePerOfferta(await loadInputs(range));
 }

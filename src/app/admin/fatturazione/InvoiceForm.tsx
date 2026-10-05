@@ -4,6 +4,7 @@ import { useActionState, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveInvoice } from "@/app/actions/invoices";
 import { SearchSelect } from "@/app/SearchSelect";
+import { Trunc } from "@/app/Trunc";
 
 type ClientOption = { id: string; name: string; tipo: string };
 
@@ -221,7 +222,7 @@ export function InvoiceForm({
                 className="h-4 w-4"
               />
               <span className="flex-1">
-                {s.siteName}{" "}
+                <Trunc text={s.siteName} />{" "}
                 <span className="text-xs text-zinc-400">(Offerta N. {s.numeroOfferta})</span>
               </span>
               <span className="text-zinc-500">{formatEuro(s.importo)}</span>

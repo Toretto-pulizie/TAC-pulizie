@@ -6,6 +6,7 @@ import { currentStatus } from "@/lib/timeCalc";
 import { startOfDay, addDays, formatDateLabel, formatTime } from "@/lib/dates";
 import { clientDisplayName } from "@/lib/clients";
 import { ClockPanel } from "../ClockPanel";
+import { Trunc } from "@/app/Trunc";
 
 const typeLabels: Record<string, string> = {
   TRAVEL_START: "Inizio spostamento",
@@ -71,7 +72,7 @@ export default async function TimbraturaPage() {
                   {formatTime(s.end)}
                 </p>
                 <p className="text-zinc-500">
-                  {clientDisplayName(s.site.client)} — {s.site.name}
+                  <Trunc text={clientDisplayName(s.site.client)} /> — <Trunc text={s.site.name} />
                 </p>
                 {s.notes && <p className="text-zinc-400">{s.notes}</p>}
               </li>
@@ -109,7 +110,7 @@ export default async function TimbraturaPage() {
                 </p>
                 {e.site && (
                   <p className="text-zinc-500">
-                    {clientDisplayName(e.site.client)} — {e.site.name}
+                    <Trunc text={clientDisplayName(e.site.client)} /> — <Trunc text={e.site.name} />
                   </p>
                 )}
               </div>

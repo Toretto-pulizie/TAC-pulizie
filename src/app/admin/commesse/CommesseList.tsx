@@ -5,15 +5,15 @@ import { Trunc } from "@/app/Trunc";
 import { ExcelHeader } from "@/app/ExcelHeader";
 import { passesColumnFilters } from "@/lib/excelFilter";
 import { compareValues } from "@/lib/sort";
-import type { CommessaRow } from "@/lib/commesse";
+import type { OffertaRow } from "@/lib/commesse";
 
-const OFFER_LABELS: Record<NonNullable<CommessaRow["offerStato"]>, string> = {
+const OFFER_LABELS: Record<NonNullable<OffertaRow["offerStato"]>, string> = {
   ACCETTATA: "Accettata",
   IN_TRATTATIVA: "In trattativa",
   RIFIUTATA: "Rifiutata",
 };
 
-const OFFER_CLASSES: Record<NonNullable<CommessaRow["offerStato"]>, string> = {
+const OFFER_CLASSES: Record<NonNullable<OffertaRow["offerStato"]>, string> = {
   ACCETTATA: "bg-green-100 text-green-700",
   IN_TRATTATIVA: "bg-amber-100 text-amber-700",
   RIFIUTATA: "bg-zinc-100 text-zinc-500",
@@ -27,11 +27,11 @@ function formatOre(n: number) {
   return n === 0 ? "—" : `${n.toFixed(1)}h`;
 }
 
-type Stato = "FATTURATA" | NonNullable<CommessaRow["offerStato"]> | "SENZA_OFFERTA";
+type Stato = "FATTURATA" | NonNullable<OffertaRow["offerStato"]> | "SENZA_OFFERTA";
 
 // Una sola voce: se ci sono fatture emesse conta "Fatturata" (l'offerta è già
 // andata avanti, "Accettata" sarebbe ridondante); le bozze non contano.
-function statoOf(r: CommessaRow): Stato {
+function statoOf(r: OffertaRow): Stato {
   if (r.ftStato === "FATTURATA") return "FATTURATA";
   return r.offerStato ?? "SENZA_OFFERTA";
 }
@@ -48,10 +48,10 @@ const STATO_CLASSES: Record<Stato, string> = {
   SENZA_OFFERTA: "bg-zinc-100 text-zinc-500",
 };
 
-type Row = CommessaRow & {
+type Row = OffertaRow & {
   statoLabel: string;
-  numeriLabel: string;
-  numeroMax: number;
+  numeroLabel: string;
+  numeroSort: number;
   cantieriLabel: string;
   mensileLabel: string;
   annuoLabel: string;
@@ -63,7 +63,7 @@ type Row = CommessaRow & {
   fatturatoLabel: string;
 };
 
-export function CommesseList({ rows }: { rows: CommessaRow[] }) {
+export function CommesseList({ rows }: { rows: OffertaRow[] }) {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -71,8 +71,8 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
   const rowsForFilter: Row[] = rows.map((r) => ({
     ...r,
     statoLabel: STATO_LABELS[statoOf(r)],
-    numeriLabel: r.numeri.join(", "),
-    numeroMax: Math.max(0, ...r.numeri),
+    numeroLabel: r.numero != null ? String(r.numero) : "—",
+    numeroSort: r.numero ?? 0,
     cantieriLabel: String(r.cantieri),
     mensileLabel: r.mensile ? formatEuro(r.mensile) : "—",
     annuoLabel: r.annuo ? formatEuro(r.annuo) : "—",
@@ -115,7 +115,7 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
       <table className="w-full min-w-[1280px] text-left text-sm">
         <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
           <tr>
-            {col("N°", "numeriLabel", "numeroMax")}
+            {col("N°", "numeroLabel", "numeroSort")}
             {col("Cliente", "clientName", "clientName")}
             {col("Stato", "statoLabel", "statoLabel")}
             {col("Cantieri", "cantieriLabel", "cantieri")}
@@ -131,8 +131,8 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
         </thead>
         <tbody>
           {sorted.map((r) => (
-            <tr key={r.clientId} className="border-b border-zinc-100 last:border-0">
-              <td className="px-3 py-3 font-medium text-zinc-900">{r.numeriLabel || "—"}</td>
+            <tr key={r.key} className="border-b border-zinc-100 last:border-0">
+              <td className="px-3 py-3 font-medium text-zinc-900">{r.numeroLabel}</td>
               <td className="px-3 py-3 font-medium text-zinc-900">
                 <Trunc text={r.clientName} />
               </td>

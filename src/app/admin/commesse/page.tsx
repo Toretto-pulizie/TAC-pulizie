@@ -1,6 +1,6 @@
 import { requireModule } from "@/lib/dal";
 import { MONTH_LABELS, monthRange } from "@/lib/dates";
-import { loadCommesse } from "@/lib/commesseData";
+import { loadCommessePerOfferta } from "@/lib/commesseData";
 import { CommesseList } from "./CommesseList";
 
 function formatEuro(n: number) {
@@ -33,7 +33,7 @@ export default async function CommessePage({
     range = monthRange(now.getFullYear(), month);
   }
 
-  const rows = await loadCommesse(range);
+  const rows = await loadCommessePerOfferta(range);
 
   const totContratto = rows.reduce((s, r) => s + r.contratto, 0);
   const totConsuntivo = rows.reduce((s, r) => s + r.consuntivo, 0);

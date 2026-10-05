@@ -181,3 +181,183 @@ export function computeCommesse({
 
   return rows.sort((x, y) => x.clientName.localeCompare(y.clientName, "it"));
 }
+
+// ---------------------------------------------------------------------------
+// Commesse per offerta: ogni offerta è una commessa, quindi una riga per ogni
+// numero d'offerta (82, 83, ...). Ore e consuntivo si attribuiscono alle
+// offerte accettate: se più righe d'offerta (anche di offerte diverse) coprono
+// lo stesso cantiere, le ore del mese si dividono in parti uguali tra le righe
+// (ciascuna col proprio tariffario a consuntivo), così non si raddoppiano. Le
+// fatture si collegano all'offerta da cui sono nate; quelle senza offerta
+// finiscono in una riga a parte per cliente ("Senza offerta").
+// ---------------------------------------------------------------------------
+
+type InvoiceInQ = InvoiceIn & { quoteId: string | null };
+
+export type OffertaRow = {
+  key: string;
+  quoteId: string | null;
+  numero: number | null;
+  clientId: string;
+  clientName: string;
+  offerStato: "ACCETTATA" | "IN_TRATTATIVA" | "RIFIUTATA" | null;
+  ftStato: "FATTURATA" | "BOZZA" | null;
+  cantieri: number;
+  mensile: number;
+  annuo: number;
+  amountsFromPending: boolean;
+  oreLavorate: number;
+  oreSpostamento: number;
+  contratto: number;
+  consuntivo: number;
+  scostamento: number | null;
+  nFatture: number;
+  fatturato: number;
+};
+
+export function computeCommessePerOfferta({
+  clients,
+  quotes,
+  entries,
+  invoices,
+}: {
+  clients: { id: string; name: string }[];
+  quotes: QuoteIn[];
+  entries: EntryIn[];
+  invoices: InvoiceInQ[];
+}): OffertaRow[] {
+  const acceptedBySite = new Map<string, { quoteId: string; qs: QuoteSite }[]>();
+  for (const q of quotes) {
+    if (q.status !== "ACCETTATO") continue;
+    for (const qs of q.sites) {
+      const list = acceptedBySite.get(qs.siteId) ?? [];
+      list.push({ quoteId: q.id, qs });
+      acceptedBySite.set(qs.siteId, list);
+    }
+  }
+
+  const entriesByMonth = new Map<string, EntryIn[]>();
+  for (const e of entries) {
+    const key = monthKey(e.timestamp);
+    const list = entriesByMonth.get(key) ?? [];
+    list.push(e);
+    entriesByMonth.set(key, list);
+  }
+
+  const agg = new Map<
+    string,
+    { ore: number; spost: number; contratto: number; consuntivo: number }
+  >();
+  const oneShotCounted = new Set<string>();
+  for (const monthEntries of entriesByMonth.values()) {
+    const totals = computeSiteTotals(monthEntries);
+    for (const [siteId, t] of totals) {
+      const accepted = acceptedBySite.get(siteId);
+      if (!accepted) continue;
+      const n = accepted.length;
+      for (const { quoteId, qs } of accepted) {
+        const a = agg.get(quoteId) ?? { ore: 0, spost: 0, contratto: 0, consuntivo: 0 };
+        const ore = t.workMinutes / 60 / n;
+        a.ore += ore;
+        a.spost += t.travelMinutes / 60 / n;
+        a.consuntivo += ore * qs.tariffaConsuntivo;
+        if (qs.serviceType === "ONE_SHOT") {
+          if (!oneShotCounted.has(qs.id)) {
+            oneShotCounted.add(qs.id);
+            a.contratto += vendita(qs);
+          }
+        } else {
+          a.contratto += vendita(qs);
+        }
+        agg.set(quoteId, a);
+      }
+    }
+  }
+
+  const clientName = new Map(clients.map((c) => [c.id, c.name]));
+  const invoicesByQuote = new Map<string, InvoiceInQ[]>();
+  const orphanByClient = new Map<string, InvoiceInQ[]>();
+  const quoteIds = new Set(quotes.map((q) => q.id));
+  for (const inv of invoices) {
+    if (inv.quoteId && quoteIds.has(inv.quoteId)) {
+      const list = invoicesByQuote.get(inv.quoteId) ?? [];
+      list.push(inv);
+      invoicesByQuote.set(inv.quoteId, list);
+    } else {
+      const list = orphanByClient.get(inv.clientId) ?? [];
+      list.push(inv);
+      orphanByClient.set(inv.clientId, list);
+    }
+  }
+
+  const ftSummary = (list: InvoiceInQ[]) => {
+    const emitted = list.filter((i) => i.stato !== "BOZZA");
+    return {
+      ftStato: (emitted.length > 0 ? "FATTURATA" : list.length > 0 ? "BOZZA" : null) as
+        | "FATTURATA"
+        | "BOZZA"
+        | null,
+      nFatture: emitted.filter((i) => i.tipoDocumento === "TD01").length,
+      fatturato: emitted.reduce(
+        (s, i) => s + (i.tipoDocumento === "TD04" ? -1 : 1) * i.importo,
+        0
+      ),
+    };
+  };
+
+  const rows: OffertaRow[] = [];
+  for (const q of quotes) {
+    const isAccepted = q.status === "ACCETTATO";
+    const a = agg.get(q.id) ?? { ore: 0, spost: 0, contratto: 0, consuntivo: 0 };
+    const mensile = q.sites
+      .filter((qs) => qs.serviceType !== "ONE_SHOT")
+      .reduce((s, qs) => s + vendita(qs), 0);
+    const annuo = q.sites.reduce((s, qs) => s + computeSoldAnnual(qs.serviceType, vendita(qs)), 0);
+    rows.push({
+      key: q.id,
+      quoteId: q.id,
+      numero: q.numeroOfferta,
+      clientId: q.clientId,
+      clientName: clientName.get(q.clientId) ?? "—",
+      offerStato: isAccepted
+        ? "ACCETTATA"
+        : q.status === "IN_TRATTATIVA"
+          ? "IN_TRATTATIVA"
+          : "RIFIUTATA",
+      cantieri: new Set(q.sites.map((qs) => qs.siteId)).size,
+      mensile,
+      annuo,
+      amountsFromPending: !isAccepted,
+      oreLavorate: a.ore,
+      oreSpostamento: a.spost,
+      contratto: a.contratto,
+      consuntivo: a.consuntivo,
+      scostamento: isAccepted ? a.contratto - a.consuntivo : null,
+      ...ftSummary(invoicesByQuote.get(q.id) ?? []),
+    });
+  }
+  for (const [clientId, list] of orphanByClient) {
+    rows.push({
+      key: `senza-offerta-${clientId}`,
+      quoteId: null,
+      numero: null,
+      clientId,
+      clientName: clientName.get(clientId) ?? "—",
+      offerStato: null,
+      cantieri: 0,
+      mensile: 0,
+      annuo: 0,
+      amountsFromPending: false,
+      oreLavorate: 0,
+      oreSpostamento: 0,
+      contratto: 0,
+      consuntivo: 0,
+      scostamento: null,
+      ...ftSummary(list),
+    });
+  }
+
+  return rows.sort(
+    (x, y) => (y.numero ?? -1) - (x.numero ?? -1) || x.clientName.localeCompare(y.clientName, "it")
+  );
+}
