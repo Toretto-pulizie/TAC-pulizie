@@ -26,9 +26,31 @@ function formatOre(n: number) {
   return n === 0 ? "—" : `${n.toFixed(1)}h`;
 }
 
+type Stato = "FATTURATA" | NonNullable<CommessaRow["offerStato"]> | "SENZA_OFFERTA";
+
+// Una sola voce: se ci sono fatture emesse conta "Fatturata" (l'offerta è già
+// andata avanti, "Accettata" sarebbe ridondante); le bozze non contano.
+function statoOf(r: CommessaRow): Stato {
+  if (r.ftStato === "FATTURATA") return "FATTURATA";
+  return r.offerStato ?? "SENZA_OFFERTA";
+}
+
+const STATO_LABELS: Record<Stato, string> = {
+  FATTURATA: "Fatturata",
+  ...OFFER_LABELS,
+  SENZA_OFFERTA: "Senza offerta",
+};
+
+const STATO_CLASSES: Record<Stato, string> = {
+  FATTURATA: "bg-blue-100 text-blue-700",
+  ...OFFER_CLASSES,
+  SENZA_OFFERTA: "bg-zinc-100 text-zinc-500",
+};
+
 type Row = CommessaRow & {
   statoLabel: string;
   numeriLabel: string;
+  numeroMax: number;
   cantieriLabel: string;
   mensileLabel: string;
   annuoLabel: string;
@@ -48,11 +70,9 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
 
   const rowsForFilter: Row[] = rows.map((r) => ({
     ...r,
-    statoLabel:
-      [r.offerStato ? OFFER_LABELS[r.offerStato] : "Senza offerta", r.ftStato === "FATTURATA" ? "Fatturata" : r.ftStato === "BOZZA" ? "FT in bozza" : null]
-        .filter(Boolean)
-        .join(" · "),
+    statoLabel: STATO_LABELS[statoOf(r)],
     numeriLabel: r.numeri.join(", "),
+    numeroMax: Math.max(0, ...r.numeri),
     cantieriLabel: String(r.cantieri),
     mensileLabel: r.mensile ? formatEuro(r.mensile) : "—",
     annuoLabel: r.annuo ? formatEuro(r.annuo) : "—",
@@ -96,9 +116,9 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
       <table className="w-full min-w-[1280px] text-left text-sm">
         <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
           <tr>
+            {col("N°", "numeriLabel", "numeroMax")}
             {col("Cliente", "clientName", "clientName")}
             {col("Stato", "statoLabel", "statoLabel")}
-            {col("Offerte N°", "numeriLabel", "numeriLabel")}
             {col("Cantieri", "cantieriLabel", "cantieri")}
             {col("Mensile", "mensileLabel", "mensile")}
             {col("Annuo", "annuoLabel", "annuo")}
@@ -115,31 +135,13 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
         <tbody>
           {sorted.map((r) => (
             <tr key={r.clientId} className="border-b border-zinc-100 last:border-0">
+              <td className="px-3 py-3 font-medium text-zinc-900">{r.numeriLabel || "—"}</td>
               <td className="px-3 py-3 font-medium text-zinc-900">{r.clientName}</td>
               <td className="px-3 py-3">
-                <div className="flex flex-wrap gap-1">
-                  {r.offerStato ? (
-                    <span className={`rounded-full px-2 py-1 text-xs ${OFFER_CLASSES[r.offerStato]}`}>
-                      {OFFER_LABELS[r.offerStato]}
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs text-zinc-500">
-                      Senza offerta
-                    </span>
-                  )}
-                  {r.ftStato === "FATTURATA" && (
-                    <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
-                      Fatturata
-                    </span>
-                  )}
-                  {r.ftStato === "BOZZA" && (
-                    <span className="rounded-full bg-violet-100 px-2 py-1 text-xs text-violet-700">
-                      FT in bozza
-                    </span>
-                  )}
-                </div>
+                <span className={`rounded-full px-2 py-1 text-xs ${STATO_CLASSES[statoOf(r)]}`}>
+                  {STATO_LABELS[statoOf(r)]}
+                </span>
               </td>
-              <td className="px-3 py-3 text-zinc-500">{r.numeriLabel || "—"}</td>
               <td className="px-3 py-3 text-zinc-500">{r.cantieri || "—"}</td>
               <td
                 className={`px-3 py-3 ${r.amountsFromPending ? "italic text-zinc-400" : "text-zinc-500"}`}

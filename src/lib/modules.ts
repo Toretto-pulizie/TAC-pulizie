@@ -36,7 +36,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
 
 export const MODULE_GROUPS: { label: string; keys: ModuleKey[] }[] = [
   { label: "Anagrafiche", keys: ["clienti", "fornitori", "collaboratori"] },
-  { label: "Gestione", keys: ["pianificazione", "preventivi", "consuntivi", "commesse", "sopralluoghi"] },
+  { label: "Gestione", keys: ["commesse", "pianificazione", "preventivi", "consuntivi", "sopralluoghi"] },
   { label: "Produzione", keys: ["timbrature", "presenze", "permessi"] },
   { label: "Contabilità", keys: ["fatturazione"] },
   { label: "Utilità", keys: ["statistiche"] },

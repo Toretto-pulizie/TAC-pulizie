@@ -76,7 +76,7 @@ Visibile solo a chi ha il permesso **Amministrazione**. Due pulsanti:
 
 Il menu è diviso in cinque gruppi, in quest'ordine:
 - **Anagrafiche**: Clienti, Fornitori, Collaboratori (le schede anagrafiche dei collaboratori — dati personali, non l'accesso al programma).
-- **Gestione**: Pianificazione, Offerte, Consuntivi, Commesse, Sopralluoghi.
+- **Gestione**: Commesse, Pianificazione, Offerte, Consuntivi, Sopralluoghi.
 - **Produzione**: Timbrature, Presenze, Permessi (i moduli operativi che i collaboratori usano ogni giorno).
 - **Contabilità**: Fatturazione.
 - **Utilità**: Statistiche.
@@ -142,8 +142,9 @@ Il pulsante **+ Aggiungi permesso**, in alto a destra nell'intestazione, apre un
 
 ### Commesse (`/admin/commesse`)
 Elenco riepilogativo, **una riga per cliente**, che mette insieme in un colpo d'occhio offerte, consuntivo e fatture. Solo lettura: serve a vedere a che punto è ogni cliente. Sono presenti i clienti che hanno almeno un'offerta o una fattura. In cima, quattro totali: **Contrattualizzato**, **Consuntivato**, **Fatturato**, **Da fatturare**. I filtri **Anno** e **Mese** restringono ore, consuntivo e fatture al periodo scelto; senza filtri (Tutti) i numeri vanno dall'inizio a oggi. Filtro e ordinamento su ogni colonna, come in Excel.
-- **Stato**: lo stato dell'offerta del cliente — **Accettata**, **In trattativa** o **Rifiutata** (con più offerte prevale la più avanzata) — e, se ci sono fatture, l'etichetta **Fatturata** (oppure **FT in bozza** se ci sono solo bozze).
-- **Offerte N°** e **Cantieri**: i numeri delle offerte considerate e quanti cantieri coprono. **Mensile** e **Annuo** sono gli importi di vendita (Adeguamento se presente, altrimenti Netto); se il cliente non ha offerte accettate compaiono in grigio corsivo gli importi di quelle in trattativa.
+- **N°** (prima colonna): il numero delle offerte considerate per quel cliente (più numeri se ne ha più d'una).
+- **Stato**: una sola voce per cliente — **Fatturata** se ha almeno una fattura emessa (in quel caso "Accettata" non serve e non compare; le bozze non contano), altrimenti lo stato dell'offerta: **Accettata**, **In trattativa** o **Rifiutata** (con più offerte prevale la più avanzata), oppure **Senza offerta**.
+- **Cantieri**: quanti cantieri coprono le offerte considerate. **Mensile** e **Annuo** sono gli importi di vendita (Adeguamento se presente, altrimenti Netto); se il cliente non ha offerte accettate compaiono in grigio corsivo gli importi di quelle in trattativa.
 - **Ore lavorate**, **Ore spost.**, **Consuntivo** (ore × tariffa a consuntivo) e **Scostamento** (contrattualizzato meno consuntivo, rosso se negativo): calcolati sulle sole offerte accettate, con la stessa regola di Consuntivi — un contratto conta in un mese solo se in quel mese sul cantiere c'è almeno un'ora lavorata. Le ore di un cantiere con più righe d'offerta si contano una volta sola.
 - **N° FT**, **Fatturato** (imponibile delle fatture emesse, note di credito sottratte), **Ultima FT** (numero e data) e **Da fatturare** (contrattualizzato meno già fatturato, mai sotto zero). Le bozze non contano.
 
