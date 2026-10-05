@@ -532,6 +532,11 @@ export function QuoteSiteFieldset({
       <div className="flex flex-col gap-3 border-t border-zinc-200 pt-3">
         <div className="flex flex-col gap-1 text-sm">
           Note
+          {/* Larghezza e carattere identici alla colonna Descrizione del PDF
+              (testo 409,7 px, Arial 12/16 px, circa 55 caratteri in
+              maiuscolo): quello che va a capo qui va a capo anche in
+              stampa. 436 px = 410 di testo + 2×12 di padding + 2 di bordo. */}
+          <div className="flex flex-col" style={{ width: 436, maxWidth: "100%" }}>
           <div className="flex gap-1 rounded-t-lg border border-b-0 border-zinc-300 bg-zinc-50 p-1">
             <button
               type="button"
@@ -567,9 +572,14 @@ export function QuoteSiteFieldset({
             suppressContentEditableWarning
             onInput={syncNoteValue}
             onPaste={handleNotePaste}
-            className="min-h-[220px] rounded-b-lg border border-zinc-300 px-3 py-2 focus:outline-none"
+            className="min-h-[220px] break-words rounded-b-lg border border-zinc-300 px-3 py-2 text-xs leading-4 text-zinc-700 focus:outline-none"
           />
+          </div>
           <textarea ref={noteRef} name={name("note")} hidden readOnly />
+          <p className="text-[11px] text-zinc-400">
+            Il campo ha la stessa larghezza della stampa: ogni riga qui è una riga del PDF
+            (circa 55 caratteri in maiuscolo).
+          </p>
         </div>
 
         {phrases.length > 0 && (
