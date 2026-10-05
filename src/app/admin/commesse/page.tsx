@@ -1,8 +1,6 @@
 import { requireModule } from "@/lib/dal";
-import { prisma } from "@/lib/prisma";
-import { clientDisplayName } from "@/lib/clients";
 import { MONTH_LABELS, monthRange } from "@/lib/dates";
-import { computeCommesse } from "@/lib/commesse";
+import { loadCommesse } from "@/lib/commesseData";
 import { CommesseList } from "./CommesseList";
 
 function formatEuro(n: number) {
@@ -35,57 +33,21 @@ export default async function CommessePage({
     range = monthRange(now.getFullYear(), month);
   }
 
-  const [clients, quotes, entries, invoices] = await Promise.all([
-    prisma.client.findMany(),
-    prisma.quote.findMany({ include: { sites: true } }),
-    prisma.timeEntry.findMany({
-      where: range ? { timestamp: { gte: range.start, lte: range.end } } : {},
-      select: { userId: true, siteId: true, type: true, timestamp: true, sessionId: true },
-    }),
-    prisma.invoice.findMany({
-      where: range ? { data: { gte: range.start, lte: range.end } } : {},
-      select: {
-        clientId: true,
-        tipoDocumento: true,
-        stato: true,
-        anno: true,
-        numero: true,
-        data: true,
-        righe: { select: { importo: true } },
-      },
-    }),
-  ]);
-
-  const rows = computeCommesse({
-    clients: clients.map((c) => ({ id: c.id, name: clientDisplayName(c) })),
-    quotes,
-    entries,
-    invoices: invoices.map((i) => ({
-      clientId: i.clientId,
-      tipoDocumento: i.tipoDocumento,
-      stato: i.stato,
-      anno: i.anno,
-      numero: i.numero,
-      data: i.data,
-      importo: i.righe.reduce((s, r) => s + r.importo, 0),
-    })),
-  });
+  const rows = await loadCommesse(range);
 
   const totContratto = rows.reduce((s, r) => s + r.contratto, 0);
   const totConsuntivo = rows.reduce((s, r) => s + r.consuntivo, 0);
   const totFatturato = rows.reduce((s, r) => s + r.fatturato, 0);
-  const totDaFatturare = rows.reduce((s, r) => s + (r.daFatturare ?? 0), 0);
 
   const years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
-      <section className="grid gap-3 sm:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-3">
         {[
           { label: "Contrattualizzato", value: totContratto },
           { label: "Consuntivato", value: totConsuntivo },
           { label: "Fatturato", value: totFatturato },
-          { label: "Da fatturare", value: totDaFatturare },
         ].map((c) => (
           <div key={c.label} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-zinc-500">{c.label}</p>

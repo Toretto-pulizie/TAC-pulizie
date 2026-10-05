@@ -60,7 +60,6 @@ type Row = CommessaRow & {
   scostamentoLabel: string;
   nFattureLabel: string;
   fatturatoLabel: string;
-  daFatturareLabel: string;
 };
 
 export function CommesseList({ rows }: { rows: CommessaRow[] }) {
@@ -82,7 +81,6 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
     scostamentoLabel: r.scostamento != null ? formatEuro(r.scostamento) : "—",
     nFattureLabel: String(r.nFatture),
     fatturatoLabel: r.fatturato ? formatEuro(r.fatturato) : "—",
-    daFatturareLabel: r.daFatturare != null ? formatEuro(r.daFatturare) : "—",
   }));
 
   const filtered = rowsForFilter.filter((r) => passesColumnFilters(r, filters));
@@ -128,7 +126,6 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
             {col("Consuntivo", "consuntivoLabel", "consuntivo")}
             {col("Scostamento", "scostamentoLabel", "scostamento")}
             {col("Fatturato", "fatturatoLabel", "fatturato")}
-            {col("Da fatturare", "daFatturareLabel", "daFatturare")}
           </tr>
         </thead>
         <tbody>
@@ -171,17 +168,11 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
                 {r.scostamentoLabel}
               </td>
               <td className="px-3 py-3 text-zinc-500">{r.fatturatoLabel}</td>
-              <td
-                className="px-3 py-3 font-medium text-zinc-900"
-                title="Contrattualizzato nel periodo meno quanto già fatturato"
-              >
-                {r.daFatturareLabel}
-              </td>
             </tr>
           ))}
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={13} className="px-4 py-6 text-center text-zinc-400">
+              <td colSpan={12} className="px-4 py-6 text-center text-zinc-400">
                 {rows.length === 0 ? "Nessuna commessa ancora." : "Nessun risultato."}
               </td>
             </tr>

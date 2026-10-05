@@ -6,8 +6,13 @@ import { getServiceTypeLabels, getServiceTypeMostraCadenza } from "@/lib/service
 import { InvoiceForm } from "../InvoiceForm";
 import { buildSiteOptions } from "../buildSiteOptions";
 
-export default async function NuovaFatturaPage() {
+export default async function NuovaFatturaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ clientId?: string }>;
+}) {
   await requireModule("fatturazione");
+  const { clientId } = await searchParams;
 
   const [clientsRaw, quotesRaw, serviceLabels, mostraCadenzaSettings] = await Promise.all([
     prisma.client.findMany(),
@@ -38,6 +43,7 @@ export default async function NuovaFatturaPage() {
         clients={clients}
         sites={sites}
         defaultData={new Date().toISOString().slice(0, 10)}
+        initialClientId={clients.some((c) => c.id === clientId) ? clientId : undefined}
       />
     </div>
   );

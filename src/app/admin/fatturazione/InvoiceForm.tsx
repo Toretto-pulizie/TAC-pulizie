@@ -63,11 +63,15 @@ export function InvoiceForm({
   defaultData,
   editing,
   isCreditNote = false,
+  initialClientId,
 }: {
   clients: ClientOption[];
   sites: SiteOption[];
   defaultData: string;
   editing?: EditingInvoice;
+  // Cliente già scelto all'apertura (es. dal pulsante "Crea fattura" della
+  // sezione "Da fatturare").
+  initialClientId?: string;
   // Nota di credito: il cliente è quello della fattura stornata e non si
   // sceglie; le righe si tolgono o riducono a mano (niente cantieri).
   isCreditNote?: boolean;
@@ -75,9 +79,10 @@ export function InvoiceForm({
   const router = useRouter();
   const [state, action, pending] = useActionState(saveInvoice, undefined);
 
-  const [clientId, setClientId] = useState(editing?.clientId ?? "");
+  const startClientId = editing?.clientId ?? initialClientId ?? "";
+  const [clientId, setClientId] = useState(startClientId);
   const [regimeIva, setRegimeIva] = useState(
-    editing?.regimeIva ?? regimeDefault(clients.find((c) => c.id === editing?.clientId)?.tipo)
+    editing?.regimeIva ?? regimeDefault(clients.find((c) => c.id === startClientId)?.tipo)
   );
   const [righe, setRighe] = useState<Line[]>(editing?.righe.length ? editing.righe : [emptyLine()]);
 

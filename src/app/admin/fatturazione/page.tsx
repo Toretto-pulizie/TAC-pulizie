@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { clientDisplayName } from "@/lib/clients";
+import { loadCommesse } from "@/lib/commesseData";
 import { InvoiceListActions } from "./InvoiceListActions";
 
 function formatEuro(n: number) {
@@ -33,10 +34,20 @@ const STATO_COLORS: Record<string, string> = {
 export default async function FatturazionePage() {
   await requireModule("fatturazione");
 
-  const invoices = await prisma.invoice.findMany({
-    include: { client: true, righe: true },
-    orderBy: [{ data: "desc" }, { createdAt: "desc" }],
-  });
+  const [invoices, commesse] = await Promise.all([
+    prisma.invoice.findMany({
+      include: { client: true, righe: true },
+      orderBy: [{ data: "desc" }, { createdAt: "desc" }],
+    }),
+    loadCommesse(null),
+  ]);
+
+  // Clienti con offerte accettate di cui resta ancora qualcosa da fatturare
+  // (stesso calcolo delle Commesse, su tutto il periodo).
+  const daFatturare = commesse
+    .filter((c) => (c.daFatturare ?? 0) > 0.005)
+    .sort((a, b) => (b.daFatturare ?? 0) - (a.daFatturare ?? 0));
+  const totaleDaFatturare = daFatturare.reduce((s, c) => s + (c.daFatturare ?? 0), 0);
 
   const rows = invoices.map((inv) => ({
     id: inv.id,
@@ -71,6 +82,54 @@ export default async function FatturazionePage() {
           + Nuova fattura
         </Link>
       </div>
+
+      {daFatturare.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-900">
+              Da fatturare: {formatEuro(totaleDaFatturare)}
+            </h2>
+            <p className="text-xs text-zinc-400">
+              Clienti con offerte accettate di cui non è ancora stato fatturato tutto il lavoro
+              svolto (contrattualizzato meno fatturato, dall&apos;inizio a oggi).
+            </p>
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+            <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+              <thead className="border-b border-zinc-300 bg-zinc-100 text-zinc-500">
+                <tr>
+                  {["Offerte N°", "Cliente", "Contrattualizzato", "Fatturato", "Da fatturare", ""].map((h) => (
+                    <th key={h} className="px-3 py-2 font-semibold">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {daFatturare.map((c) => (
+                  <tr key={c.clientId} className="border-b border-zinc-100 last:border-0">
+                    <td className="px-3 py-2 text-zinc-500">{c.numeri.join(", ") || "—"}</td>
+                    <td className="px-3 py-2 font-medium text-zinc-900">{c.clientName}</td>
+                    <td className="px-3 py-2 text-zinc-500">{formatEuro(c.contratto)}</td>
+                    <td className="px-3 py-2 text-zinc-500">{formatEuro(c.fatturato)}</td>
+                    <td className="px-3 py-2 font-semibold text-zinc-900">
+                      {formatEuro(c.daFatturare ?? 0)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <Link
+                        href={`/admin/fatturazione/nuova?clientId=${c.clientId}`}
+                        className="rounded-lg border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                      >
+                        Crea fattura
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
         <table className="w-full min-w-[720px] border-collapse text-left text-sm">
