@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveQuote } from "@/app/actions/quotes";
+import { SearchSelect } from "@/app/SearchSelect";
 import {
   QuoteSiteFieldset,
   type ClientOption,
@@ -111,20 +112,14 @@ export function QuoteForm({
       <div className="flex flex-wrap items-start gap-3">
         <label className="flex flex-col gap-1 text-sm">
           Cliente
-          <select
+          <SearchSelect
             name="clientId"
             required
+            options={clients.map((c) => ({ value: c.id, label: c.name }))}
             value={selectedClientId}
-            onChange={(e) => setSelectedClientId(e.target.value)}
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          >
-            <option value="">Seleziona...</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            onChange={setSelectedClientId}
+            placeholder="Scrivi il cliente o scegli..."
+          />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Data creazione

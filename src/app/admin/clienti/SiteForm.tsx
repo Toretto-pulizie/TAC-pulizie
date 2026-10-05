@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { createSite } from "@/app/actions/admin";
+import { SearchSelect } from "@/app/SearchSelect";
 
 export function SiteForm({
   clients,
@@ -25,18 +26,12 @@ export function SiteForm({
     >
       <label className="flex flex-col gap-1 text-sm">
         Cliente
-        <select
+        <SearchSelect
           name="clientId"
           required
-          className="rounded-lg border border-zinc-300 px-3 py-2"
-        >
-          <option value="">Seleziona...</option>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          options={clients.map((c) => ({ value: c.id, label: c.name }))}
+          placeholder="Scrivi il cliente o scegli..."
+        />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         Nome sede/cantiere

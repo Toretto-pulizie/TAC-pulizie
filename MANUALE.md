@@ -51,7 +51,7 @@ Se il titolare ha assegnato al collaboratore il permesso **Amministrazione** (da
 
 **Timbratura** — pensata per il minor numero di tocchi possibile: lo spostamento tra un cantiere e l'altro non si segna più con un tasto dedicato, si calcola da solo come tempo trascorso dall'ultimo momento segnato.
 1. A inizio turno si preme **Inizio giornata** (un solo tasto, una volta al giorno).
-2. Si sceglie il cantiere da una tendina (comprende anche la voce **Sopralluogo**); appare subito **"Confermi? [nome cantiere]"** con **Conferma**/**Annulla** — confermando si è già "al lavoro", senza altro tocco.
+2. Si sceglie il cantiere da un campo con ricerca (si scrivono poche lettere del cliente, es. "tav", e si tocca il cantiere; comprende anche la voce **Sopralluogo**); appare subito **"Confermi? [nome cantiere]"** con **Conferma**/**Annulla** — confermando si è già "al lavoro", senza altro tocco.
 3. A fine cantiere si preme **Fine lavoro** (o **Fine sopralluogo**): si apre una schermata con tre possibilità, in qualsiasi combinazione e ordine:
    - **Pausa** (diventa **Fine pausa**; se invece si sceglie subito il prossimo cantiere mentre la pausa è aperta, si chiude da sola in quell'istante, senza doverla chiudere a mano prima);
    - la tendina **Prossimo cantiere** (stessa lista, comprende anche il Sopralluogo): selezionarlo avvia subito il lavoro lì, con lo stesso popup di conferma del punto 2;
@@ -84,6 +84,8 @@ Il menu è diviso in cinque gruppi, in quest'ordine:
 In fondo al menu resta solo **Impostazioni** (solo titolare) — **Utenti** ed **Esci** sono nel menu utente in alto a destra (vedi sopra).
 
 Ogni azione di eliminazione (o "Annulla" per le richieste di permesso) chiede conferma prima di procedere.
+
+**Campi con ricerca**: dove bisogna scegliere un Cliente o un cantiere (Nuova fattura, Offerta, Nuova sede, Pianificazione, inserimento manuale e celle Cliente/Sede di Timbrature, timbratura del collaboratore) non c'è più una tendina da scorrere: si clicca nel campo e si **scrivono poche lettere** (anche in mezzo al nome, senza badare a maiuscole e accenti), l'elenco si restringe e si sceglie con un clic o con le frecce ↑↓ e **Invio**. Cliccando nel campo senza scrivere si vede l'elenco completo; **Esc** chiude senza cambiare. Le tendine con poche voci fisse (mesi, anni, tipi, ruoli) restano come prima.
 
 ### Timbrature (`/admin/timbrature`)
 Elenco delle timbrature registrate, filtrabile per **Da**/**A** (intervallo di date) e **Collaboratore**. Mostra per ciascun collaboratore le ore totali di lavoro e spostamento nel periodo (i Sopralluoghi non sono inclusi in questo totale — vedi sotto), e una griglia dati con Collaboratore, Tipo, Cliente, Sede, Data, Inizio, Fine, Ore lavoro, Spostamento, GPS e Note.

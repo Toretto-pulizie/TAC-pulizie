@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateSessionTime, createManualSession, deleteSession } from "@/app/actions/timeEntries";
 import type { ActivityType } from "@/lib/timeCalc";
+import { SearchSelect } from "@/app/SearchSelect";
 
 export type SessionRow = {
   startId: string;
@@ -528,34 +529,29 @@ function ManualSessionForm({
       </label>
       <label className="flex min-w-[12rem] flex-col gap-1 text-xs">
         Cliente
-        <select
+        <SearchSelect
+          options={clients.map((c) => ({ value: c.id, label: c.name }))}
           value={selectedClientId}
-          onChange={(e) => setSelectedClientId(e.target.value)}
+          onChange={setSelectedClientId}
+          emptyLabel="Tutti"
+          placeholder="Scrivi il cliente..."
           className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
-        >
-          <option value="">Tutti</option>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+        />
       </label>
       <label className="flex min-w-[14rem] flex-col gap-1 text-xs">
         Sede{activityType === "SOPRALLUOGO" && " (se cliente esistente)"}
-        <select
+        <SearchSelect
           key={selectedClientId}
           name="siteId"
           required={activityType === "LAVORO"}
+          options={sitesForClient.map((s) => ({
+            value: s.id,
+            label: selectedClientId ? s.siteName : `${s.clientName} — ${s.siteName}`,
+          }))}
+          emptyLabel={activityType === "SOPRALLUOGO" ? "Nessuna / non in anagrafica" : undefined}
+          placeholder="Scrivi il cliente o la sede..."
           className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
-        >
-          <option value="">{activityType === "SOPRALLUOGO" ? "Nessuna / non in anagrafica" : "Seleziona..."}</option>
-          {sitesForClient.map((s) => (
-            <option key={s.id} value={s.id}>
-              {selectedClientId ? s.siteName : `${s.clientName} — ${s.siteName}`}
-            </option>
-          ))}
-        </select>
+        />
       </label>
       {activityType === "SOPRALLUOGO" && (
         <label className="flex min-w-[12rem] flex-col gap-1 text-xs">
@@ -689,19 +685,18 @@ function GroupBlock({
     const isEditing = editing?.startId === s.startId && editing.field === field;
     if (isEditing) {
       return (
-        <select
-          autoFocus
-          value={editing!.value}
-          onChange={(e) => onCommit(s, { field, value: e.target.value })}
-          onBlur={onCancel}
-          className={`${width} rounded border border-blue-400 px-1 py-0.5 text-xs`}
-        >
-          {options.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        <div className={width}>
+          <SearchSelect
+            autoFocus
+            options={options}
+            value={editing!.value}
+            onChange={(v) => v && onCommit(s, { field, value: v })}
+            onClose={onCancel}
+            wrapperClassName="min-w-0"
+            placeholder="Scrivi per cercare..."
+            className="rounded border border-blue-400 px-1 py-0.5 text-xs"
+          />
+        </div>
       );
     }
     return (

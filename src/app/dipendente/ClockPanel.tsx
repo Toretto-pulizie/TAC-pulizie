@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { punch } from "@/app/actions/timeEntries";
+import { SearchSelect } from "@/app/SearchSelect";
 
 type Site = { id: string; label: string };
 type Status = "NESSUNA_GIORNATA" | "SCEGLI_CANTIERE" | "LAVORO" | "SOPRALLUOGO" | "HUB";
@@ -62,8 +63,7 @@ export function ClockPanel({
     });
   }
 
-  function handleSelect(e: React.ChangeEvent<HTMLSelectElement>) {
-    const value = e.target.value;
+  function handleSelect(value: string) {
     if (!value) return;
     if (value === SOPRALLUOGO_VALUE) {
       setPendingChoice({ siteId: null, label: "Sopralluogo", sopralluogo: true });
@@ -82,18 +82,10 @@ export function ClockPanel({
     setPendingChoice(null);
   }
 
-  const siteOptions = (
-    <>
-      <option value="">Seleziona...</option>
-      {sites.length === 0 && <option value="">Nessun cantiere</option>}
-      {sites.map((s) => (
-        <option key={s.id} value={s.id}>
-          {s.label}
-        </option>
-      ))}
-      <option value={SOPRALLUOGO_VALUE}>Sopralluogo</option>
-    </>
-  );
+  const siteOptions = [
+    ...sites.map((s) => ({ value: s.id, label: s.label })),
+    { value: SOPRALLUOGO_VALUE, label: "Sopralluogo" },
+  ];
 
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
@@ -133,13 +125,12 @@ export function ClockPanel({
               <span className="text-sm font-medium text-zinc-700">
                 Scegli il cantiere
               </span>
-              <select
-                defaultValue=""
+              <SearchSelect
+                options={siteOptions}
                 onChange={handleSelect}
+                placeholder="Scrivi il cliente o scegli..."
                 className="rounded-lg border border-zinc-300 px-3 py-3 text-base"
-              >
-                {siteOptions}
-              </select>
+              />
             </label>
           )}
 
@@ -190,13 +181,12 @@ export function ClockPanel({
                 <span className="text-sm font-medium text-zinc-700">
                   Prossimo cantiere
                 </span>
-                <select
-                  defaultValue=""
+                <SearchSelect
+                  options={siteOptions}
                   onChange={handleSelect}
+                  placeholder="Scrivi il cliente o scegli..."
                   className="rounded-lg border border-zinc-300 px-3 py-3 text-base"
-                >
-                  {siteOptions}
-                </select>
+                />
               </label>
 
               <button

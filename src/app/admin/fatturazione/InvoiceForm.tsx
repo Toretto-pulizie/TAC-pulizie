@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveInvoice } from "@/app/actions/invoices";
+import { SearchSelect } from "@/app/SearchSelect";
 
 type ClientOption = { id: string; name: string; tipo: string };
 
@@ -155,21 +156,15 @@ export function InvoiceForm({
         <label className="flex flex-col gap-1 text-sm">
           Cliente
           {isCreditNote && <input type="hidden" name="clientId" value={clientId} />}
-          <select
+          <SearchSelect
             name={isCreditNote ? undefined : "clientId"}
+            options={clients.map((c) => ({ value: c.id, label: c.name }))}
             value={clientId}
-            onChange={(e) => handleClientChange(e.target.value)}
+            onChange={handleClientChange}
             required
             disabled={isCreditNote}
-            className="rounded-lg border border-zinc-300 px-3 py-2 disabled:bg-zinc-100"
-          >
-            <option value="">Seleziona...</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Scrivi il cliente o scegli..."
+          />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Data

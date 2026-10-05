@@ -10,6 +10,7 @@ import {
 } from "react";
 import { createShift, updateShiftGroup, checkShiftConflicts } from "@/app/actions/shifts";
 import { createShiftPlan, deleteShiftPlans } from "@/app/actions/shiftPlans";
+import { SearchSelect } from "@/app/SearchSelect";
 import { toDateInputValue, formatTime } from "@/lib/dates";
 import { ShiftConflictDialog, hasWarnings } from "./ShiftConflictDialog";
 import type { ShiftConflicts } from "@/lib/shiftConflicts";
@@ -320,19 +321,14 @@ export function TurnoForm({
       {isRicorrente && quoteSites.length > 0 && (
         <label className="flex flex-col gap-1 text-sm">
           Da offerta continuativa (opzionale)
-          <select
+          <SearchSelect
             name="quoteSiteId"
+            options={quoteSites.map((qs) => ({ value: qs.id, label: qs.label }))}
             value={quoteSiteId}
-            onChange={(e) => handleQuoteSiteChange(e.target.value)}
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          >
-            <option value="">— Nessuno —</option>
-            {quoteSites.map((qs) => (
-              <option key={qs.id} value={qs.id}>
-                {qs.label}
-              </option>
-            ))}
-          </select>
+            onChange={handleQuoteSiteChange}
+            emptyLabel="— Nessuno —"
+            placeholder="Scrivi per cercare..."
+          />
         </label>
       )}
 
@@ -356,20 +352,14 @@ export function TurnoForm({
         </div>
         <label className="flex flex-col gap-1 text-sm">
           Cliente / cantiere
-          <select
+          <SearchSelect
             name="siteId"
+            options={sites.map((s) => ({ value: s.id, label: s.label }))}
             value={siteId}
-            onChange={(e) => handleSiteChange(e.target.value)}
+            onChange={handleSiteChange}
             required
-            className="rounded-lg border border-zinc-300 px-3 py-2"
-          >
-            <option value="">Seleziona...</option>
-            {sites.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+            placeholder="Scrivi il cliente o scegli..."
+          />
         </label>
         {!isRicorrente && (
           <label className="flex flex-col gap-1 text-sm">
