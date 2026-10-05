@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Trunc } from "@/app/Trunc";
 import { useTransition } from "react";
 import { deleteCollaboratore } from "@/app/actions/collaboratori";
 
@@ -29,7 +30,7 @@ export function CollaboratoreRow({
         {String(codiceCollaboratore).padStart(4, "0")}
       </td>
       <td className="px-3 py-1.5 font-medium text-zinc-900">
-        {cognome ?? ""} {nome}
+        <Trunc text={`${cognome ?? ""} ${nome}`.trim()} />
       </td>
       <td className="px-3 py-1.5 text-zinc-500">{citta ?? "—"}</td>
       <td className="px-3 py-1.5 text-zinc-500">{telefono ?? "—"}</td>

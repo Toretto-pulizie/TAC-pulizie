@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Trunc } from "@/app/Trunc";
 import { redirect } from "next/navigation";
 import { verifySession, getCurrentUser } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
@@ -316,10 +317,11 @@ export default async function AdminHomePage() {
                       >
                         <div>
                           <p className="font-medium text-zinc-900">
-                            {s.user.name}
+                            <Trunc text={s.user.name} />
                           </p>
                           <p className="text-zinc-500">
-                            {clientDisplayName(s.site.client)} — {s.site.name}
+                            <Trunc text={clientDisplayName(s.site.client)} /> —{" "}
+                            <Trunc text={s.site.name} />
                           </p>
                         </div>
                         <p className="shrink-0 text-zinc-500">
@@ -353,7 +355,7 @@ export default async function AdminHomePage() {
                         >
                           <div>
                             <p className="font-medium text-zinc-900">
-                              {r.user.name}
+                              <Trunc text={r.user.name} />
                             </p>
                             <p className="text-zinc-500">
                               {TIPO_LABELS[r.tipo]}

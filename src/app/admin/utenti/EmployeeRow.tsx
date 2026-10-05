@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Trunc } from "@/app/Trunc";
 import { useTransition } from "react";
 import { setEmployeeActive } from "@/app/actions/admin";
 
@@ -27,8 +28,10 @@ export function EmployeeRow({
 
   return (
     <tr className="border-b border-zinc-100 last:border-0">
-      <td className="px-4 py-3">{name}</td>
-      <td className="px-4 py-3">{cognome ?? "—"}</td>
+      <td className="px-4 py-3">
+        <Trunc text={name} />
+      </td>
+      <td className="px-4 py-3">{cognome ? <Trunc text={cognome} /> : "—"}</td>
       <td className="px-4 py-3 text-zinc-500">{telefono ?? "—"}</td>
       <td className="px-4 py-3 text-zinc-500">{email}</td>
       <td className="px-4 py-3 text-zinc-500">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { Trunc } from "@/app/Trunc";
 import { setLeaveRequestStatus, deleteLeaveRequest } from "@/app/actions/leaveRequests";
 
 export function LeaveRequestRow({
@@ -22,7 +23,9 @@ export function LeaveRequestRow({
 
   return (
     <tr className="border-b border-zinc-100 last:border-0">
-      <td className="px-4 py-3 font-medium text-zinc-900">{employeeName}</td>
+      <td className="px-4 py-3 font-medium text-zinc-900">
+        <Trunc text={employeeName} />
+      </td>
       <td className="px-4 py-3 text-zinc-500">{tipoLabel}</td>
       <td className="px-4 py-3 text-zinc-500">{dateRangeLabel}</td>
       <td className="px-4 py-3 text-zinc-400">{note ?? "—"}</td>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { Trunc } from "@/app/Trunc";
 import { useRouter } from "next/navigation";
 import { updateSessionTime, createManualSession, deleteSession } from "@/app/actions/timeEntries";
 import type { ActivityType } from "@/lib/timeCalc";
@@ -728,7 +729,7 @@ function GroupBlock({
               {editableSelectCell(
                 s,
                 "userId",
-                s.userName,
+                <Trunc text={s.userName} />,
                 employees.map((e) => ({ value: e.id, label: e.name }))
               )}
             </td>
@@ -747,7 +748,7 @@ function GroupBlock({
               {editableSelectCell(
                 s,
                 "clientId",
-                s.clientName ?? "—",
+                s.clientName ? <Trunc text={s.clientName} /> : "—",
                 clients.map((c) => ({ value: c.id, label: c.name })),
                 "w-[12rem]"
               )}
@@ -757,7 +758,7 @@ function GroupBlock({
                 editableSelectCell(
                   s,
                   "siteId",
-                  s.siteName ?? "—",
+                  s.siteName ? <Trunc text={s.siteName} /> : "—",
                   sites
                     .filter((site) => site.clientId === s.clientId)
                     .map((site) => ({ value: site.id, label: site.siteName })),
@@ -765,7 +766,7 @@ function GroupBlock({
                   s.siteAddress ?? undefined
                 )
               ) : (
-                editableCell(s, "luogo", s.luogo || "—", "text", "w-[12rem]")
+                editableCell(s, "luogo", s.luogo ? <Trunc text={s.luogo} /> : "—", "text", "w-[12rem]")
               )}
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">

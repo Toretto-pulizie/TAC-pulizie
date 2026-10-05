@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Trunc } from "@/app/Trunc";
 import { useTransition } from "react";
 import { deleteFornitore } from "@/app/actions/fornitori";
 
@@ -26,7 +27,9 @@ export function FornitoreRow({
       <td className="px-3 py-1.5 font-mono text-xs text-zinc-400">
         {String(codiceFornitore).padStart(4, "0")}
       </td>
-      <td className="px-3 py-1.5 font-medium text-zinc-900">{name}</td>
+      <td className="px-3 py-1.5 font-medium text-zinc-900">
+        <Trunc text={name} />
+      </td>
       <td className="px-3 py-1.5 text-zinc-500">{citta ?? "—"}</td>
       <td className="px-3 py-1.5 text-zinc-500">{telefono ?? "—"}</td>
       <td className="px-3 py-1.5 text-zinc-500">{email ?? "—"}</td>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Trunc } from "@/app/Trunc";
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { clientDisplayName } from "@/lib/clients";
@@ -109,7 +110,9 @@ export default async function FatturazionePage() {
                 {daFatturare.map((c) => (
                   <tr key={c.clientId} className="border-b border-zinc-100 last:border-0">
                     <td className="px-3 py-2 text-zinc-500">{c.numeri.join(", ") || "—"}</td>
-                    <td className="px-3 py-2 font-medium text-zinc-900">{c.clientName}</td>
+                    <td className="px-3 py-2 font-medium text-zinc-900">
+                      <Trunc text={c.clientName} />
+                    </td>
                     <td className="px-3 py-2 text-zinc-500">{formatEuro(c.contratto)}</td>
                     <td className="px-3 py-2 text-zinc-500">{formatEuro(c.fatturato)}</td>
                     <td className="px-3 py-2 font-semibold text-zinc-900">
@@ -155,7 +158,9 @@ export default async function FatturazionePage() {
                     </span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-zinc-700">{r.clientName}</td>
+                <td className="px-3 py-2 text-zinc-700">
+                  <Trunc text={r.clientName} />
+                </td>
                 <td className="px-3 py-2 text-zinc-500">{r.data}</td>
                 <td className="px-3 py-2 text-zinc-700">{formatEuro(r.totale)}</td>
                 <td className="px-3 py-2">

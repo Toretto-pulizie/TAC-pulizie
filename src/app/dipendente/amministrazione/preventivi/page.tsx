@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Trunc } from "@/app/Trunc";
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { clientDisplayName } from "@/lib/clients";
@@ -53,7 +54,9 @@ export default async function PreventiviDipendentePage() {
                 {STATUS_LABELS[q.status]}
               </span>
             </div>
-            <p className="font-medium text-zinc-900">{clientDisplayName(q.client)}</p>
+            <p className="font-medium text-zinc-900">
+              <Trunc text={clientDisplayName(q.client)} />
+            </p>
             <p className="text-xs text-zinc-500">
               {formatDateLabel(q.createdAt)} · {q.sites.length}{" "}
               {q.sites.length === 1 ? "sede" : "sedi"}

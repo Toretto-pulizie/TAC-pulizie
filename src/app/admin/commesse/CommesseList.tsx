@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Trunc } from "@/app/Trunc";
 import { ExcelHeader } from "@/app/ExcelHeader";
 import { passesColumnFilters } from "@/lib/excelFilter";
 import { compareValues } from "@/lib/sort";
@@ -132,7 +133,9 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
           {sorted.map((r) => (
             <tr key={r.clientId} className="border-b border-zinc-100 last:border-0">
               <td className="px-3 py-3 font-medium text-zinc-900">{r.numeriLabel || "—"}</td>
-              <td className="px-3 py-3 font-medium text-zinc-900">{r.clientName}</td>
+              <td className="px-3 py-3 font-medium text-zinc-900">
+                <Trunc text={r.clientName} />
+              </td>
               <td className="px-3 py-3">
                 <span className={`rounded-full px-2 py-1 text-xs ${STATO_CLASSES[statoOf(r)]}`}>
                   {STATO_LABELS[statoOf(r)]}

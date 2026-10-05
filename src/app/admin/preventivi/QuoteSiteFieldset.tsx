@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { computeListPrice } from "@/lib/quotes";
+import { SearchSelect } from "@/app/SearchSelect";
+import { truncateText } from "@/app/Trunc";
 
 export type ServiceType = "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
 
@@ -89,7 +91,7 @@ export function QuoteSiteFieldset({
   onTotaleChange: (index: number, totale: number) => void;
   serviceLabels: Record<ServiceType, string>;
   phrases: Phrase[];
-  tipiPrestazione: string[];
+  tipiPrestazione: { etichetta: string; abbreviazione: string | null }[];
 }) {
   const [serviceType, setServiceType] = useState<ServiceType>(
     initial?.serviceType ?? "PASS_SETTIMANALE"
@@ -303,25 +305,29 @@ export function QuoteSiteFieldset({
 
         <label className="flex flex-col gap-1 text-sm xl:col-span-2">
           Tipo servizio
-          <select
+          {/* Campo fisso: da chiuso mostra il codice (Abbreviazione del Tipo
+              servizio, o il testo tagliato a 25 caratteri se non c'è); aperto
+              mostra codice e testo completo. Il valore salvato resta il
+              testo intero. */}
+          <SearchSelect
             name={name("tipoPrestazione")}
             required
             defaultValue={initial?.tipoPrestazione ?? ""}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          >
-            <option value="">Seleziona...</option>
-            {initial?.tipoPrestazione &&
-              !tipiPrestazione.includes(initial.tipoPrestazione) && (
-                <option value={initial.tipoPrestazione}>
-                  {initial.tipoPrestazione}
-                </option>
-              )}
-            {tipiPrestazione.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
+            options={[
+              ...(initial?.tipoPrestazione &&
+              !tipiPrestazione.some((t) => t.etichetta === initial.tipoPrestazione)
+                ? [{ value: initial.tipoPrestazione, label: initial.tipoPrestazione, short: truncateText(initial.tipoPrestazione) }]
+                : []),
+              ...tipiPrestazione.map((t) => ({
+                value: t.etichetta,
+                label: t.etichetta,
+                short: t.abbreviazione?.trim() || truncateText(t.etichetta),
+              })),
+            ]}
+            placeholder="Scrivi il codice o cerca..."
+            wrapperClassName="w-full"
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          />
         </label>
 
         <label className="flex flex-col gap-1 text-sm">

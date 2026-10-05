@@ -1,4 +1,5 @@
 import { requireModule } from "@/lib/dal";
+import { Trunc } from "@/app/Trunc";
 import { prisma } from "@/lib/prisma";
 import { MONTH_LABELS, monthRange } from "@/lib/dates";
 import { computeMonthlyAttendance } from "@/lib/presenze";
@@ -130,7 +131,7 @@ export default async function PresenzePage({
               {attendance.map((a) => (
                 <tr key={a.userId} className="border-b border-zinc-100 last:border-0">
                   <td className="sticky left-0 whitespace-nowrap bg-white px-4 py-2 font-medium text-zinc-900">
-                    {a.cognome} {a.nome}
+                    <Trunc text={`${a.cognome} ${a.nome}`.trim()} />
                   </td>
                   {a.days.map((d) => (
                     <td

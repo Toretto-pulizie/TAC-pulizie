@@ -100,7 +100,10 @@ export default async function PreventiviPage({
       }
     : undefined;
 
-  const tipiPrestazione = tipiPrestazioneRows.map((t) => t.etichetta);
+  const tipiPrestazione = tipiPrestazioneRows.map((t) => ({
+    etichetta: t.etichetta,
+    abbreviazione: t.abbreviazione,
+  }));
   const condizioniPagamento = condizioniPagamentoRows.map((c) => c.etichetta);
   // Nell'elenco preventivi si mostra l'Abbreviazione al posto del testo
   // completo, per non appesantire la colonna; se non impostata (o se il

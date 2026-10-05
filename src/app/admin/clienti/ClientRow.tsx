@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Trunc } from "@/app/Trunc";
 import { useState } from "react";
 import { SiteCapacityEdit } from "./SiteCapacityEdit";
 import { SiteActions } from "./SiteActions";
@@ -56,7 +57,9 @@ export function ClientRow({
             {TIPO_LABELS[tipo]}
           </span>
         </td>
-        <td className="px-3 py-1.5 font-medium text-zinc-900">{name}</td>
+        <td className="px-3 py-1.5 font-medium text-zinc-900">
+          <Trunc text={name} />
+        </td>
         <td className="px-3 py-1.5 text-zinc-500">{citta ?? "—"}</td>
         <td className="px-3 py-1.5 text-zinc-500">{telefono ?? "—"}</td>
         <td className="px-3 py-1.5 text-zinc-500">{email ?? "—"}</td>

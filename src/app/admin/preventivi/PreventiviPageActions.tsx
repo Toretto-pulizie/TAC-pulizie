@@ -28,7 +28,7 @@ export function PreventiviPageActions({
   clients: ClientOption[];
   phrases: Phrase[];
   serviceLabels: Record<ServiceType, string>;
-  tipiPrestazione: string[];
+  tipiPrestazione: { etichetta: string; abbreviazione: string | null }[];
   condizioniPagamento: string[];
   attachments: AttachmentOption[];
   editingQuote?: EditingQuote;

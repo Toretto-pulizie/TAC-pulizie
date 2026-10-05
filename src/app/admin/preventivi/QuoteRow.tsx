@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Trunc } from "@/app/Trunc";
 import { useState, useTransition } from "react";
 import { setQuoteStatus, deleteQuote } from "@/app/actions/quotes";
 
@@ -69,7 +70,9 @@ export function QuoteRow({
       <tr className="border-b border-zinc-100 last:border-0">
         <td className="px-4 py-3 font-medium text-zinc-900">{numeroOfferta}</td>
         <td className="px-4 py-3">
-          <p className="font-medium text-zinc-900">{clientName}</p>
+          <p className="font-medium text-zinc-900">
+            <Trunc text={clientName} />
+          </p>
         </td>
         <td className="px-4 py-3 text-zinc-500">
           {canExpand ? (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Trunc } from "@/app/Trunc";
 import { useRouter } from "next/navigation";
 import { updateDayBoundary, deletePause } from "@/app/actions/timeEntries";
 
@@ -137,7 +138,9 @@ export function GiornateGrid({ rows }: { rows: GiornataRow[] }) {
           <tbody>
             {rows.map((r) => (
               <tr key={r.key} className="border-b border-zinc-100 last:border-0 hover:bg-blue-50/40">
-                <td className="border-r border-zinc-100 px-2.5 py-1.5 font-semibold text-zinc-900">{r.userName}</td>
+                <td className="border-r border-zinc-100 px-2.5 py-1.5 font-semibold text-zinc-900">
+                  <Trunc text={r.userName} />
+                </td>
                 <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">{r.dateLabel}</td>
                 <td className="border-r border-zinc-100 px-2.5 py-1.5">{timeCell(r, "start")}</td>
                 <td className="border-r border-zinc-100 px-2.5 py-1.5">{timeCell(r, "end")}</td>

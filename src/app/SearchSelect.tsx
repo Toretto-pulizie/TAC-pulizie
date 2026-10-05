@@ -2,7 +2,9 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
-export type SearchOption = { value: string; label: string };
+// `short`: versione breve (es. un codice) mostrata nel campo quando è chiuso;
+// l'elenco aperto mostra codice e testo completo, e la ricerca vale per entrambi.
+export type SearchOption = { value: string; label: string; short?: string };
 
 // Sostituisce una <select> con tante voci: si scrive per cercare invece di
 // scorrere la tendina. Si comporta come un campo di form normale (invia
@@ -51,7 +53,10 @@ export function SearchSelect({
   const listId = useId();
   const [internal, setInternal] = useState(defaultValue);
   const current = value !== undefined ? value : internal;
-  const labelOf = (v: string) => options.find((o) => o.value === v)?.label ?? "";
+  const closedLabelOf = (v: string) => {
+    const o = options.find((x) => x.value === v);
+    return o ? (o.short ?? o.label) : "";
+  };
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState<string | null>(null);
@@ -65,7 +70,7 @@ export function SearchSelect({
   const filtered = useMemo(() => {
     if (query == null || query.trim() === "") return all;
     const q = normalize(query.trim());
-    return all.filter((o) => normalize(o.label).includes(q));
+    return all.filter((o) => normalize(`${o.short ?? ""} ${o.label}`).includes(q));
   }, [all, query]);
 
   useEffect(() => {
@@ -85,7 +90,7 @@ export function SearchSelect({
     setOpen(false);
   }
 
-  const shown = query ?? (current ? labelOf(current) : emptyLabel && !current ? emptyLabel : "");
+  const shown = query ?? (current ? closedLabelOf(current) : emptyLabel && !current ? emptyLabel : "");
 
   return (
     <div className={`relative ${wrapperClassName}`}>
@@ -169,7 +174,14 @@ export function SearchSelect({
                 i === highlight ? "bg-zinc-100" : ""
               } ${o.value === current ? "font-semibold text-zinc-900" : "text-zinc-700"}`}
             >
-              {o.label}
+              {o.short ? (
+                <>
+                  <span className="font-semibold text-zinc-900">{o.short}</span>
+                  {o.short !== o.label && <span className="text-zinc-500"> — {o.label}</span>}
+                </>
+              ) : (
+                o.label
+              )}
             </li>
           ))}
         </ul>
