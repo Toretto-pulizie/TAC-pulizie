@@ -42,8 +42,6 @@ export type CommessaRow = {
   scostamento: number | null;
   nFatture: number;
   fatturato: number;
-  ultimaFattura: string | null;
-  ultimaFatturaTs: number;
   daFatturare: number | null;
 };
 
@@ -158,7 +156,6 @@ export function computeCommesse({
       (s, i) => s + (i.tipoDocumento === "TD04" ? -1 : 1) * i.importo,
       0
     );
-    const last = [...fatture].sort((a, b) => b.data.getTime() - a.data.getTime())[0];
     const a = agg.get(client.id) ?? { ore: 0, spost: 0, contratto: 0, consuntivo: 0 };
 
     rows.push({
@@ -178,10 +175,6 @@ export function computeCommesse({
       scostamento: accepted.length > 0 ? a.contratto - a.consuntivo : null,
       nFatture: fatture.length,
       fatturato,
-      ultimaFattura: last
-        ? `${last.numero != null ? `${last.numero}/${last.anno}` : "—"} · ${last.data.toLocaleDateString("it-IT")}`
-        : null,
-      ultimaFatturaTs: last ? last.data.getTime() : 0,
       daFatturare: accepted.length > 0 ? Math.max(0, a.contratto - fatturato) : null,
     });
   }

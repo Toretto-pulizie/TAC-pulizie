@@ -123,7 +123,6 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
             {col("Ore lavorate", "oreLabel", "oreLavorate")}
             {col("Ore spost.", "spostLabel", "oreSpostamento")}
             {col("N° FT", "nFattureLabel", "nFatture")}
-            {col("Ultima FT", "ultimaFattura", "ultimaFatturaTs")}
             {col("Mensile", "mensileLabel", "mensile")}
             {col("Annuo", "annuoLabel", "annuo")}
             {col("Consuntivo", "consuntivoLabel", "consuntivo")}
@@ -146,7 +145,6 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
               <td className="px-3 py-3 text-zinc-500">{r.oreLabel}</td>
               <td className="px-3 py-3 text-zinc-500">{r.spostLabel}</td>
               <td className="px-3 py-3 text-zinc-500">{r.nFatture || "—"}</td>
-              <td className="px-3 py-3 whitespace-nowrap text-zinc-500">{r.ultimaFattura ?? "—"}</td>
               <td
                 className={`px-3 py-3 ${r.amountsFromPending ? "italic text-zinc-400" : "text-zinc-500"}`}
                 title={r.amountsFromPending ? "Importo dell'offerta in trattativa" : undefined}
@@ -183,7 +181,7 @@ export function CommesseList({ rows }: { rows: CommessaRow[] }) {
           ))}
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={14} className="px-4 py-6 text-center text-zinc-400">
+              <td colSpan={13} className="px-4 py-6 text-center text-zinc-400">
                 {rows.length === 0 ? "Nessuna commessa ancora." : "Nessun risultato."}
               </td>
             </tr>
