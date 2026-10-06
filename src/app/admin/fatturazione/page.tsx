@@ -38,7 +38,13 @@ export default async function FatturazionePage() {
   const [invoices, commesse] = await Promise.all([
     prisma.invoice.findMany({
       include: { client: true, righe: true },
-      orderBy: [{ data: "desc" }, { createdAt: "desc" }],
+      // Per numero decrescente (anno e numero); le bozze, ancora senza numero,
+      // stanno in cima perché sono quelle da completare.
+      orderBy: [
+        { anno: { sort: "desc", nulls: "first" } },
+        { numero: { sort: "desc", nulls: "first" } },
+        { createdAt: "desc" },
+      ],
     }),
     loadCommesse(null),
   ]);

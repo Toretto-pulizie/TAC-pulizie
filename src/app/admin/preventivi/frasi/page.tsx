@@ -7,7 +7,7 @@ export default async function FrasiPreimpostatePage() {
   await requireModule("preventivi");
 
   const phrases = await prisma.quotePhrase.findMany({
-    orderBy: [{ ordine: "asc" }, { titolo: "asc" }],
+    orderBy: { codice: "desc" },
   });
 
   return (

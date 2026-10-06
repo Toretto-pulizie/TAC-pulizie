@@ -22,7 +22,7 @@ export default async function PreventiviDipendentePage() {
 
   const quotes = await prisma.quote.findMany({
     include: { client: true, sites: true },
-    orderBy: { createdAt: "desc" },
+    orderBy: { numeroOfferta: "desc" },
   });
 
   return (

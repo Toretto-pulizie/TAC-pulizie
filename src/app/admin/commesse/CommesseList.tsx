@@ -65,8 +65,8 @@ type Row = OffertaRow & {
 
 export function CommesseList({ rows }: { rows: OffertaRow[] }) {
   const [filters, setFilters] = useState<Record<string, string>>({});
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortKey, setSortKey] = useState<string | null>("numeroSort");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const rowsForFilter: Row[] = rows.map((r) => ({
     ...r,

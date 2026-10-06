@@ -48,8 +48,8 @@ type FilterState = Record<string, string>;
 
 export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
   const [filters, setFilters] = useState<FilterState>({});
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortKey, setSortKey] = useState<string | null>("numeroOfferta");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const rowsForFilter = rows.map((r) => ({
     ...r,
