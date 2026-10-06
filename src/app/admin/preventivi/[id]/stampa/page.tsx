@@ -271,7 +271,9 @@ export default async function StampaPreventivoPage({
         {formatEuro(r.lineItem.prezzoUnitario)}
       </td>
       <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-center">
-        {r.discountPct != null ? `${(r.discountPct * 100).toFixed(0)}%` : ""}
+        {r.discountPct != null && Math.round(r.discountPct * 100) > 0
+          ? `${Math.round(r.discountPct * 100)}%`
+          : ""}
       </td>
       <td className="border-t border-b border-zinc-300 px-2 py-2 text-right">
         {formatEuro(r.netto)}
