@@ -74,7 +74,7 @@ export default async function ProduzionePage() {
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
       <AutoRefresh intervalMs={150000} />
       {allowed.has("amministrazione") && (
-        <Link href="/dipendente" className="-mb-2 text-sm text-zinc-500">
+        <Link prefetch={false} href="/dipendente" className="-mb-2 text-sm text-zinc-500">
           ← Indietro
         </Link>
       )}
@@ -110,7 +110,7 @@ export default async function ProduzionePage() {
       </header>
 
       <div className="grid grid-cols-2 gap-3">
-        <Link
+        <Link prefetch={false}
           href="/dipendente/timbratura"
           className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-green-800 bg-green-700 p-4 text-center shadow-sm active:bg-green-800"
         >
@@ -125,7 +125,7 @@ export default async function ProduzionePage() {
           </span>
         </Link>
 
-        <Link
+        <Link prefetch={false}
           href="/dipendente/permessi"
           className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-green-800 bg-green-700 p-4 text-center shadow-sm active:bg-green-800"
         >
@@ -156,7 +156,7 @@ export default async function ProduzionePage() {
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {group.keys.map((key) => (
-                    <Link
+                    <Link prefetch={false}
                       key={key}
                       href={MODULE_HREFS[key]}
                       className="rounded-lg border border-zinc-200 bg-white px-3 py-3 text-center text-sm font-medium text-zinc-700 shadow-sm active:bg-zinc-50"

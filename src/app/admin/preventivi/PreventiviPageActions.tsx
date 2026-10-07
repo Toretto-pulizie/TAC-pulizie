@@ -39,7 +39,7 @@ export function PreventiviPageActions({
   return (
     <>
       <PageHeaderActions>
-        <Link
+        <Link prefetch={false}
           href="/admin/preventivi/frasi"
           className="text-sm text-zinc-600 underline"
         >

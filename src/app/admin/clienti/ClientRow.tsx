@@ -74,7 +74,7 @@ export function ClientRow({
                 Sedi ({sites.length}) {expanded ? "▴" : "▾"}
               </button>
             )}
-            <Link href={editHref} className="text-xs text-zinc-500 underline">
+            <Link prefetch={false} href={editHref} className="text-xs text-zinc-500 underline">
               Modifica
             </Link>
             <ClientActions clientId={clientId} />

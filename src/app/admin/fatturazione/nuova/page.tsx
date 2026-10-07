@@ -34,7 +34,7 @@ export default async function NuovaFatturaPage({
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
       <div className="flex items-center gap-3">
-        <Link href="/admin/fatturazione" className="text-sm text-zinc-500">
+        <Link prefetch={false} href="/admin/fatturazione" className="text-sm text-zinc-500">
           ← Fatturazione
         </Link>
       </div>

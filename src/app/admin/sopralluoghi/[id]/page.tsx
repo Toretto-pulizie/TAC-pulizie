@@ -51,7 +51,7 @@ export default async function SopralluogoDetailPage({
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-zinc-900">Sopralluogo</h1>
-        <Link href="/admin/sopralluoghi" className="text-sm text-zinc-500">
+        <Link prefetch={false} href="/admin/sopralluoghi" className="text-sm text-zinc-500">
           ← Torna all'elenco
         </Link>
       </header>

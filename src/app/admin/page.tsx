@@ -362,7 +362,7 @@ export default async function AdminHomePage() {
                   <ul className="divide-y divide-zinc-100">
                     {pendingRequests.map((r) => (
                       <li key={r.id}>
-                        <Link
+                        <Link prefetch={false}
                           href="/admin/permessi"
                           className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-zinc-50"
                         >

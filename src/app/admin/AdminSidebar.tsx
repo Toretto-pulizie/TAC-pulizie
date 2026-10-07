@@ -31,7 +31,7 @@ export function AdminSidebar({
 
   return (
     <nav className="fixed inset-y-0 left-0 z-40 flex h-screen w-64 flex-col gap-6 overflow-y-auto border-r border-zinc-200 bg-zinc-50 p-4 shadow-xl sm:sticky sm:top-0 sm:z-auto sm:w-56 sm:shrink-0 sm:bg-zinc-50/60 sm:shadow-none">
-      <Link href={isAdmin ? "/admin" : "/dipendente"} className="px-1" onClick={onNavigate}>
+      <Link prefetch={false} href={isAdmin ? "/admin" : "/dipendente"} className="px-1" onClick={onNavigate}>
         <Image
           src="/logo.png"
           alt="Toretto"
@@ -50,7 +50,7 @@ export function AdminSidebar({
                 {group.label}
               </p>
               {group.keys.map((key) => (
-                <Link
+                <Link prefetch={false}
                   key={key}
                   href={MODULE_HREFS[key]}
                   className={linkClass(MODULE_HREFS[key])}
@@ -66,12 +66,12 @@ export function AdminSidebar({
 
       <div className="flex flex-col gap-1 border-t border-zinc-200 pt-4">
         {!isAdmin && (
-          <Link href="/dipendente" className={linkClass("/dipendente")} onClick={onNavigate}>
+          <Link prefetch={false} href="/dipendente" className={linkClass("/dipendente")} onClick={onNavigate}>
             La mia area
           </Link>
         )}
         {showImpostazioni && (
-          <Link
+          <Link prefetch={false}
             href="/admin/impostazioni"
             className={linkClass("/admin/impostazioni")}
             onClick={onNavigate}

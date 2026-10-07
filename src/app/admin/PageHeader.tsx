@@ -75,7 +75,7 @@ export function PageHeader() {
       {(backHref || actions) && (
         <div className="ml-auto flex items-center gap-3">
           {backHref && (
-            <Link href={backHref} className="text-sm text-zinc-500 underline hover:text-zinc-700">
+            <Link prefetch={false} href={backHref} className="text-sm text-zinc-500 underline hover:text-zinc-700">
               {backLabel}
             </Link>
           )}

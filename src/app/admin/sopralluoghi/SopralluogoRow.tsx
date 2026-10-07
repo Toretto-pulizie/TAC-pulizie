@@ -27,7 +27,7 @@ export function SopralluogoRow({
       <td className="px-4 py-2 text-zinc-500">{effettuatoDaName}</td>
       <td className="px-4 py-2 text-right whitespace-nowrap">
         <div className="flex justify-end gap-2 text-sm">
-          <Link href={`/admin/sopralluoghi/${id}`} className="text-xs text-zinc-500 underline">
+          <Link prefetch={false} href={`/admin/sopralluoghi/${id}`} className="text-xs text-zinc-500 underline">
             Vedi
           </Link>
           <button

@@ -57,7 +57,7 @@ export function EmployeeRow({
       </td>
       <td className="px-4 py-3 text-right">
         <div className="flex justify-end gap-3">
-          <Link
+          <Link prefetch={false}
             href={`/admin/utenti/${id}`}
             className="text-sm text-zinc-600 underline"
           >

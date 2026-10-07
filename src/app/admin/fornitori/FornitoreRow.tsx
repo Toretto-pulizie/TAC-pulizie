@@ -35,7 +35,7 @@ export function FornitoreRow({
       <td className="px-3 py-1.5 text-zinc-500">{email ?? "—"}</td>
       <td className="px-3 py-1.5 text-right whitespace-nowrap">
         <div className="flex justify-end gap-2 text-sm">
-          <Link
+          <Link prefetch={false}
             href={`/admin/fornitori/${id}`}
             className="text-xs text-zinc-500 underline"
           >

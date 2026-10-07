@@ -35,7 +35,7 @@ export function PhraseRow({
           >
             Contenuto {expanded ? "▴" : "▾"}
           </button>
-          <Link
+          <Link prefetch={false}
             href={`/admin/preventivi/frasi/${id}`}
             className="text-sm text-zinc-600 underline"
           >

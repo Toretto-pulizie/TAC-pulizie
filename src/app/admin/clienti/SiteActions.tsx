@@ -10,7 +10,7 @@ export function SiteActions({ siteId }: { siteId: string }) {
 
   return (
     <span className="flex items-center gap-2">
-      <Link
+      <Link prefetch={false}
         href={`/admin/clienti/siti/${siteId}`}
         className="text-xs text-zinc-500 underline"
       >

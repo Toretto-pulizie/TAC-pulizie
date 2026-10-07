@@ -172,7 +172,7 @@ export default async function PianificazionePage({
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
         <div className="flex items-center justify-between">
-          <Link
+          <Link prefetch={false}
             href={`/admin/pianificazione?week=${prevWeek}`}
             className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           >
@@ -181,7 +181,7 @@ export default async function PianificazionePage({
           <p className="text-sm font-medium text-zinc-600">
             {formatDateLabel(weekStart)} – {formatDateLabel(days[6])}
           </p>
-          <Link
+          <Link prefetch={false}
             href={`/admin/pianificazione?week=${nextWeek}`}
             className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           >

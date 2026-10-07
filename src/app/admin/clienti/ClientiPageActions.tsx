@@ -26,7 +26,7 @@ export function ClientiPageActions({
         >
           {open ? "✕ Chiudi modulo" : "+ Nuova sede/cantiere"}
         </button>
-        <Link
+        <Link prefetch={false}
           href="/admin/clienti/nuovo"
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white"
         >

@@ -71,7 +71,7 @@ export default async function FatturaDetailPage({
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/admin/fatturazione" className="text-sm text-zinc-500">
+          <Link prefetch={false} href="/admin/fatturazione" className="text-sm text-zinc-500">
             ← Fatturazione
           </Link>
           <h1 className="text-lg font-semibold text-zinc-900">
@@ -97,7 +97,7 @@ export default async function FatturaDetailPage({
       {invoice.rettificaDi && (
         <p className="rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-800">
           Storna la{" "}
-          <Link href={`/admin/fatturazione/${invoice.rettificaDi.id}`} className="font-semibold underline">
+          <Link prefetch={false} href={`/admin/fatturazione/${invoice.rettificaDi.id}`} className="font-semibold underline">
             fattura {refLabel(invoice.rettificaDi)}
           </Link>{" "}
           del {invoice.rettificaDi.data.toLocaleDateString("it-IT")}.
@@ -109,7 +109,7 @@ export default async function FatturaDetailPage({
           {invoice.noteDiCredito.map((n, i) => (
             <span key={n.id}>
               {i > 0 && ", "}
-              <Link href={`/admin/fatturazione/${n.id}`} className="font-semibold underline">
+              <Link prefetch={false} href={`/admin/fatturazione/${n.id}`} className="font-semibold underline">
                 {refLabel(n)}
               </Link>
             </span>

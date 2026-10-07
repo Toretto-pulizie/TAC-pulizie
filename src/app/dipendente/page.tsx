@@ -84,7 +84,7 @@ export default async function DipendentePage() {
       </header>
 
       <div className="grid grid-cols-2 gap-3">
-        <Link
+        <Link prefetch={false}
           href="/dipendente/produzione"
           className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-green-800 bg-green-700 p-4 text-center shadow-sm active:bg-green-800"
         >
@@ -96,7 +96,7 @@ export default async function DipendentePage() {
           </span>
         </Link>
 
-        <Link
+        <Link prefetch={false}
           href="/dipendente/amministrazione"
           className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white p-4 text-center shadow-sm active:bg-zinc-50"
         >

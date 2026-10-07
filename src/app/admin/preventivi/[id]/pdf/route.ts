@@ -143,26 +143,27 @@ export async function GET(
     // decides on its own where to break it across physical pages (repeating
     // the <thead> automatically) — so how many pages there will be is only
     // known after actually rendering, never estimated in advance. Render
-    // once with "SEGUE" as the footer total, check the real page count, and
-    // only render+merge the "real total" version if there's more than one:
-    // all-but-last page keep "SEGUE", the last one gets the real total.
-    const segueBuf = await renderPdf("SEGUE");
-    const segueDoc = await PDFDocument.load(segueBuf);
-    const totalPages = segueDoc.getPageCount();
+    // first with the real total in the footer: a one-page document (the
+    // common case) is already final, with a single Chromium render. Only
+    // if there is more than one page do we render again with "SEGUE" as
+    // the footer total: all-but-last page keep "SEGUE", the last one keeps
+    // the real total.
+    const realBuf = await renderPdf(formatEuro(prezzoNetto));
+    const realDoc = await PDFDocument.load(realBuf);
+    const totalPages = realDoc.getPageCount();
 
     let finalDoc: PDFDocument;
     if (totalPages <= 1) {
-      const realBuf = await renderPdf(formatEuro(prezzoNetto));
-      finalDoc = await PDFDocument.load(realBuf);
+      finalDoc = realDoc;
     } else {
-      const realBuf = await renderPdf(formatEuro(prezzoNetto));
-      const realDoc = await PDFDocument.load(realBuf);
+      const segueBuf = await renderPdf("SEGUE");
+      const segueDoc = await PDFDocument.load(segueBuf);
       finalDoc = await PDFDocument.create();
       const seguePages = await finalDoc.copyPages(
         segueDoc,
         Array.from({ length: totalPages - 1 }, (_, i) => i)
       );
-      seguePages.forEach((p) => finalDoc.addPage(p));
+      seguePages.forEach((pg) => finalDoc.addPage(pg));
       const [lastPage] = await finalDoc.copyPages(realDoc, [totalPages - 1]);
       finalDoc.addPage(lastPage);
     }

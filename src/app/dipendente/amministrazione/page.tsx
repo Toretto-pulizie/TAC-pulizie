@@ -37,14 +37,14 @@ export default async function AmministrazionePage() {
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
       <header className="flex items-center gap-3">
-        <Link href="/dipendente" className="shrink-0 text-sm text-zinc-500">
+        <Link prefetch={false} href="/dipendente" className="shrink-0 text-sm text-zinc-500">
           ← Indietro
         </Link>
         <h1 className="text-xl font-semibold text-zinc-900">Amministrazione</h1>
       </header>
 
       <div className="grid grid-cols-2 gap-3">
-        <Link
+        <Link prefetch={false}
           href="/dipendente/amministrazione/sopralluoghi"
           className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white p-4 text-center shadow-sm active:bg-zinc-50"
         >
@@ -56,7 +56,7 @@ export default async function AmministrazionePage() {
           </span>
         </Link>
 
-        <Link
+        <Link prefetch={false}
           href="/dipendente/amministrazione/preventivi"
           className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white p-4 text-center shadow-sm active:bg-zinc-50"
         >

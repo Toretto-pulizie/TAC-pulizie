@@ -171,7 +171,7 @@ export function UserMenu({
 
             <div className="flex flex-col gap-1 border-t border-zinc-100 pt-2">
               {isAdmin && (
-                <Link
+                <Link prefetch={false}
                   href="/admin/utenti"
                   className="rounded-lg px-2 py-1.5 text-sm text-zinc-700 hover:bg-zinc-100"
                   onClick={() => setOpen(false)}

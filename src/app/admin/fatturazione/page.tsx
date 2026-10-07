@@ -116,7 +116,7 @@ export default async function FatturazionePage() {
             Fatture emesse: {formatEuro(totaleAnnoCorrente)} totali, note di credito sottratte (bozze escluse).
           </p>
         </div>
-        <Link
+        <Link prefetch={false}
           href="/admin/fatturazione/nuova"
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white"
         >
@@ -159,7 +159,7 @@ export default async function FatturazionePage() {
                       {formatEuro(c.daFatturare ?? 0)}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      <Link
+                      <Link prefetch={false}
                         href={`/admin/fatturazione/nuova?clientId=${c.clientId}`}
                         className="rounded-lg border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
                       >
@@ -233,7 +233,7 @@ export default async function FatturazionePage() {
             {rows.map((r) => (
               <tr key={r.id} className="border-b border-zinc-100 last:border-0 hover:bg-blue-50/40">
                 <td className="px-3 py-2">
-                  <Link href={`/admin/fatturazione/${r.id}`} className="font-medium text-zinc-900 hover:underline">
+                  <Link prefetch={false} href={`/admin/fatturazione/${r.id}`} className="font-medium text-zinc-900 hover:underline">
                     {r.numero}
                   </Link>
                   {r.isCreditNote && (

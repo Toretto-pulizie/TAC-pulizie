@@ -109,7 +109,7 @@ export function NotificationBell({ initial }: { initial: NotificationItem[] }) {
                 </p>
               ) : (
                 items.map((n) => (
-                  <Link
+                  <Link prefetch={false}
                     key={n.id}
                     href={n.link ?? "#"}
                     onClick={() => handleItemClick(n)}

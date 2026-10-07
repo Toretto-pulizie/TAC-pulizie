@@ -102,14 +102,14 @@ export function QuoteRow({
         </td>
         <td className="px-4 py-3 text-right">
           <div className="flex justify-end gap-2 text-sm">
-            <Link
+            <Link prefetch={false}
               href={`/admin/preventivi/${id}/pdf`}
               target="_blank"
               className="text-zinc-600 underline"
             >
               Stampa
             </Link>
-            <Link
+            <Link prefetch={false}
               href={`/admin/preventivi?edit=${id}#quote-form`}
               className="text-zinc-600 underline"
             >
