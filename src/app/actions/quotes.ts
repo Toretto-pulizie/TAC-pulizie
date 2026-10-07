@@ -13,6 +13,8 @@ const QuoteSchema = z.object({
   clientId: z.string().trim().min(1, "Seleziona un cliente"),
   createdAt: z.string().trim().min(1, "Indica la data di creazione"),
   condizioniPagamento: z.string().trim().optional(),
+  canoneModalita: z.enum(["DODICI_MESI", "UNDICI_MESI", "ENTRAMBE"]).default("DODICI_MESI"),
+  meseSenzaFattura: z.coerce.number().int().min(1).max(12).optional(),
 });
 
 const QuoteSiteSchema = z
@@ -139,11 +141,13 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
     clientId: formData.get("clientId"),
     createdAt: formData.get("createdAt"),
     condizioniPagamento: formData.get("condizioniPagamento") || undefined,
+    canoneModalita: formData.get("canoneModalita") || undefined,
+    meseSenzaFattura: formData.get("meseSenzaFattura") || undefined,
   });
   if (!parsedQuote.success) {
     return { error: parsedQuote.error.issues[0]?.message ?? "Dati non validi" };
   }
-  const { clientId, condizioniPagamento } = parsedQuote.data;
+  const { clientId, condizioniPagamento, canoneModalita, meseSenzaFattura } = parsedQuote.data;
   const createdAt = new Date(`${parsedQuote.data.createdAt}T00:00:00`);
   if (Number.isNaN(createdAt.getTime())) {
     return { error: "Data di creazione non valida" };
@@ -230,6 +234,9 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
     clientId,
     createdAt,
     condizioniPagamento: condizioniPagamento || null,
+    canoneModalita,
+    // Il mese senza fattura ha senso solo per il canone su 11 mesi.
+    meseSenzaFattura: canoneModalita === "UNDICI_MESI" ? (meseSenzaFattura ?? null) : null,
   };
 
   // Allegati selezionati (checkbox "attachmentIds"): salvati nell'ordine in

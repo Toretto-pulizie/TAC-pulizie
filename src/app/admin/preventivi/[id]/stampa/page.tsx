@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import { notFound } from "next/navigation";
 import { requireAnyModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { computeDiscountPct } from "@/lib/quotes";
+import { computeDiscountPct, FATTORE_11_MESI } from "@/lib/quotes";
 import {
   buildDescriptionBlocks,
   buildLineItem,
@@ -116,9 +116,17 @@ export default async function StampaPreventivoPage({
   });
 
   const anySiteHasAdeguamento = siteRows.some((r) => r.adeguamento != null);
-  const prezzoNetto = siteRows.reduce((sum, r) => sum + r.prezzoFinale, 0);
-  const nettoTotale = siteRows.reduce((sum, r) => sum + r.netto, 0);
-  const listinoTotale = siteRows.reduce((sum, r) => sum + r.lineItem.prezzoUnitario, 0);
+  // Totale del documento (riquadro in fondo): con il canone su 11 mesi vale la
+  // lettura su 11 mesi; con 12 mesi o "a scelta" vale la lettura su 12 mesi.
+  const prezzoNetto = siteRows.reduce(
+    (sum, r, i) =>
+      sum +
+      r.prezzoFinale *
+        (quote.canoneModalita === "UNDICI_MESI" && quote.sites[i].serviceType !== "ONE_SHOT"
+          ? FATTORE_11_MESI
+          : 1),
+    0
+  );
 
   const dataDocumento = new Date().toLocaleDateString("it-IT");
   const scadenza = new Date();
@@ -262,70 +270,166 @@ export default async function StampaPreventivoPage({
     </thead>
   );
 
-  const summaryRowsEl = siteRows.map((r, i) => (
-    <tr key={i}>
-      <td className="border-r border-t border-b border-zinc-300 px-2 py-2 font-semibold text-zinc-900">
-        {multiSede ? `Valore del servizio — ${quote.sites[i].site.name}` : "Valore del servizio"}
-      </td>
-      <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right">
-        {formatEuro(r.lineItem.prezzoUnitario)}
-      </td>
-      <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-center">
-        {r.discountPct != null && Math.round(r.discountPct * 100) > 0
+  // Modalità di canone (art. III delle clausole): per i servizi continuativi
+  // il PDF può mostrare il canone su 12 mesi, su 11 mesi (×12/11, un mese
+  // all'anno non fatturato) o entrambi, perché il cliente scelga. L'una
+  // tantum resta sempre com'è. Con DODICI_MESI il PDF è identico a prima.
+  type Scenario = "12" | "11" | null;
+  const modalita = quote.canoneModalita;
+  const hasRecurring = quote.sites.some((qs) => qs.serviceType !== "ONE_SHOT");
+  const scenari: Scenario[] =
+    !hasRecurring || modalita === "DODICI_MESI"
+      ? [null]
+      : modalita === "UNDICI_MESI"
+        ? ["11"]
+        : ["12", "11"];
+  const factorFor = (sc: Scenario, isOneShot: boolean) =>
+    sc === "11" && !isOneShot ? FATTORE_11_MESI : 1;
+  const scenarioLabel = (sc: Scenario) =>
+    sc === "12"
+      ? "canone mensile fatturato su 12 mesi"
+      : sc === "11"
+        ? "canone mensile fatturato su 11 mesi"
+        : "";
+  const scenarioNote = (sc: Scenario) =>
+    sc === "12"
+      ? "comprende le chiusure di Toretto e del Committente"
+      : sc === "11"
+        ? "un mese all'anno non fatturato, comunicato via e-mail"
+        : "";
+
+  const summaryRowsEl = siteRows.map((r, i) =>
+    scenari.map((sc) => {
+      const isOneShot = quote.sites[i].serviceType === "ONE_SHOT";
+      // Una sede una tantum compare una sola volta, senza etichette di canone.
+      if (isOneShot && sc === "11") return null;
+      const showSc = sc !== null && !isOneShot;
+      const f = factorFor(sc, isOneShot);
+      const base = multiSede
+        ? `Valore del servizio — ${quote.sites[i].site.name}`
+        : "Valore del servizio";
+      const pct =
+        r.discountPct != null && Math.round(r.discountPct * 100) > 0
           ? `${Math.round(r.discountPct * 100)}%`
-          : ""}
-      </td>
-      <td className="border-t border-b border-zinc-300 px-2 py-2 text-right">
-        {formatEuro(r.netto)}
-      </td>
-    </tr>
-  ));
+          : "";
+      return (
+        <tr key={`sum-${i}-${sc}`}>
+          <td className="border-r border-t border-b border-zinc-300 px-2 py-2 font-semibold text-zinc-900">
+            {base}
+            {showSc && (
+              <>
+                <span className="font-normal text-zinc-700"> — {scenarioLabel(sc)}</span>
+                <span className="block text-[10px] font-normal text-zinc-500">
+                  {scenarioNote(sc)}
+                </span>
+              </>
+            )}
+          </td>
+          <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right">
+            {formatEuro(r.lineItem.prezzoUnitario * f)}
+          </td>
+          <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-center">
+            {pct}
+          </td>
+          <td className="border-t border-b border-zinc-300 px-2 py-2 text-right">
+            {formatEuro(r.netto * f)}
+          </td>
+        </tr>
+      );
+    })
+  );
 
   // Riga a parte per l'Adeguamento (solo quando presente): tiene lo Sconto%
   // sempre coerente col Netto sulla riga sopra, ed espone comunque per
   // intero il prezzo finale concordato.
   const adeguamentoRowsEl = siteRows.map((r, i) =>
-    r.adeguamento != null ? (
-      <tr key={`adeg-${i}`}>
-        <td className="border-r border-b border-zinc-300 px-2 py-2 text-zinc-700">
-          {multiSede ? `Adeguamento — ${quote.sites[i].site.name}` : "Adeguamento"}
-        </td>
-        <td className="border-r border-b border-zinc-300 px-2 py-2"></td>
-        <td className="border-r border-b border-zinc-300 px-2 py-2"></td>
-        <td className="border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
-          {formatEuro(r.prezzoFinale)}
-        </td>
-      </tr>
-    ) : null
+    r.adeguamento != null
+      ? scenari.map((sc) => {
+          const isOneShot = quote.sites[i].serviceType === "ONE_SHOT";
+          if (isOneShot && sc === "11") return null;
+          const f = factorFor(sc, isOneShot);
+          return (
+            <tr key={`adeg-${i}-${sc}`}>
+              <td className="border-r border-b border-zinc-300 px-2 py-2 text-zinc-700">
+                {multiSede ? `Adeguamento — ${quote.sites[i].site.name}` : "Adeguamento"}
+                {sc !== null && !isOneShot && <span> — {scenarioLabel(sc)}</span>}
+              </td>
+              <td className="border-r border-b border-zinc-300 px-2 py-2"></td>
+              <td className="border-r border-b border-zinc-300 px-2 py-2"></td>
+              <td className="border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
+                {formatEuro(r.prezzoFinale * f)}
+              </td>
+            </tr>
+          );
+        })
+      : null
   );
 
-  const totaleComplessivoRowEl = multiSede ? (
-    <tr>
-      <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
-        Totale complessivo
-      </td>
-      <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
-        {formatEuro(listinoTotale)}
-      </td>
-      <td className="border-r border-t border-b border-zinc-300 px-2 py-2"></td>
-      <td className="border-t border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
-        {formatEuro(nettoTotale)}
-      </td>
-    </tr>
-  ) : null;
+  const totaleComplessivoRowsEl = multiSede
+    ? scenari.map((sc) => {
+        const f = (i: number) => factorFor(sc, quote.sites[i].serviceType === "ONE_SHOT");
+        const listino = siteRows.reduce(
+          (sum, r, i) => sum + r.lineItem.prezzoUnitario * f(i),
+          0
+        );
+        const netto = siteRows.reduce((sum, r, i) => sum + r.netto * f(i), 0);
+        return (
+          <tr key={`tot-${sc}`}>
+            <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
+              Totale complessivo{sc ? ` — ${scenarioLabel(sc)}` : ""}
+            </td>
+            <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
+              {formatEuro(listino)}
+            </td>
+            <td className="border-r border-t border-b border-zinc-300 px-2 py-2"></td>
+            <td className="border-t border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
+              {formatEuro(netto)}
+            </td>
+          </tr>
+        );
+      })
+    : null;
 
   // Come per la singola sede: se almeno una sede ha un Adeguamento, il
   // totale complessivo "puro" sopra va corretto con una riga finale a parte.
-  const adeguamentoComplessivoRowEl =
-    multiSede && anySiteHasAdeguamento ? (
+  const adeguamentoComplessivoRowsEl =
+    multiSede && anySiteHasAdeguamento
+      ? scenari.map((sc) => {
+          const tot = siteRows.reduce(
+            (sum, r, i) =>
+              sum + r.prezzoFinale * factorFor(sc, quote.sites[i].serviceType === "ONE_SHOT"),
+            0
+          );
+          return (
+            <tr key={`adegtot-${sc}`}>
+              <td className="border-r border-b border-zinc-300 px-2 py-2 text-right text-zinc-700">
+                Adeguamento complessivo{sc ? ` — ${scenarioLabel(sc)}` : ""}
+              </td>
+              <td className="border-r border-b border-zinc-300 px-2 py-2"></td>
+              <td className="border-r border-b border-zinc-300 px-2 py-2"></td>
+              <td className="border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
+                {formatEuro(tot)}
+              </td>
+            </tr>
+          );
+        })
+      : null;
+
+  // Offerta "a scelta": nota sulla modalità e caselle da barrare, in fondo
+  // alla tabella (nel PDF compare solo la tabella).
+  const sceltaCanoneRowEl =
+    modalita === "ENTRAMBE" && hasRecurring ? (
       <tr>
-        <td className="border-r border-b border-zinc-300 px-2 py-2 text-right text-zinc-700">
-          Adeguamento complessivo
-        </td>
-        <td className="border-r border-b border-zinc-300 px-2 py-2"></td>
-        <td className="border-r border-b border-zinc-300 px-2 py-2"></td>
-        <td className="border-b border-zinc-300 px-2 py-2 text-right font-semibold text-zinc-900">
-          {formatEuro(prezzoNetto)}
+        <td
+          colSpan={4}
+          className="border-t border-zinc-300 px-2 py-2 text-[10px] text-zinc-700"
+        >
+          Il Committente sceglie una delle due modalità di canone (art. III delle clausole); in
+          mancanza di indicazione si applica il canone su 12 mesi.
+          <span className="mt-1 block text-xs text-zinc-900">
+            Modalità scelta: &nbsp; &#9744; Canone su 12 mesi &nbsp;&nbsp;&nbsp; &#9744; Canone su
+            11 mesi
+          </span>
         </td>
       </tr>
     ) : null;
@@ -374,8 +478,9 @@ export default async function StampaPreventivoPage({
               {adeguamentoRowsEl[i]}
             </Fragment>
           ))}
-          {totaleComplessivoRowEl}
-          {adeguamentoComplessivoRowEl}
+          {totaleComplessivoRowsEl}
+          {adeguamentoComplessivoRowsEl}
+          {sceltaCanoneRowEl}
         </tbody>
       </table>
     </div>

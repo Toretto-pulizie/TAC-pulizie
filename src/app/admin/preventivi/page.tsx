@@ -77,6 +77,8 @@ export default async function PreventiviPage({
         clientId: editingQuoteRaw.clientId,
         createdAt: toDateInputValue(editingQuoteRaw.createdAt),
         condizioniPagamento: editingQuoteRaw.condizioniPagamento,
+        canoneModalita: editingQuoteRaw.canoneModalita,
+        meseSenzaFattura: editingQuoteRaw.meseSenzaFattura,
         attachmentIds: editingQuoteRaw.attachments.map((a) => a.attachmentId),
         sites: editingQuoteRaw.sites.map((s) => ({
           siteId: s.siteId,

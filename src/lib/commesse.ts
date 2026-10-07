@@ -1,5 +1,5 @@
 import type { EntryType, Quote, QuoteSite } from "@prisma/client";
-import { computeListPrice, computeSoldAnnual } from "@/lib/quotes";
+import { canoneDelMese, computeListPrice, computeSoldAnnual } from "@/lib/quotes";
 import { computeSiteTotals } from "@/lib/timeCalc";
 
 type QuoteIn = Quote & { sites: QuoteSite[] };
@@ -66,12 +66,12 @@ export function computeCommesse({
   entries: EntryIn[];
   invoices: InvoiceIn[];
 }): CommessaRow[] {
-  const acceptedBySite = new Map<string, { clientId: string; qs: QuoteSite }[]>();
+  const acceptedBySite = new Map<string, { clientId: string; qs: QuoteSite; q: QuoteIn }[]>();
   for (const q of quotes) {
     if (q.status !== "ACCETTATO") continue;
     for (const qs of q.sites) {
       const list = acceptedBySite.get(qs.siteId) ?? [];
-      list.push({ clientId: q.clientId, qs });
+      list.push({ clientId: q.clientId, qs, q });
       acceptedBySite.set(qs.siteId, list);
     }
   }
@@ -91,6 +91,7 @@ export function computeCommesse({
   const oneShotCounted = new Set<string>();
   for (const monthEntries of entriesByMonth.values()) {
     const totals = computeSiteTotals(monthEntries);
+    const mese = monthEntries[0].timestamp.getMonth() + 1;
     for (const [siteId, t] of totals) {
       const accepted = acceptedBySite.get(siteId);
       if (!accepted) continue;
@@ -99,12 +100,12 @@ export function computeCommesse({
       const ore = t.workMinutes / 60;
       a.ore += ore;
       a.spost += t.travelMinutes / 60;
-      for (const { qs } of accepted) {
+      for (const { qs, q } of accepted) {
         if (qs.serviceType === "ONE_SHOT") {
           if (oneShotCounted.has(qs.id)) continue;
           oneShotCounted.add(qs.id);
         }
-        a.contratto += vendita(qs);
+        a.contratto += canoneDelMese(vendita(qs), qs.serviceType, q, mese);
       }
       const meanTariffa =
         accepted.reduce((s, x) => s + x.qs.tariffaConsuntivo, 0) / accepted.length;
@@ -145,9 +146,14 @@ export function computeCommesse({
             : null;
 
     const baseSites = base.flatMap((q) => q.sites);
-    const mensile = baseSites
-      .filter((qs) => qs.serviceType !== "ONE_SHOT")
-      .reduce((s, qs) => s + vendita(qs), 0);
+    const mensile = base.reduce(
+      (sum, q) =>
+        sum +
+        q.sites
+          .filter((qs) => qs.serviceType !== "ONE_SHOT")
+          .reduce((s, qs) => s + canoneDelMese(vendita(qs), qs.serviceType, q), 0),
+      0
+    );
     const annuo = baseSites.reduce((s, qs) => s + computeSoldAnnual(qs.serviceType, vendita(qs)), 0);
 
     const emitted = cInvoices.filter((i) => i.stato !== "BOZZA");
@@ -226,12 +232,12 @@ export function computeCommessePerOfferta({
   entries: EntryIn[];
   invoices: InvoiceInQ[];
 }): OffertaRow[] {
-  const acceptedBySite = new Map<string, { quoteId: string; qs: QuoteSite }[]>();
+  const acceptedBySite = new Map<string, { quoteId: string; qs: QuoteSite; q: QuoteIn }[]>();
   for (const q of quotes) {
     if (q.status !== "ACCETTATO") continue;
     for (const qs of q.sites) {
       const list = acceptedBySite.get(qs.siteId) ?? [];
-      list.push({ quoteId: q.id, qs });
+      list.push({ quoteId: q.id, qs, q });
       acceptedBySite.set(qs.siteId, list);
     }
   }
@@ -251,11 +257,12 @@ export function computeCommessePerOfferta({
   const oneShotCounted = new Set<string>();
   for (const monthEntries of entriesByMonth.values()) {
     const totals = computeSiteTotals(monthEntries);
+    const mese = monthEntries[0].timestamp.getMonth() + 1;
     for (const [siteId, t] of totals) {
       const accepted = acceptedBySite.get(siteId);
       if (!accepted) continue;
       const n = accepted.length;
-      for (const { quoteId, qs } of accepted) {
+      for (const { quoteId, qs, q } of accepted) {
         const a = agg.get(quoteId) ?? { ore: 0, spost: 0, contratto: 0, consuntivo: 0 };
         const ore = t.workMinutes / 60 / n;
         a.ore += ore;
@@ -267,7 +274,7 @@ export function computeCommessePerOfferta({
             a.contratto += vendita(qs);
           }
         } else {
-          a.contratto += vendita(qs);
+          a.contratto += canoneDelMese(vendita(qs), qs.serviceType, q, mese);
         }
         agg.set(quoteId, a);
       }
@@ -311,7 +318,7 @@ export function computeCommessePerOfferta({
     const a = agg.get(q.id) ?? { ore: 0, spost: 0, contratto: 0, consuntivo: 0 };
     const mensile = q.sites
       .filter((qs) => qs.serviceType !== "ONE_SHOT")
-      .reduce((s, qs) => s + vendita(qs), 0);
+      .reduce((s, qs) => s + canoneDelMese(vendita(qs), qs.serviceType, q), 0);
     const annuo = q.sites.reduce((s, qs) => s + computeSoldAnnual(qs.serviceType, vendita(qs)), 0);
     rows.push({
       key: q.id,

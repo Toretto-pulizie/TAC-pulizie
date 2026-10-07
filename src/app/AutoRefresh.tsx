@@ -1,10 +1,25 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-export function AutoRefresh({ intervalMs = 150000 }: { intervalMs?: number }) {
+// Pagine "live" (chi sta lavorando adesso, timbrature del giorno) si
+// aggiornano ogni `intervalMs`; tutte le altre, dove i dati cambiano di rado,
+// ogni `slowIntervalMs`: meno richieste e meno calcolo sul server (limiti del
+// piano Vercel) senza perdere i dati che contano in tempo reale.
+export function AutoRefresh({
+  intervalMs = 150000,
+  slowIntervalMs,
+  livePaths,
+}: {
+  intervalMs?: number;
+  slowIntervalMs?: number;
+  livePaths?: string[];
+}) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isLive = !livePaths || livePaths.includes(pathname);
+  const effectiveMs = isLive || !slowIntervalMs ? intervalMs : slowIntervalMs;
   const searchParams = useSearchParams();
   const isPdfMode = searchParams.get("pdf") === "1";
 
@@ -15,7 +30,7 @@ export function AutoRefresh({ intervalMs = 150000 }: { intervalMs?: number }) {
 
     function start() {
       if (id != null) return;
-      id = setInterval(() => router.refresh(), intervalMs);
+      id = setInterval(() => router.refresh(), effectiveMs);
     }
     function stop() {
       if (id == null) return;
@@ -44,7 +59,7 @@ export function AutoRefresh({ intervalMs = 150000 }: { intervalMs?: number }) {
       stop();
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [router, intervalMs, isPdfMode]);
+  }, [router, effectiveMs, isPdfMode]);
 
   return null;
 }

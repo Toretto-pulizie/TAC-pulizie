@@ -57,6 +57,16 @@ enum QuoteStatus {
   RIFIUTATO
 }
 
+// Modalità di canone mensile per i servizi continuativi (vedi art. III delle
+// clausole): 12 mesi (canone costante), 11 mesi (canone più alto, un mese
+// all'anno non fatturato), oppure ENTRAMBE = offerta "a scelta" non ancora
+// decisa dal cliente (nei calcoli vale come 12 mesi).
+enum CanoneModalita {
+  DODICI_MESI
+  UNDICI_MESI
+  ENTRAMBE
+}
+
 enum ClientTipo {
   AZIENDA
   PERSONA_FISICA
@@ -228,6 +238,10 @@ model Quote {
   attachments         QuoteAttachment[]
   condizioniPagamento String?
   status              QuoteStatus       @default(IN_TRATTATIVA)
+  canoneModalita      CanoneModalita    @default(DODICI_MESI)
+  // Solo per UNDICI_MESI: mese (1-12) in cui non si fattura, deciso da
+  // Toretto e comunicato al cliente via e-mail; non compare nel PDF.
+  meseSenzaFattura    Int?
   createdAt           DateTime          @default(now())
   closedAt            DateTime?
   invoices            Invoice[]

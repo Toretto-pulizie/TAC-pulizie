@@ -3,7 +3,7 @@ import { Trunc } from "@/app/Trunc";
 import { redirect } from "next/navigation";
 import { verifySession, getCurrentUser } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import type { EntryType } from "@prisma/client";
+import type { CanoneModalita, EntryType, ServiceType } from "@prisma/client";
 import { startOfToday, computeSiteTotals } from "@/lib/timeCalc";
 import {
   startOfDay,
@@ -16,6 +16,7 @@ import { TIPO_LABELS } from "@/lib/leaveRequests";
 import { isModuleKey } from "@/lib/modules";
 import { getHomeSettings } from "@/lib/homeSettings";
 import { clientDisplayName } from "@/lib/clients";
+import { canoneDelMese } from "@/lib/quotes";
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
@@ -200,6 +201,8 @@ export default async function AdminHomePage() {
               tariffaConsuntivo: true,
               prezzoVenduto: true,
               adeguamento: true,
+              serviceType: true,
+              quote: { select: { canoneModalita: true, meseSenzaFattura: true } },
             },
           }),
           prisma.timeEntry.findMany({
@@ -213,6 +216,8 @@ export default async function AdminHomePage() {
             tariffaConsuntivo: number;
             prezzoVenduto: number | null;
             adeguamento: number | null;
+            serviceType: ServiceType;
+            quote: { canoneModalita: CanoneModalita; meseSenzaFattura: number | null };
           }[],
           { userId: string; siteId: string | null; type: EntryType; timestamp: Date; sessionId: string | null }[],
         ]),
@@ -239,7 +244,15 @@ export default async function AdminHomePage() {
     };
     const euroConsuntivo = (totals.workMinutes / 60) * qs.tariffaConsuntivo;
     totaleConsuntivo += euroConsuntivo;
-    if (euroConsuntivo >= (qs.adeguamento ?? qs.prezzoVenduto ?? 0)) {
+    if (
+      euroConsuntivo >=
+      canoneDelMese(
+        qs.adeguamento ?? qs.prezzoVenduto ?? 0,
+        qs.serviceType,
+        qs.quote,
+        new Date().getMonth() + 1
+      )
+    ) {
       consuntivoInUtile += euroConsuntivo;
     } else {
       consuntivoInPerdita += euroConsuntivo;

@@ -1,5 +1,5 @@
 import type { Quote, QuoteSite, Site } from "@prisma/client";
-import { computeListPrice } from "@/lib/quotes";
+import { canoneDelMese, computeListPrice } from "@/lib/quotes";
 import { buildDescriptionBlocks, flattenDescriptionBlocks } from "@/lib/quotePrint";
 import type { getServiceTypeLabels, getServiceTypeMostraCadenza } from "@/lib/serviceTypeLabels";
 
@@ -17,7 +17,8 @@ export function buildSiteOptions(
   return quotes.flatMap((q) =>
     q.sites.map((qs) => {
       const listPrice = computeListPrice(qs);
-      const importo = qs.adeguamento ?? qs.prezzoVenduto ?? listPrice;
+      // Canone su 11 mesi: l'importo da fatturare è quello maggiorato (12/11).
+      const importo = canoneDelMese(qs.adeguamento ?? qs.prezzoVenduto ?? listPrice, qs.serviceType, q);
       const blocks = buildDescriptionBlocks(
         qs,
         serviceLabels[qs.serviceType],

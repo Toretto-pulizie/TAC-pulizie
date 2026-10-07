@@ -1,6 +1,6 @@
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { computeListPrice, computeDiscountPct } from "@/lib/quotes";
+import { canoneDelMese, computeListPrice, computeDiscountPct } from "@/lib/quotes";
 import { computeSiteTotals, computeTotals } from "@/lib/timeCalc";
 import { monthRange, MONTH_LABELS } from "@/lib/dates";
 import { clientDisplayName } from "@/lib/clients";
@@ -42,7 +42,7 @@ export default async function StatistichePage() {
     }),
     prisma.quoteSite.findMany({
       where: { quote: { status: "ACCETTATO" } },
-      include: { site: { include: { client: true } } },
+      include: { site: { include: { client: true } }, quote: true },
     }),
     prisma.timeEntry.findMany({
       where: { timestamp: { gte: curStart, lte: curEnd } },
@@ -111,7 +111,12 @@ export default async function StatistichePage() {
     .map((qs) => {
       const totals = siteTotals.get(qs.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
       const oreLavorate = totals.workMinutes / 60;
-      const contrattoMensile = qs.adeguamento ?? qs.prezzoVenduto ?? 0;
+      const contrattoMensile = canoneDelMese(
+        qs.adeguamento ?? qs.prezzoVenduto ?? 0,
+        qs.serviceType,
+        qs.quote,
+        new Date().getMonth() + 1
+      );
       const euroConsuntivo = oreLavorate * qs.tariffaConsuntivo;
       // Margine: vedi la stessa nota in consuntivi/page.tsx.
       const scostamento = contrattoMensile - euroConsuntivo;

@@ -24,7 +24,11 @@ export default async function AdminLayout({
 
   return (
     <>
-      <AutoRefresh intervalMs={150000} />
+      <AutoRefresh
+        intervalMs={150000}
+        slowIntervalMs={600000}
+        livePaths={["/admin", "/admin/timbrature", "/admin/presenze"]}
+      />
       <AdminShell
         groups={groups}
         showImpostazioni={isAdmin}

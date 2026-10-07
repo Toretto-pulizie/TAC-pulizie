@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { computeSiteTotals } from "@/lib/timeCalc";
 import { MONTH_LABELS, monthRange } from "@/lib/dates";
 import { clientDisplayName } from "@/lib/clients";
+import { canoneDelMese } from "@/lib/quotes";
 import { getOreDisponibili } from "@/lib/oreDisponibili";
 import { ConsuntiviList } from "./ConsuntiviList";
 
@@ -27,7 +28,7 @@ export default async function ConsuntiviPage({
     await Promise.all([
       prisma.quoteSite.findMany({
         where: { quote: { status: "ACCETTATO" } },
-        include: { site: { include: { client: true } } },
+        include: { site: { include: { client: true } }, quote: true },
       }),
       prisma.timeEntry.findMany({
         where: { timestamp: { gte: start, lte: end } },
@@ -50,7 +51,12 @@ export default async function ConsuntiviPage({
     .filter((qs) => siteTotals.has(qs.siteId))
     .map((qs) => {
       const totals = siteTotals.get(qs.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
-      const contrattoMensile = qs.adeguamento ?? qs.prezzoVenduto ?? 0;
+      const contrattoMensile = canoneDelMese(
+        qs.adeguamento ?? qs.prezzoVenduto ?? 0,
+        qs.serviceType,
+        qs.quote,
+        month
+      );
       const oreLavorate = totals.workMinutes / 60;
       const oreSpostamento = totals.travelMinutes / 60;
       const euroConsuntivo = oreLavorate * qs.tariffaConsuntivo;
