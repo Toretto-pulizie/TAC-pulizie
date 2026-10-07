@@ -20,6 +20,8 @@ type SiteOption = {
   siteName: string;
   descrizione: string;
   importo: number;
+  canone11: boolean;
+  meseSenzaFattura: number | null;
 };
 
 // sourceId collega una riga al cantiere che l'ha generata (per poterla
@@ -87,6 +89,9 @@ export function InvoiceForm({
     editing?.regimeIva ?? regimeDefault(clients.find((c) => c.id === startClientId)?.tipo)
   );
   const [righe, setRighe] = useState<Line[]>(editing?.righe.length ? editing.righe : [emptyLine()]);
+
+  const [dataFattura, setDataFattura] = useState(editing?.data ?? defaultData);
+  const meseFattura = Number(dataFattura.slice(5, 7)) || null;
 
   const sitesForClient = useMemo(
     () => sites.filter((s) => s.clientId === clientId),
@@ -172,7 +177,8 @@ export function InvoiceForm({
           <input
             type="date"
             name="data"
-            defaultValue={editing?.data ?? defaultData}
+            value={dataFattura}
+            onChange={(e) => setDataFattura(e.target.value)}
             required
             className="rounded-lg border border-zinc-300 px-3 py-2"
           />
@@ -223,11 +229,28 @@ export function InvoiceForm({
               />
               <span className="flex-1">
                 <Trunc text={s.siteName} />{" "}
-                <span className="text-xs text-zinc-400">(Offerta N. {s.numeroOfferta})</span>
+                <span className="text-xs text-zinc-400">
+                  (Offerta N. {s.numeroOfferta}
+                  {s.canone11 ? ", canone su 11 mesi" : ""})
+                </span>
               </span>
               <span className="text-zinc-500">{formatEuro(s.importo)}</span>
             </label>
           ))}
+          {sitesForClient
+            .filter(
+              (s) =>
+                checkedSiteIds.has(s.siteId) &&
+                s.canone11 &&
+                s.meseSenzaFattura != null &&
+                s.meseSenzaFattura === meseFattura
+            )
+            .map((s) => (
+              <p key={`avviso-${s.siteId}`} className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                Attenzione: l&apos;offerta N. {s.numeroOfferta} è a canone su 11 mesi e questo è il suo mese
+                senza fattura. Se emetti questa fattura, il cliente ne riceverebbe 12 invece di 11.
+              </p>
+            ))}
         </div>
       )}
 

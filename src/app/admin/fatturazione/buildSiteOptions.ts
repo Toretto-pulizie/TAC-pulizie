@@ -32,6 +32,9 @@ export function buildSiteOptions(
         siteName: qs.site.name,
         descrizione: flattenDescriptionBlocks(blocks),
         importo,
+        // Canone su 11 mesi: serve a segnalare in fattura il mese senza fattura.
+        canone11: q.canoneModalita === "UNDICI_MESI" && qs.serviceType !== "ONE_SHOT",
+        meseSenzaFattura: q.meseSenzaFattura,
       };
     })
   );

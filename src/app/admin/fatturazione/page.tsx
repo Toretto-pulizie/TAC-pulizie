@@ -4,6 +4,8 @@ import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { clientDisplayName } from "@/lib/clients";
 import { loadCommesse } from "@/lib/commesseData";
+import { MONTH_LABELS } from "@/lib/dates";
+import { canoneDelMese } from "@/lib/quotes";
 import { InvoiceListActions } from "./InvoiceListActions";
 
 function formatEuro(n: number) {
@@ -55,6 +57,38 @@ export default async function FatturazionePage() {
     .filter((c) => (c.daFatturare ?? 0) > 0.005)
     .sort((a, b) => (b.daFatturare ?? 0) - (a.daFatturare ?? 0));
   const totaleDaFatturare = daFatturare.reduce((s, c) => s + (c.daFatturare ?? 0), 0);
+
+  // Offerte accettate a canone su 11 mesi, raggruppate per mese senza fattura:
+  // serve a distribuire i mesi tra i clienti senza ritrovarsi con un mese a
+  // zero incassi. Importo = canone mensile (maggiorato) che quel mese non
+  // viene fatturato.
+  const offerte11 = await prisma.quote.findMany({
+    where: { status: "ACCETTATO", canoneModalita: "UNDICI_MESI" },
+    include: { client: true, sites: true },
+    orderBy: { numeroOfferta: "desc" },
+  });
+  const mesiSenzaFattura = new Map<
+    number | null,
+    { numero: number; clientName: string; importo: number }[]
+  >();
+  for (const q of offerte11) {
+    const importo = q.sites.reduce(
+      (sum, qs) =>
+        sum +
+        (qs.serviceType === "ONE_SHOT"
+          ? 0
+          : canoneDelMese(qs.adeguamento ?? qs.prezzoVenduto ?? 0, qs.serviceType, q)),
+      0
+    );
+    const list = mesiSenzaFattura.get(q.meseSenzaFattura) ?? [];
+    list.push({ numero: q.numeroOfferta, clientName: clientDisplayName(q.client), importo });
+    mesiSenzaFattura.set(q.meseSenzaFattura, list);
+  }
+  const mesiRows = [...Array(12).keys()]
+    .map((i) => i + 1)
+    .map((m) => ({ mese: m as number | null, label: MONTH_LABELS[m - 1], offerte: mesiSenzaFattura.get(m) ?? [] }))
+    .concat([{ mese: null, label: "Da decidere", offerte: mesiSenzaFattura.get(null) ?? [] }])
+    .filter((r) => r.offerte.length > 0);
 
   const rows = invoices.map((inv) => ({
     id: inv.id,
@@ -131,6 +165,50 @@ export default async function FatturazionePage() {
                       >
                         Crea fattura
                       </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {mesiRows.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-900">Mese senza fattura (canone su 11 mesi)</h2>
+            <p className="text-xs text-zinc-400">
+              Offerte accettate a canone su 11 mesi, per mese in cui non si fattura: l&apos;importo è il
+              canone mensile che quel mese non viene fatturato. Il mese si imposta nell&apos;offerta.
+            </p>
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+            <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+              <thead className="border-b border-zinc-300 bg-zinc-100 text-zinc-500">
+                <tr>
+                  {["Mese", "Offerte", "Clienti", "Non fatturato"].map((h) => (
+                    <th key={h} className="px-3 py-2 font-semibold">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {mesiRows.map((r) => (
+                  <tr key={r.label} className="border-b border-zinc-100 last:border-0">
+                    <td className="px-3 py-2 font-medium text-zinc-900">{r.label}</td>
+                    <td className="px-3 py-2 text-zinc-500">{r.offerte.map((o) => o.numero).join(", ")}</td>
+                    <td className="px-3 py-2 text-zinc-500">
+                      {r.offerte.map((o, i) => (
+                        <span key={o.numero}>
+                          {i > 0 && ", "}
+                          <Trunc text={o.clientName} />
+                        </span>
+                      ))}
+                    </td>
+                    <td className="px-3 py-2 font-semibold text-zinc-900">
+                      {formatEuro(r.offerte.reduce((sum, o) => sum + o.importo, 0))}
                     </td>
                   </tr>
                 ))}
