@@ -61,6 +61,16 @@ export function SiteForm({
           className="w-32 rounded-lg border border-zinc-300 px-3 py-2"
         />
       </label>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="accessoSenzaCliente"
+          
+          className="h-4 w-4"
+        />
+        Abbiamo chiavi/codici per accedere anche senza il cliente
+      </label>
       <button
         type="submit"
         disabled={pending}

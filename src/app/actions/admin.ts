@@ -390,6 +390,7 @@ const SiteSchema = z.object({
   name: z.string().trim().min(1, "Nome sede richiesto"),
   address: z.string().trim().min(1, "Indirizzo richiesto (serve per il cantiere)"),
   capienza: z.coerce.number().int().min(1).optional(),
+  accessoSenzaCliente: z.preprocess((v) => v === "on" || v === "true", z.boolean()),
 });
 
 export async function createSite(_prevState: unknown, formData: FormData) {
@@ -402,6 +403,7 @@ export async function createSite(_prevState: unknown, formData: FormData) {
     name: formData.get("name"),
     address: formData.get("address"),
     capienza: formData.get("capienza") || undefined,
+    accessoSenzaCliente: formData.get("accessoSenzaCliente") ?? undefined,
   });
 
   if (!parsed.success) {
@@ -431,6 +433,7 @@ const UpdateSiteSchema = z.object({
   name: z.string().trim().min(1, "Nome sede richiesto"),
   address: z.string().trim().min(1, "Indirizzo richiesto (serve per il cantiere)"),
   capienza: z.coerce.number().int().min(1).optional(),
+  accessoSenzaCliente: z.preprocess((v) => v === "on" || v === "true", z.boolean()),
 });
 
 export async function updateSite(_prevState: unknown, formData: FormData) {
@@ -441,13 +444,14 @@ export async function updateSite(_prevState: unknown, formData: FormData) {
     name: formData.get("name"),
     address: formData.get("address"),
     capienza: formData.get("capienza") || undefined,
+    accessoSenzaCliente: formData.get("accessoSenzaCliente") ?? undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
 
-  const { id, name, address, capienza } = parsed.data;
+  const { id, name, address, capienza, accessoSenzaCliente } = parsed.data;
 
   const existing = await prisma.site.findUnique({ where: { id } });
   const coords =
@@ -461,6 +465,7 @@ export async function updateSite(_prevState: unknown, formData: FormData) {
       name,
       address,
       capienza: capienza ?? null,
+      accessoSenzaCliente,
       lat: coords?.lat ?? null,
       lng: coords?.lng ?? null,
     },

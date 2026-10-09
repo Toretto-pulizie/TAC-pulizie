@@ -123,7 +123,7 @@ export function CommesseList({ rows }: { rows: OffertaRow[] }) {
             {col("Ore spost.", "spostLabel", "oreSpostamento")}
             {col("N° FT", "nFattureLabel", "nFatture")}
             {col("Mensile", "mensileLabel", "mensile")}
-            {col("Annuo", "annuoLabel", "annuo")}
+            {col("Annuo (11 mesi)", "annuoLabel", "annuo")}
             {col("Consuntivo", "consuntivoLabel", "consuntivo")}
             {col("Scostamento", "scostamentoLabel", "scostamento")}
             {col("Fatturato", "fatturatoLabel", "fatturato")}

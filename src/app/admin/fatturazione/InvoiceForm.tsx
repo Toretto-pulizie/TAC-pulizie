@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { saveInvoice } from "@/app/actions/invoices";
 import { SearchSelect } from "@/app/SearchSelect";
 import { Trunc } from "@/app/Trunc";
+import { fattoreChiusura, type ChiusuraScelta } from "@/lib/chiusure";
 
 type ClientOption = { id: string; name: string; tipo: string };
 
@@ -20,8 +21,10 @@ type SiteOption = {
   siteName: string;
   descrizione: string;
   importo: number;
-  canone11: boolean;
-  meseSenzaFattura: number | null;
+  serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
+  chiusuraScelta: ChiusuraScelta;
+  accessoSenzaCliente: boolean;
+  weekdays: number[] | null;
 };
 
 // sourceId collega una riga al cantiere che l'ha generata (per poterla
@@ -64,6 +67,7 @@ function regimeDefault(tipo: string | undefined): "STANDARD" | "REVERSE_CHARGE" 
 export function InvoiceForm({
   clients,
   sites,
+  closures,
   defaultData,
   editing,
   isCreditNote = false,
@@ -71,6 +75,7 @@ export function InvoiceForm({
 }: {
   clients: ClientOption[];
   sites: SiteOption[];
+  closures: { dal: string; al: string }[];
   defaultData: string;
   editing?: EditingInvoice;
   // Cliente già scelto all'apertura (es. dal pulsante "Crea fattura" della
@@ -91,7 +96,28 @@ export function InvoiceForm({
   const [righe, setRighe] = useState<Line[]>(editing?.righe.length ? editing.righe : [emptyLine()]);
 
   const [dataFattura, setDataFattura] = useState(editing?.data ?? defaultData);
-  const meseFattura = Number(dataFattura.slice(5, 7)) || null;
+  const annoFattura = Number(dataFattura.slice(0, 4)) || new Date().getFullYear();
+  const meseFattura = Number(dataFattura.slice(5, 7)) || new Date().getMonth() + 1;
+
+  // Chiusura aziendale: nel mese interessato il canone si riduce per chi è
+  // nella modalità b (nessun intervento); l'importo resta modificabile.
+  function propostaChiusura(s: SiteOption) {
+    if (s.serviceType === "ONE_SHOT") return null;
+    const f = fattoreChiusura({
+      year: annoFattura,
+      month: meseFattura,
+      closures,
+      scelta: s.chiusuraScelta,
+      accessoSenzaCliente: s.accessoSenzaCliente,
+      weekdays: s.weekdays,
+    });
+    if (f.saltati === 0) return null;
+    return {
+      ...f,
+      importo: Math.round(s.importo * f.fattore * 100) / 100,
+      riduzionePct: Math.round((1 - f.fattore) * 100),
+    };
+  }
 
   const sitesForClient = useMemo(
     () => sites.filter((s) => s.clientId === clientId),
@@ -117,10 +143,19 @@ export function InvoiceForm({
   function toggleSite(site: SiteOption, checked: boolean) {
     setRighe((prev) => {
       if (checked) {
+        const chiusura = propostaChiusura(site);
         const line: Line = {
-          descrizione: site.descrizione,
+          descrizione:
+            site.descrizione +
+            (chiusura && chiusura.fattore < 1
+              ? `\nChiusura aziendale: canone ridotto del ${chiusura.riduzionePct}% (${
+                  chiusura.metodo === "passaggi"
+                    ? `${chiusura.saltati} passaggi non eseguiti su ${chiusura.programmati}`
+                    : `${chiusura.saltati} giorni lavorativi di chiusura su ${chiusura.programmati} del mese`
+                })`
+              : ""),
           quantita: 1,
-          prezzoUnitario: site.importo,
+          prezzoUnitario: chiusura ? chiusura.importo : site.importo,
           sourceId: site.siteId,
         };
         // Tolgo l'eventuale unica riga vuota iniziale, per non lasciarla a
@@ -231,26 +266,29 @@ export function InvoiceForm({
                 <Trunc text={s.siteName} />{" "}
                 <span className="text-xs text-zinc-400">
                   (Offerta N. {s.numeroOfferta}
-                  {s.canone11 ? ", canone su 11 mesi" : ""})
+                  )
                 </span>
               </span>
-              <span className="text-zinc-500">{formatEuro(s.importo)}</span>
+              <span className="text-right text-zinc-500">
+                {formatEuro(propostaChiusura(s)?.importo ?? s.importo)}
+                {propostaChiusura(s) && propostaChiusura(s)!.fattore < 1 && (
+                  <span
+                    className="block text-[11px] text-amber-700"
+                    title="Chiusura aziendale: canone ridotto per i passaggi non eseguiti"
+                  >
+                    chiusura: −{propostaChiusura(s)!.riduzionePct}% (
+                    {propostaChiusura(s)!.saltati}/{propostaChiusura(s)!.programmati} passaggi
+                    {propostaChiusura(s)!.metodo === "giorni" ? ", stima" : ""})
+                  </span>
+                )}
+                {propostaChiusura(s) && propostaChiusura(s)!.fattore === 1 && (
+                  <span className="block text-[11px] text-zinc-400">
+                    chiusura: canone invariato (pulizie di chiusura e riapertura)
+                  </span>
+                )}
+              </span>
             </label>
           ))}
-          {sitesForClient
-            .filter(
-              (s) =>
-                checkedSiteIds.has(s.siteId) &&
-                s.canone11 &&
-                s.meseSenzaFattura != null &&
-                s.meseSenzaFattura === meseFattura
-            )
-            .map((s) => (
-              <p key={`avviso-${s.siteId}`} className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                Attenzione: l&apos;offerta N. {s.numeroOfferta} è a canone su 11 mesi e questo è il suo mese
-                senza fattura. Se emetti questa fattura, il cliente ne riceverebbe 12 invece di 11.
-              </p>
-            ))}
         </div>
       )}
 

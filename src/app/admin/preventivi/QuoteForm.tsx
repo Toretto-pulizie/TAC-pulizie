@@ -4,7 +4,6 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveQuote } from "@/app/actions/quotes";
 import { SearchSelect } from "@/app/SearchSelect";
-import { MONTH_LABELS } from "@/lib/dates";
 import {
   QuoteSiteFieldset,
   type ClientOption,
@@ -23,8 +22,8 @@ export type EditingQuote = {
   clientId: string;
   createdAt: string;
   condizioniPagamento: string | null;
-  canoneModalita: "DODICI_MESI" | "UNDICI_MESI" | "ENTRAMBE";
-  meseSenzaFattura: number | null;
+  chiusuraScelta: "DA_DEFINIRE" | "CON_PULIZIE" | "SENZA_PULIZIE";
+  chiusuraNote: string | null;
   sites: SiteBlockInitial[];
   attachmentIds: string[];
 };
@@ -66,9 +65,6 @@ export function QuoteForm({
       ? editingQuote.sites.map((_, i) => i)
       : [0]
   );
-  const [canoneModalita, setCanoneModalita] = useState<"DODICI_MESI" | "UNDICI_MESI" | "ENTRAMBE">(
-    editingQuote?.canoneModalita ?? "ENTRAMBE"
-  );
   const [totali, setTotali] = useState<Record<number, number>>({});
   const totaleComplessivo = Object.values(totali).reduce((a, b) => a + b, 0);
 
@@ -92,7 +88,6 @@ export function QuoteForm({
       } else {
         formRef.current?.reset();
         setSelectedClientId("");
-        setCanoneModalita("ENTRAMBE");
         nextBlockId.current = 0;
         setBlockIds([0]);
         setTotali({});
@@ -206,38 +201,30 @@ export function QuoteForm({
 
       <div className="flex flex-wrap items-end gap-3 border-t border-zinc-100 pt-3">
         <label className="flex flex-col gap-1 text-sm">
-          Canone mensile (art. III clausole)
+          Chiusura aziendale (art. III clausole)
           <select
-            name="canoneModalita"
-            value={canoneModalita}
-            onChange={(e) => setCanoneModalita(e.target.value as typeof canoneModalita)}
+            name="chiusuraScelta"
+            defaultValue={editingQuote?.chiusuraScelta ?? "DA_DEFINIRE"}
             className="rounded-lg border border-zinc-300 px-3 py-2"
           >
-            <option value="ENTRAMBE">Il cliente sceglie: 12 mesi o 11 mesi (nel PDF)</option>
-            <option value="DODICI_MESI">12 mesi (come prima)</option>
-            <option value="UNDICI_MESI">11 mesi (un mese all'anno non fatturato)</option>
+            <option value="DA_DEFINIRE">Da definire (vale la regola predefinita)</option>
+            <option value="CON_PULIZIE">Canone invariato con pulizie di chiusura e riapertura</option>
+            <option value="SENZA_PULIZIE">Nessun intervento e canone ridotto</option>
           </select>
         </label>
-        {canoneModalita === "UNDICI_MESI" && (
-          <label className="flex flex-col gap-1 text-sm">
-            Mese senza fattura
-            <select
-              name="meseSenzaFattura"
-              defaultValue={editingQuote?.meseSenzaFattura ?? ""}
-              className="rounded-lg border border-zinc-300 px-3 py-2"
-            >
-              <option value="">Da decidere</option>
-              {MONTH_LABELS.map((label, i) => (
-                <option key={label} value={i + 1}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <p className="max-w-md text-xs text-zinc-500">
-          Il canone su 11 mesi è il canone su 12 mesi × 12/11 (stesso importo annuo). Il mese
-          senza fattura non compare nel PDF: lo comunichi tu al cliente via e-mail.
+        <label className="flex min-w-[16rem] flex-1 flex-col gap-1 text-sm">
+          Nota sulla scelta
+          <input
+            name="chiusuraNote"
+            defaultValue={editingQuote?.chiusuraNote ?? ""}
+            placeholder="Es. comunicata a voce il 3/7 dal sig. Rossi"
+            className="rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <p className="w-full text-xs text-zinc-500">
+          Dato interno, non compare nel PDF. Regola predefinita se il cliente non risponde: pulizie di chiusura e
+          riapertura se abbiamo l&apos;accesso ai locali, altrimenti canone ridotto. Il riepilogo di tutte le scelte è nella
+          pagina Chiusure.
         </p>
       </div>
 

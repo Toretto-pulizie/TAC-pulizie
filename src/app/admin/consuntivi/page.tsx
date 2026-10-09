@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { computeSiteTotals } from "@/lib/timeCalc";
 import { MONTH_LABELS, monthRange } from "@/lib/dates";
 import { clientDisplayName } from "@/lib/clients";
-import { canoneDelMese } from "@/lib/quotes";
+import { importoMeseSede, loadChiusureContext } from "@/lib/chiusureData";
 import { getOreDisponibili } from "@/lib/oreDisponibili";
 import { ConsuntiviList } from "./ConsuntiviList";
 
@@ -23,6 +23,8 @@ export default async function ConsuntiviPage({
   const year = params.year ? parseInt(params.year, 10) : now.getFullYear();
   const month = params.month ? parseInt(params.month, 10) : now.getMonth() + 1;
   const { start, end } = monthRange(year, month);
+
+  const chiusure = await loadChiusureContext();
 
   const [quoteSites, entries, { ore: oreDisponibili, netto: oreDisponibiliNette }] =
     await Promise.all([
@@ -51,10 +53,13 @@ export default async function ConsuntiviPage({
     .filter((qs) => siteTotals.has(qs.siteId))
     .map((qs) => {
       const totals = siteTotals.get(qs.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
-      const contrattoMensile = canoneDelMese(
+      const contrattoMensile = importoMeseSede(
+        chiusure,
         qs.adeguamento ?? qs.prezzoVenduto ?? 0,
-        qs.serviceType,
+        qs,
         qs.quote,
+        qs.site.accessoSenzaCliente,
+        year,
         month
       );
       const oreLavorate = totals.workMinutes / 60;

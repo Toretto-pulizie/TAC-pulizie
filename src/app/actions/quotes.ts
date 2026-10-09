@@ -13,8 +13,8 @@ const QuoteSchema = z.object({
   clientId: z.string().trim().min(1, "Seleziona un cliente"),
   createdAt: z.string().trim().min(1, "Indica la data di creazione"),
   condizioniPagamento: z.string().trim().optional(),
-  canoneModalita: z.enum(["DODICI_MESI", "UNDICI_MESI", "ENTRAMBE"]).default("DODICI_MESI"),
-  meseSenzaFattura: z.coerce.number().int().min(1).max(12).optional(),
+  chiusuraScelta: z.enum(["DA_DEFINIRE", "CON_PULIZIE", "SENZA_PULIZIE"]).default("DA_DEFINIRE"),
+  chiusuraNote: z.string().trim().optional(),
 });
 
 const QuoteSiteSchema = z
@@ -141,13 +141,13 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
     clientId: formData.get("clientId"),
     createdAt: formData.get("createdAt"),
     condizioniPagamento: formData.get("condizioniPagamento") || undefined,
-    canoneModalita: formData.get("canoneModalita") || undefined,
-    meseSenzaFattura: formData.get("meseSenzaFattura") || undefined,
+    chiusuraScelta: formData.get("chiusuraScelta") || undefined,
+    chiusuraNote: formData.get("chiusuraNote") || undefined,
   });
   if (!parsedQuote.success) {
     return { error: parsedQuote.error.issues[0]?.message ?? "Dati non validi" };
   }
-  const { clientId, condizioniPagamento, canoneModalita, meseSenzaFattura } = parsedQuote.data;
+  const { clientId, condizioniPagamento, chiusuraScelta, chiusuraNote } = parsedQuote.data;
   const createdAt = new Date(`${parsedQuote.data.createdAt}T00:00:00`);
   if (Number.isNaN(createdAt.getTime())) {
     return { error: "Data di creazione non valida" };
@@ -230,13 +230,29 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
     });
   }
 
+  // Data della scelta: si aggiorna solo quando la scelta cambia, così resta
+  // la traccia di quando il cliente ha deciso.
+  const precedente =
+    typeof id === "string" && id
+      ? await prisma.quote.findUnique({
+          where: { id },
+          select: { chiusuraScelta: true, chiusuraSceltaIl: true },
+        })
+      : null;
+  const chiusuraSceltaIl =
+    chiusuraScelta === "DA_DEFINIRE"
+      ? null
+      : precedente && precedente.chiusuraScelta === chiusuraScelta
+        ? precedente.chiusuraSceltaIl
+        : new Date();
+
   const quoteBaseData = {
     clientId,
     createdAt,
     condizioniPagamento: condizioniPagamento || null,
-    canoneModalita,
-    // Il mese senza fattura ha senso solo per il canone su 11 mesi.
-    meseSenzaFattura: canoneModalita === "UNDICI_MESI" ? (meseSenzaFattura ?? null) : null,
+    chiusuraScelta,
+    chiusuraNote: chiusuraNote || null,
+    chiusuraSceltaIl,
   };
 
   // Allegati selezionati (checkbox "attachmentIds"): salvati nell'ordine in

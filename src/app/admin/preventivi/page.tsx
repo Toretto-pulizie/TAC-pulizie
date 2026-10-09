@@ -77,8 +77,8 @@ export default async function PreventiviPage({
         clientId: editingQuoteRaw.clientId,
         createdAt: toDateInputValue(editingQuoteRaw.createdAt),
         condizioniPagamento: editingQuoteRaw.condizioniPagamento,
-        canoneModalita: editingQuoteRaw.canoneModalita,
-        meseSenzaFattura: editingQuoteRaw.meseSenzaFattura,
+        chiusuraScelta: editingQuoteRaw.chiusuraScelta,
+        chiusuraNote: editingQuoteRaw.chiusuraNote,
         attachmentIds: editingQuoteRaw.attachments.map((a) => a.attachmentId),
         sites: editingQuoteRaw.sites.map((s) => ({
           siteId: s.siteId,
@@ -138,6 +138,10 @@ export default async function PreventiviPage({
     // manuale).
     const discountPct = computeDiscountPct(listPrice, netto);
     const annuo = siteRows.reduce((sum, s) => sum + s.annuo, 0);
+    const annuo11 = siteRows.reduce(
+      (sum, s) => sum + computeSoldAnnual(s.serviceType, s.vendita),
+      0
+    );
     const siteCount = q.sites.length;
     // Dettaglio per sede: usato dal pannello "a grappolo" per mostrare gli
     // importi (e ora anche il Tipo servizio) di ciascuna sede — possono
@@ -162,6 +166,7 @@ export default async function PreventiviPage({
         discountPct: computeDiscountPct(s.listPrice, s.netto),
         netto: s.netto,
         vendita: s.vendita,
+        annuo11: computeSoldAnnual(s.serviceType, s.vendita),
       };
     });
     const tipoServizio = perSite.every((s) => s.tipoServizio === perSite[0].tipoServizio)
@@ -186,6 +191,7 @@ export default async function PreventiviPage({
       venditaRicorrente,
       discountPct,
       annuo,
+      annuo11,
     };
   });
 
@@ -213,7 +219,7 @@ export default async function PreventiviPage({
             </p>
           </div>
           <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <p className="text-sm text-zinc-500">Valore annuo contratti</p>
+            <p className="text-sm text-zinc-500">Valore annuo contratti (11 mesi)</p>
             <p className="text-xl font-semibold text-zinc-900">
               {formatEuro(annuoAccettato)}
             </p>
@@ -249,6 +255,7 @@ export default async function PreventiviPage({
             listPrice: r.listPrice,
             netto: r.netto,
             vendita: r.vendita,
+            annuo11: r.annuo11,
             discountPct: r.discountPct,
             status: r.status,
           }))}

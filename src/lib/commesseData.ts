@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { clientDisplayName } from "@/lib/clients";
 import { computeCommesse, computeCommessePerOfferta } from "@/lib/commesse";
+import { loadChiusureContext } from "@/lib/chiusureData";
 
 async function loadInputs(range: { start: Date; end: Date } | null) {
-  const [clients, quotes, entries, invoices] = await Promise.all([
+  const [clients, quotes, entries, invoices, chiusure, sites] = await Promise.all([
     prisma.client.findMany(),
     prisma.quote.findMany({ include: { sites: true } }),
     prisma.timeEntry.findMany({
@@ -23,9 +24,13 @@ async function loadInputs(range: { start: Date; end: Date } | null) {
         righe: { select: { importo: true } },
       },
     }),
+    loadChiusureContext(),
+    prisma.site.findMany({ select: { id: true, accessoSenzaCliente: true } }),
   ]);
 
   return {
+    chiusure,
+    accessoBySite: new Map(sites.map((x) => [x.id, x.accessoSenzaCliente])),
     clients: clients.map((c) => ({ id: c.id, name: clientDisplayName(c) })),
     quotes,
     entries,

@@ -4,6 +4,8 @@ import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { clientDisplayName } from "@/lib/clients";
 import { getServiceTypeLabels, getServiceTypeMostraCadenza } from "@/lib/serviceTypeLabels";
+import { toDateInputValue } from "@/lib/dates";
+import { loadChiusureContext } from "@/lib/chiusureData";
 import { InvoiceForm } from "../InvoiceForm";
 import { buildSiteOptions } from "../buildSiteOptions";
 import { EmettiButton } from "./EmettiButton";
@@ -55,7 +57,12 @@ export default async function FatturaDetailPage({
     .map((c) => ({ id: c.id, name: clientDisplayName(c), tipo: c.tipo }))
     .sort((a, b) => a.name.localeCompare(b.name, "it"));
 
-  const sites = buildSiteOptions(quotesRaw, serviceLabels, mostraCadenzaSettings);
+  const chiusure = await loadChiusureContext();
+  const sites = buildSiteOptions(quotesRaw, serviceLabels, mostraCadenzaSettings, chiusure);
+  const closures = chiusure.closures.map((c) => ({
+    dal: toDateInputValue(new Date(c.dal)),
+    al: toDateInputValue(new Date(c.al)),
+  }));
 
   const isCreditNote = invoice.tipoDocumento === "TD04";
   const docName = isCreditNote ? "Nota di credito" : "Fattura";
@@ -123,6 +130,7 @@ export default async function FatturaDetailPage({
           isCreditNote={isCreditNote}
           clients={clients}
           sites={sites}
+        closures={closures}
           defaultData={invoice.data.toISOString().slice(0, 10)}
           editing={{
             id: invoice.id,

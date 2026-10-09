@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { monthRange, workingDaysInMonth } from "@/lib/dates";
 import { hoursLostToApprovedLeave } from "@/lib/leaveRequests";
 import { getStatisticheSettings } from "@/lib/statisticheSettings";
+import { giorniLavorativiChiusura } from "@/lib/chiusure";
 
 // Ore disponibili nel mese/anno dato: giorni lavorativi (esclusi sabati,
 // domeniche, feste comandate e il Patrono di Torino) × 8h × Collaboratori
@@ -10,15 +11,21 @@ import { getStatisticheSettings } from "@/lib/statisticheSettings";
 // approvati che cadono in quel mese (Ferie aziendali comprese) — stesso
 // calcolo condiviso da Consuntivi e Statistiche, per restare coerenti.
 export async function getOreDisponibili(year: number, month: number) {
-  const [collaboratoriOperativi, settings] = await Promise.all([
+  const [collaboratoriOperativi, settings, closures] = await Promise.all([
     prisma.user.findMany({
       where: { active: true, role: "EMPLOYEE", tipoCollaboratore: "OPERATIVO" },
       select: { id: true },
     }),
     getStatisticheSettings(),
+    prisma.closurePeriod.findMany({ select: { dal: true, al: true } }),
   ]);
 
-  const lorde = workingDaysInMonth(year, month) * 8 * collaboratoriOperativi.length;
+  // I giorni di chiusura aziendale non sono disponibili, come le festività.
+  const giorni = Math.max(
+    0,
+    workingDaysInMonth(year, month) - giorniLavorativiChiusura(closures, year, month)
+  );
+  const lorde = giorni * 8 * collaboratoriOperativi.length;
 
   if (!settings.oreDisponibiliNette) {
     return { ore: lorde, netto: false };

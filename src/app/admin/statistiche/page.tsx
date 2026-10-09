@@ -1,6 +1,7 @@
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { canoneDelMese, computeListPrice, computeDiscountPct } from "@/lib/quotes";
+import { computeListPrice, computeDiscountPct } from "@/lib/quotes";
+import { importoMeseSede, loadChiusureContext } from "@/lib/chiusureData";
 import { computeSiteTotals, computeTotals } from "@/lib/timeCalc";
 import { monthRange, MONTH_LABELS } from "@/lib/dates";
 import { clientDisplayName } from "@/lib/clients";
@@ -107,15 +108,19 @@ export default async function StatistichePage() {
 
   // --- Marginalità cantieri (mese corrente) ---
   const siteTotals = computeSiteTotals(currentMonthEntries);
+  const chiusure = await loadChiusureContext();
   const margini = acceptedQuoteSites
     .map((qs) => {
       const totals = siteTotals.get(qs.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
       const oreLavorate = totals.workMinutes / 60;
-      const contrattoMensile = canoneDelMese(
+      const contrattoMensile = importoMeseSede(
+        chiusure,
         qs.adeguamento ?? qs.prezzoVenduto ?? 0,
-        qs.serviceType,
+        qs,
         qs.quote,
-        new Date().getMonth() + 1
+        qs.site.accessoSenzaCliente,
+        currentYear,
+        currentMonth
       );
       const euroConsuntivo = oreLavorate * qs.tariffaConsuntivo;
       // Margine: vedi la stessa nota in consuntivi/page.tsx.

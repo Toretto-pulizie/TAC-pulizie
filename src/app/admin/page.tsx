@@ -3,7 +3,7 @@ import { Trunc } from "@/app/Trunc";
 import { redirect } from "next/navigation";
 import { verifySession, getCurrentUser } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import type { CanoneModalita, EntryType, ServiceType } from "@prisma/client";
+import type { ChiusuraScelta, EntryType, ServiceType } from "@prisma/client";
 import { startOfToday, computeSiteTotals } from "@/lib/timeCalc";
 import {
   startOfDay,
@@ -16,7 +16,7 @@ import { TIPO_LABELS } from "@/lib/leaveRequests";
 import { isModuleKey } from "@/lib/modules";
 import { getHomeSettings } from "@/lib/homeSettings";
 import { clientDisplayName } from "@/lib/clients";
-import { canoneDelMese } from "@/lib/quotes";
+import { importoMeseSede, loadChiusureContext } from "@/lib/chiusureData";
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
@@ -197,12 +197,14 @@ export default async function AdminHomePage() {
           prisma.quoteSite.findMany({
             where: { quote: { status: "ACCETTATO" } },
             select: {
+              id: true,
               siteId: true,
               tariffaConsuntivo: true,
               prezzoVenduto: true,
               adeguamento: true,
               serviceType: true,
-              quote: { select: { canoneModalita: true, meseSenzaFattura: true } },
+              quote: { select: { chiusuraScelta: true } },
+              site: { select: { accessoSenzaCliente: true } },
             },
           }),
           prisma.timeEntry.findMany({
@@ -212,12 +214,14 @@ export default async function AdminHomePage() {
         ])
       : Promise.resolve([[], []] as [
           {
+            id: string;
             siteId: string;
             tariffaConsuntivo: number;
             prezzoVenduto: number | null;
             adeguamento: number | null;
             serviceType: ServiceType;
-            quote: { canoneModalita: CanoneModalita; meseSenzaFattura: number | null };
+            quote: { chiusuraScelta: ChiusuraScelta };
+            site: { accessoSenzaCliente: boolean };
           }[],
           { userId: string; siteId: string | null; type: EntryType; timestamp: Date; sessionId: string | null }[],
         ]),
@@ -234,6 +238,9 @@ export default async function AdminHomePage() {
 
   const [consuntivoQuoteSites, consuntivoEntries] = monthEntries;
   const consuntivoSiteTotals = computeSiteTotals(consuntivoEntries);
+  const chiusure = await loadChiusureContext();
+  const annoCorrente = new Date().getFullYear();
+  const meseCorrente = new Date().getMonth() + 1;
   let totaleConsuntivo = 0;
   let consuntivoInUtile = 0;
   let consuntivoInPerdita = 0;
@@ -246,11 +253,14 @@ export default async function AdminHomePage() {
     totaleConsuntivo += euroConsuntivo;
     if (
       euroConsuntivo >=
-      canoneDelMese(
+      importoMeseSede(
+        chiusure,
         qs.adeguamento ?? qs.prezzoVenduto ?? 0,
-        qs.serviceType,
+        qs,
         qs.quote,
-        new Date().getMonth() + 1
+        qs.site.accessoSenzaCliente,
+        annoCorrente,
+        meseCorrente
       )
     ) {
       consuntivoInUtile += euroConsuntivo;

@@ -536,6 +536,17 @@ export function QuoteSiteFieldset({
             title="Se compilato, sostituisce il Netto come prezzo venduto finale"
           />
         </label>
+
+        <div className="flex flex-col gap-1 text-sm">
+          <span title="Prezzo venduto × 11 mesi (nel mese di chiusura aziendale non si fattura per intero); l'una tantum conta una volta">
+            Totale annuo (11 mesi)
+          </span>
+          <div className="w-36 rounded-lg border border-zinc-200 bg-white px-3 py-2 font-medium text-zinc-900">
+            {formatEuro(
+              (parseEuroInput(adeguamentoDisplay) ?? netto) * (serviceType === "ONE_SHOT" ? 1 : 11)
+            )}
+          </div>
+        </div>
       </div>
 
       </div>

@@ -57,14 +57,15 @@ enum QuoteStatus {
   RIFIUTATO
 }
 
-// Modalità di canone mensile per i servizi continuativi (vedi art. III delle
-// clausole): 12 mesi (canone costante), 11 mesi (canone più alto, un mese
-// all'anno non fatturato), oppure ENTRAMBE = offerta "a scelta" non ancora
-// decisa dal cliente (nei calcoli vale come 12 mesi).
-enum CanoneModalita {
-  DODICI_MESI
-  UNDICI_MESI
-  ENTRAMBE
+// Scelta del cliente per la chiusura aziendale (art. III delle clausole):
+// CON_PULIZIE = canone invariato con pulizie di chiusura e riapertura (a),
+// SENZA_PULIZIE = nessun intervento e canone ridotto (b), DA_DEFINIRE = non
+// ha ancora scelto (vale la regola predefinita: a se abbiamo l'accesso ai
+// locali, altrimenti b).
+enum ChiusuraScelta {
+  DA_DEFINIRE
+  CON_PULIZIE
+  SENZA_PULIZIE
 }
 
 enum ClientTipo {
@@ -222,6 +223,9 @@ model Site {
   lng         Float?
   notes       String?
   capienza    Int?
+  // Abbiamo chiavi/codici per accedere ai locali anche senza il personale del
+  // cliente: decide la regola predefinita per la chiusura aziendale.
+  accessoSenzaCliente Boolean @default(false)
   createdAt   DateTime    @default(now())
   timeEntries TimeEntry[]
   shifts      Shift[]
@@ -238,10 +242,10 @@ model Quote {
   attachments         QuoteAttachment[]
   condizioniPagamento String?
   status              QuoteStatus       @default(IN_TRATTATIVA)
-  canoneModalita      CanoneModalita    @default(DODICI_MESI)
-  // Solo per UNDICI_MESI: mese (1-12) in cui non si fattura, deciso da
-  // Toretto e comunicato al cliente via e-mail; non compare nel PDF.
-  meseSenzaFattura    Int?
+  chiusuraScelta      ChiusuraScelta    @default(DA_DEFINIRE)
+  // Nota libera sulla scelta (es. "comunicata a voce il 3/7 dal sig. Rossi").
+  chiusuraNote        String?
+  chiusuraSceltaIl    DateTime?
   createdAt           DateTime          @default(now())
   closedAt            DateTime?
   invoices            Invoice[]
@@ -671,4 +675,15 @@ model CompanySettings {
   telefono      String  @default("")
   email         String  @default("")
   pec           String  @default("")
+}
+
+// Periodi di chiusura aziendale (es. le due settimane centrali di agosto):
+// servono a ridurre il canone del mese interessato, a escludere i giorni dalle
+// ore disponibili e al riepilogo della pagina Chiusure.
+model ClosurePeriod {
+  id        String   @id @default(cuid())
+  nome      String
+  dal       DateTime
+  al        DateTime
+  createdAt DateTime @default(now())
 }

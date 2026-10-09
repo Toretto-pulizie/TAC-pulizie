@@ -1,5 +1,6 @@
 import type { Quote, QuoteSite, Site } from "@prisma/client";
-import { canoneDelMese, computeListPrice } from "@/lib/quotes";
+import { computeListPrice } from "@/lib/quotes";
+import type { ChiusureContext } from "@/lib/chiusureData";
 import { buildDescriptionBlocks, flattenDescriptionBlocks } from "@/lib/quotePrint";
 import type { getServiceTypeLabels, getServiceTypeMostraCadenza } from "@/lib/serviceTypeLabels";
 
@@ -12,13 +13,13 @@ type QuoteWithSites = Quote & { sites: (QuoteSite & { site: Site })[] };
 export function buildSiteOptions(
   quotes: QuoteWithSites[],
   serviceLabels: Awaited<ReturnType<typeof getServiceTypeLabels>>,
-  mostraCadenzaSettings: Awaited<ReturnType<typeof getServiceTypeMostraCadenza>>
+  mostraCadenzaSettings: Awaited<ReturnType<typeof getServiceTypeMostraCadenza>>,
+  chiusure: ChiusureContext
 ) {
   return quotes.flatMap((q) =>
     q.sites.map((qs) => {
       const listPrice = computeListPrice(qs);
-      // Canone su 11 mesi: l'importo da fatturare è quello maggiorato (12/11).
-      const importo = canoneDelMese(qs.adeguamento ?? qs.prezzoVenduto ?? listPrice, qs.serviceType, q);
+      const importo = qs.adeguamento ?? qs.prezzoVenduto ?? listPrice;
       const blocks = buildDescriptionBlocks(
         qs,
         serviceLabels[qs.serviceType],
@@ -32,9 +33,11 @@ export function buildSiteOptions(
         siteName: qs.site.name,
         descrizione: flattenDescriptionBlocks(blocks),
         importo,
-        // Canone su 11 mesi: serve a segnalare in fattura il mese senza fattura.
-        canone11: q.canoneModalita === "UNDICI_MESI" && qs.serviceType !== "ONE_SHOT",
-        meseSenzaFattura: q.meseSenzaFattura,
+        // Dati per proporre l'importo ridotto nel mese di chiusura aziendale.
+        serviceType: qs.serviceType,
+        chiusuraScelta: q.chiusuraScelta,
+        accessoSenzaCliente: qs.site.accessoSenzaCliente,
+        weekdays: chiusure.weekdaysByQuoteSite.get(qs.id) ?? null,
       };
     })
   );

@@ -26,6 +26,7 @@ export default async function EditSitePage({
         name={site.name}
         address={site.address}
         capienza={site.capienza}
+        accessoSenzaCliente={site.accessoSenzaCliente}
       />
     </div>
   );
