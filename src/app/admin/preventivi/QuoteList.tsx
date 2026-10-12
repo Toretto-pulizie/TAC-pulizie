@@ -15,6 +15,7 @@ type PerSite = {
   netto: number;
   vendita: number;
   annuo11: number;
+  meseRiparam: number;
 };
 
 type QuoteRowData = {
@@ -32,6 +33,7 @@ type QuoteRowData = {
   netto: number;
   vendita: number;
   annuo11: number;
+  meseRiparam: number;
   discountPct: number | null;
   status: "IN_TRATTATIVA" | "ACCETTATO" | "RIFIUTATO";
 };
@@ -64,6 +66,7 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
     nettoLabel: formatEuro(r.netto),
     venditaLabel: formatEuro(r.vendita),
     annuo11Label: formatEuro(r.annuo11),
+    meseRiparamLabel: r.meseRiparam > 0 ? formatEuro(r.meseRiparam) : "—",
     discountLabel: r.discountPct != null ? `${(r.discountPct * 100).toFixed(0)}%` : null,
   }));
 
@@ -91,7 +94,7 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
   return (
     <div className="flex flex-col gap-3">
       <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white [contain:inline-size]">
-        <table className="w-full min-w-[1040px] text-left text-sm">
+        <table className="w-full min-w-[1120px] text-left text-sm">
           <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
             <tr>
               <ExcelHeader label="N°" active={filters.numeroLabel} onFilterChange={(v) => handleFilterChange("numeroLabel", v)} sortDir={sortDirFor("numeroOfferta")} onSort={(d) => handleSort("numeroOfferta", d)} />
@@ -104,6 +107,7 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
               <ExcelHeader label="Netto" active={filters.nettoLabel} onFilterChange={(v) => handleFilterChange("nettoLabel", v)} sortDir={sortDirFor("netto")} onSort={(d) => handleSort("netto", d)} />
               <ExcelHeader label="Vendita" active={filters.venditaLabel} onFilterChange={(v) => handleFilterChange("venditaLabel", v)} sortDir={sortDirFor("vendita")} onSort={(d) => handleSort("vendita", d)} />
               <ExcelHeader label="Annuo (11 mesi)" active={filters.annuo11Label} onFilterChange={(v) => handleFilterChange("annuo11Label", v)} sortDir={sortDirFor("annuo11")} onSort={(d) => handleSort("annuo11", d)} />
+              <ExcelHeader label="Mese riparam." active={filters.meseRiparamLabel} onFilterChange={(v) => handleFilterChange("meseRiparamLabel", v)} sortDir={sortDirFor("meseRiparam")} onSort={(d) => handleSort("meseRiparam", d)} />
               <ExcelHeader label="Stato" active={filters.statusLabel} onFilterChange={(v) => handleFilterChange("statusLabel", v)} sortDir={sortDirFor("statusLabel")} onSort={(d) => handleSort("statusLabel", d)} />
               <th className="px-4 py-3"></th>
             </tr>
@@ -123,13 +127,14 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
                 netto={r.netto}
                 vendita={r.vendita}
                 annuo11={r.annuo11}
+                meseRiparam={r.meseRiparam}
                 discountPct={r.discountPct}
                 status={r.status}
               />
             ))}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-4 py-6 text-center text-zinc-400">
+                <td colSpan={13} className="px-4 py-6 text-center text-zinc-400">
                   {rows.length === 0
                     ? "Nessuna offerta ancora creata."
                     : "Nessun risultato."}

@@ -547,6 +547,17 @@ export function QuoteSiteFieldset({
             )}
           </div>
         </div>
+
+        <div className="flex flex-col gap-1 text-sm">
+          <span title="Totale annuo su 11 mesi diviso 12: il canone medio mensile dopo la chiusura aziendale (100 €/mese = 91,67 €)">
+            Mese riparametrato
+          </span>
+          <div className="w-32 rounded-lg border border-zinc-200 bg-white px-3 py-2 font-medium text-zinc-900">
+            {serviceType === "ONE_SHOT"
+              ? "—"
+              : formatEuro(((parseEuroInput(adeguamentoDisplay) ?? netto) * 11) / 12)}
+          </div>
+        </div>
       </div>
 
       </div>

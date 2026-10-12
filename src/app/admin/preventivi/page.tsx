@@ -1,7 +1,12 @@
 import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { toDateInputValue } from "@/lib/dates";
-import { computeListPrice, computeSoldAnnual, computeDiscountPct } from "@/lib/quotes";
+import {
+  computeListPrice,
+  computeSoldAnnual,
+  computeDiscountPct,
+  computeMeseRiparametrato,
+} from "@/lib/quotes";
 import { getServiceTypeLabels, getServiceTypeAbbreviazioni } from "@/lib/serviceTypeLabels";
 import { formatSedeAddress } from "@/lib/quotePrint";
 import { clientDisplayName } from "@/lib/clients";
@@ -138,6 +143,10 @@ export default async function PreventiviPage({
     // manuale).
     const discountPct = computeDiscountPct(listPrice, netto);
     const annuo = siteRows.reduce((sum, s) => sum + s.annuo, 0);
+    const meseRiparam = siteRows.reduce(
+      (sum, s) => sum + computeMeseRiparametrato(s.serviceType, s.vendita),
+      0
+    );
     const annuo11 = siteRows.reduce(
       (sum, s) => sum + computeSoldAnnual(s.serviceType, s.vendita),
       0
@@ -167,6 +176,7 @@ export default async function PreventiviPage({
         netto: s.netto,
         vendita: s.vendita,
         annuo11: computeSoldAnnual(s.serviceType, s.vendita),
+        meseRiparam: computeMeseRiparametrato(s.serviceType, s.vendita),
       };
     });
     const tipoServizio = perSite.every((s) => s.tipoServizio === perSite[0].tipoServizio)
@@ -192,6 +202,7 @@ export default async function PreventiviPage({
       discountPct,
       annuo,
       annuo11,
+      meseRiparam,
     };
   });
 
@@ -202,6 +213,11 @@ export default async function PreventiviPage({
     .filter((r) => r.status === "ACCETTATO")
     .reduce((sum, r) => sum + r.venditaRicorrente, 0);
   const annuoAccettato = rows.reduce((sum, r) => sum + r.annuo, 0);
+  // Canone medio mensile riparametrato sugli 11 mesi (annuo ÷ 12), sulle sole
+  // offerte accettate: affianca il canone mensile pieno della card.
+  const mensileRiparametrato = rows
+    .filter((r) => r.status === "ACCETTATO")
+    .reduce((sum, r) => sum + r.meseRiparam, 0);
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
@@ -216,6 +232,9 @@ export default async function PreventiviPage({
             <p className="text-sm text-zinc-500">Contratti accettati / mese</p>
             <p className="text-xl font-semibold text-zinc-900">
               {formatEuro(mensileAccettato)}
+            </p>
+            <p className="text-xs text-zinc-400" title="Valore annuo su 11 mesi diviso 12">
+              riparametrato su 11 mesi: {formatEuro(mensileRiparametrato)}
             </p>
           </div>
           <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
@@ -256,6 +275,7 @@ export default async function PreventiviPage({
             netto: r.netto,
             vendita: r.vendita,
             annuo11: r.annuo11,
+            meseRiparam: r.meseRiparam,
             discountPct: r.discountPct,
             status: r.status,
           }))}

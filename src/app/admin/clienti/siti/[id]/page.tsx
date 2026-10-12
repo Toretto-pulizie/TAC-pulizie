@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireModule } from "@/lib/dal";
+import { requireAnyModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { EditSiteForm } from "./EditSiteForm";
 import { clientDisplayName } from "@/lib/clients";
@@ -9,7 +9,7 @@ export default async function EditSitePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireModule("clienti");
+  await requireAnyModule("clienti", "sedi");
   const { id } = await params;
 
   const site = await prisma.site.findUnique({

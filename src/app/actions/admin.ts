@@ -396,7 +396,7 @@ const SiteSchema = z.object({
 export async function createSite(_prevState: unknown, formData: FormData) {
   // Richiamabile sia da Clienti sia dal modulo preventivi (bottone "+
   // Aggiungi sede" accanto al Cliente selezionato).
-  await requireAnyModule("clienti", "preventivi");
+  await requireAnyModule("clienti", "preventivi", "sedi");
 
   const parsed = SiteSchema.safeParse({
     clientId: formData.get("clientId"),
@@ -422,7 +422,7 @@ export async function createSite(_prevState: unknown, formData: FormData) {
 }
 
 export async function updateSiteCapienza(siteId: string, capienza: number | null) {
-  await requireModule("clienti");
+  await requireAnyModule("clienti", "sedi");
   await prisma.site.update({ where: { id: siteId }, data: { capienza } });
   revalidatePath("/admin/clienti");
   revalidatePath("/admin/pianificazione");
@@ -437,7 +437,7 @@ const UpdateSiteSchema = z.object({
 });
 
 export async function updateSite(_prevState: unknown, formData: FormData) {
-  await requireModule("clienti");
+  await requireAnyModule("clienti", "sedi");
 
   const parsed = UpdateSiteSchema.safeParse({
     id: formData.get("id"),
@@ -477,7 +477,7 @@ export async function updateSite(_prevState: unknown, formData: FormData) {
 }
 
 export async function deleteSite(siteId: string) {
-  await requireModule("clienti");
+  await requireAnyModule("clienti", "sedi");
 
   const [quoteCount, shiftCount, timeEntryCount] = await Promise.all([
     prisma.quoteSite.count({ where: { siteId } }),

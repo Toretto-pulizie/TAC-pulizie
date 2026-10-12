@@ -6,6 +6,7 @@ export const MODULE_KEYS = [
   "preventivi",
   "consuntivi",
   "clienti",
+  "sedi",
   "fornitori",
   "collaboratori",
   "statistiche",
@@ -26,6 +27,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   preventivi: "Offerte",
   consuntivi: "Consuntivi",
   clienti: "Clienti",
+  sedi: "Sedi",
   fornitori: "Fornitori",
   collaboratori: "Collaboratori",
   statistiche: "Statistiche",
@@ -37,7 +39,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
 };
 
 export const MODULE_GROUPS: { label: string; keys: ModuleKey[] }[] = [
-  { label: "Anagrafiche", keys: ["clienti", "fornitori", "collaboratori"] },
+  { label: "Anagrafiche", keys: ["clienti", "sedi", "fornitori", "collaboratori"] },
   { label: "Gestione", keys: ["commesse", "chiusure", "pianificazione", "preventivi", "consuntivi", "sopralluoghi"] },
   { label: "Produzione", keys: ["timbrature", "presenze", "permessi"] },
   { label: "Contabilità", keys: ["fatturazione"] },
@@ -52,6 +54,7 @@ export const MODULE_HREFS: Record<ModuleKey, string> = {
   preventivi: "/admin/preventivi",
   consuntivi: "/admin/consuntivi",
   clienti: "/admin/clienti",
+  sedi: "/admin/sedi",
   fornitori: "/admin/fornitori",
   collaboratori: "/admin/collaboratori",
   statistiche: "/admin/statistiche",

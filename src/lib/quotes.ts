@@ -42,6 +42,16 @@ export function computeSoldAnnual(
   return serviceType === "ONE_SHOT" ? prezzoVenduto : prezzoVenduto * MESI_ANNUO;
 }
 
+// Mese riparametrato: il valore annuo su 11 mesi diviso 12, cioè il canone
+// medio mensile "vero" dopo la chiusura aziendale. Es.: 100 €/mese → 1.100 €
+// l'anno → 91,67 € al mese. L'una tantum non ha un mese: vale 0.
+export function computeMeseRiparametrato(
+  serviceType: ServiceType,
+  prezzoVenduto: number
+): number {
+  return serviceType === "ONE_SHOT" ? 0 : (prezzoVenduto * MESI_ANNUO) / 12;
+}
+
 export function computeDiscountPct(
   listPrice: number,
   prezzoVenduto: number

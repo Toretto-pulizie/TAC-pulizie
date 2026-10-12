@@ -26,6 +26,7 @@ type PerSite = {
   netto: number;
   vendita: number;
   annuo11: number;
+  meseRiparam: number;
 };
 
 function formatEuro(n: number) {
@@ -44,6 +45,7 @@ export function QuoteRow({
   netto,
   vendita,
   annuo11,
+  meseRiparam,
   discountPct,
   status,
 }: {
@@ -58,6 +60,7 @@ export function QuoteRow({
   netto: number;
   vendita: number;
   annuo11: number;
+  meseRiparam: number;
   discountPct: number | null;
   status: "IN_TRATTATIVA" | "ACCETTATO" | "RIFIUTATO";
 }) {
@@ -99,6 +102,7 @@ export function QuoteRow({
         <td className="px-4 py-3 text-zinc-500">{formatEuro(netto)}</td>
         <td className="px-4 py-3 text-zinc-500">{formatEuro(vendita)}</td>
         <td className="px-4 py-3 text-zinc-500">{formatEuro(annuo11)}</td>
+        <td className="px-4 py-3 text-zinc-500">{meseRiparam > 0 ? formatEuro(meseRiparam) : "—"}</td>
         <td className="px-4 py-3">
           <span className={`rounded-full px-2 py-1 text-xs ${statusClasses[status]}`}>
             {statusLabels[status]}
@@ -176,6 +180,7 @@ export function QuoteRow({
             <td className="px-4 py-3 text-zinc-500">{formatEuro(s.netto)}</td>
             <td className="px-4 py-3 text-zinc-500">{formatEuro(s.vendita)}</td>
             <td className="px-4 py-3 text-zinc-500">{formatEuro(s.annuo11)}</td>
+            <td className="px-4 py-3 text-zinc-500">{s.meseRiparam > 0 ? formatEuro(s.meseRiparam) : "—"}</td>
             <td className="px-4 py-3"></td>
             <td className="px-4 py-3"></td>
           </tr>
