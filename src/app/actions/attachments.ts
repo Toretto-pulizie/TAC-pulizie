@@ -35,16 +35,13 @@ export async function createAttachment(_prevState: unknown, formData: FormData) 
 export async function deleteAttachment(id: string) {
   await requireAdmin();
 
-  const usageCount = await prisma.quoteAttachment.count({
-    where: { attachmentId: id },
-  });
-  if (usageCount > 0) {
-    return {
-      error: `Impossibile eliminare: è allegato a ${usageCount} offerta/e.`,
-    };
-  }
-
-  await prisma.attachment.delete({ where: { id } });
+  // L'allegato si può eliminare anche se è già collegato a delle offerte: prima
+  // si tolgono i collegamenti (le offerte restano, perdono solo quell'allegato),
+  // poi il file. Tutto in un'unica transazione.
+  await prisma.$transaction([
+    prisma.quoteAttachment.deleteMany({ where: { attachmentId: id } }),
+    prisma.attachment.delete({ where: { id } }),
+  ]);
   revalidatePath("/admin/impostazioni");
   revalidatePath("/admin/preventivi");
   return { success: true };

@@ -53,7 +53,11 @@ export default async function ImpostazioniPage() {
     getNotificationSettings(),
     getBankSettings(),
     getCompanySettings(),
-    prisma.attachment.findMany({ orderBy: { createdAt: "asc" } }),
+    prisma.attachment.findMany({
+      orderBy: { createdAt: "asc" },
+      // Senza il contenuto del file (può pesare fino a 15 MB): servono solo i dati della riga.
+      select: { id: true, nome: true, fileName: true, _count: { select: { quotes: true } } },
+    }),
     prisma.quotePhrase.findMany({ orderBy: [{ ordine: "asc" }, { titolo: "asc" }] }),
     prisma.condizionePagamento.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
   ]);
@@ -271,6 +275,7 @@ export default async function ImpostazioniPage() {
                       id={a.id}
                       nome={a.nome}
                       fileName={a.fileName}
+                      offerteCount={a._count.quotes}
                     />
                   ))}
                 </ul>

@@ -7,10 +7,12 @@ export function AttachmentRow({
   id,
   nome,
   fileName,
+  offerteCount,
 }: {
   id: string;
   nome: string;
   fileName: string;
+  offerteCount: number;
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -34,12 +36,18 @@ export function AttachmentRow({
           <button
             disabled={isPending}
             onClick={() => {
-              if (confirm(`Eliminare l'allegato "${nome}"?`)) {
+              const avviso =
+                offerteCount > 0
+                  ? `L'allegato "${nome}" è collegato a ${offerteCount} offerta/e: verrà tolto da tutte e non comparirà più nei loro PDF. Eliminarlo comunque?`
+                  : `Eliminare l'allegato "${nome}"?`;
+              if (confirm(avviso)) {
                 setError(null);
                 startTransition(async () => {
-                  const result = await deleteAttachment(id);
-                  if (result && "error" in result)
-                    setError(result.error ?? "Errore durante l'eliminazione");
+                  try {
+                    await deleteAttachment(id);
+                  } catch {
+                    setError("Errore durante l'eliminazione");
+                  }
                 });
               }
             }}
