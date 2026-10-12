@@ -39,6 +39,7 @@ const QuoteSiteSchema = z
     adeguamento: z.coerce.number().optional(),
     note: z.string().trim().optional(),
     mostraInStampa: z.boolean().default(true),
+    meseUnaTantum: z.string().regex(/^\d{4}-\d{2}$/).optional(),
   })
   .refine(
     (data) =>
@@ -88,6 +89,7 @@ function parseSiteBlockFormData(formData: FormData, i: number) {
     note: get("note") || undefined,
     // Casella "Mostra nel PDF": presente solo se spuntata.
     mostraInStampa: get("mostraInStampa") === "on",
+    meseUnaTantum: get("meseUnaTantum") || undefined,
   };
 }
 
@@ -180,6 +182,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
     adeguamento: number | null;
     note: string | null;
     mostraInStampa: boolean;
+    meseUnaTantum: string | null;
   }[] = [];
 
   for (const i of indexes) {
@@ -232,6 +235,8 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
       adeguamento: d.adeguamento ?? null,
       note: d.note ?? null,
       mostraInStampa: d.mostraInStampa,
+      // Mese di esecuzione: solo per le righe una tantum.
+      meseUnaTantum: d.serviceType === "ONE_SHOT" ? (d.meseUnaTantum ?? null) : null,
     });
   }
 

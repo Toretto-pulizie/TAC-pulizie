@@ -58,7 +58,14 @@ export async function saveInvoice(_prevState: unknown, formData: FormData) {
     return { error: "Aggiungi almeno una riga alla fattura" };
   }
 
-  const righe: { descrizione: string; quantita: number; prezzoUnitario: number; importo: number; ordine: number }[] = [];
+  const righe: {
+    descrizione: string;
+    quantita: number;
+    prezzoUnitario: number;
+    importo: number;
+    ordine: number;
+    quoteSiteId?: string;
+  }[] = [];
   for (const [ordine, i] of indexes.entries()) {
     const parsedLine = InvoiceLineSchema.safeParse({
       descrizione: formData.get(`righe.${i}.descrizione`),
@@ -75,6 +82,8 @@ export async function saveInvoice(_prevState: unknown, formData: FormData) {
       prezzoUnitario: d.prezzoUnitario,
       importo: Math.round(d.quantita * d.prezzoUnitario * 100) / 100,
       ordine,
+      // Riga d'offerta da cui nasce (serve a non fatturare due volte).
+      quoteSiteId: (formData.get(`righe.${i}.quoteSiteId`) as string) || undefined,
     });
   }
 

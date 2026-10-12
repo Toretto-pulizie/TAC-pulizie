@@ -17,6 +17,7 @@ import { isModuleKey } from "@/lib/modules";
 import { getHomeSettings } from "@/lib/homeSettings";
 import { clientDisplayName } from "@/lib/clients";
 import { importoMeseSede, loadChiusureContext } from "@/lib/chiusureData";
+import { meseKey, oreRipartitePerRiga } from "@/lib/oreSede";
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
@@ -203,7 +204,10 @@ export default async function AdminHomePage() {
               prezzoVenduto: true,
               adeguamento: true,
               serviceType: true,
-              quote: { select: { chiusuraScelta: true } },
+              ore: true,
+              oneShotCount: true,
+              meseUnaTantum: true,
+              quote: { select: { chiusuraScelta: true, closedAt: true, createdAt: true } },
               site: { select: { accessoSenzaCliente: true } },
             },
           }),
@@ -220,7 +224,10 @@ export default async function AdminHomePage() {
             prezzoVenduto: number | null;
             adeguamento: number | null;
             serviceType: ServiceType;
-            quote: { chiusuraScelta: ChiusuraScelta };
+            ore: number;
+            oneShotCount: number;
+            meseUnaTantum: string | null;
+            quote: { chiusuraScelta: ChiusuraScelta; closedAt: Date | null; createdAt: Date };
             site: { accessoSenzaCliente: boolean };
           }[],
           { userId: string; siteId: string | null; type: EntryType; timestamp: Date; sessionId: string | null }[],
@@ -241,11 +248,16 @@ export default async function AdminHomePage() {
   const chiusure = await loadChiusureContext();
   const annoCorrente = new Date().getFullYear();
   const meseCorrente = new Date().getMonth() + 1;
+  const oreRiga = oreRipartitePerRiga(
+    consuntivoQuoteSites,
+    consuntivoSiteTotals,
+    meseKey(annoCorrente, meseCorrente)
+  );
   let totaleConsuntivo = 0;
   let consuntivoInUtile = 0;
   let consuntivoInPerdita = 0;
   for (const qs of consuntivoQuoteSites) {
-    const totals = consuntivoSiteTotals.get(qs.siteId) ?? {
+    const totals = oreRiga.get(qs.id) ?? {
       travelMinutes: 0,
       workMinutes: 0,
     };

@@ -103,6 +103,7 @@ export default async function PreventiviPage({
           prezzoVenduto: s.prezzoVenduto,
           adeguamento: s.adeguamento,
           mostraInStampa: s.mostraInStampa,
+          meseUnaTantum: s.meseUnaTantum,
           note: s.note,
         })),
       }

@@ -1,6 +1,7 @@
 import type { EntryType, Quote, QuoteSite } from "@prisma/client";
 import { computeListPrice, computeSoldAnnual } from "@/lib/quotes";
 import { importoMeseSede, type ChiusureContext } from "@/lib/chiusureData";
+import { competenzaUnaTantum, meseKey, ripartisciOre, type LineaOre } from "@/lib/oreSede";
 import { computeSiteTotals } from "@/lib/timeCalc";
 
 type QuoteIn = Quote & { sites: QuoteSite[] };
@@ -107,27 +108,43 @@ export function computeCommesse({
       if (!accepted) continue;
       const clientId = accepted[0].clientId;
       const a = agg.get(clientId) ?? { ore: 0, spost: 0, contratto: 0, consuntivo: 0 };
-      const ore = t.workMinutes / 60;
-      a.ore += ore;
-      a.spost += t.travelMinutes / 60;
+      // Le ore della sede si ripartiscono tra le sue righe (una tantum solo
+      // nel mese di esecuzione) invece di contarle per intero su ciascuna.
+      const mk = meseKey(anno, mese);
+      const quote = ripartisciOre(
+        accepted.map(({ qs, q }): LineaOre => ({
+          id: qs.id,
+          serviceType: qs.serviceType,
+          ore: qs.ore,
+          oneShotCount: qs.oneShotCount,
+          competenza: qs.serviceType === "ONE_SHOT" ? competenzaUnaTantum(qs, q) : null,
+        })),
+        t,
+        mk
+      );
       for (const { qs, q } of accepted) {
+        const share = quote.get(qs.id);
+        if (!share) continue;
+        const ore = share.workMinutes / 60;
+        a.ore += ore;
+        a.spost += share.travelMinutes / 60;
+        a.consuntivo += ore * qs.tariffaConsuntivo;
         if (qs.serviceType === "ONE_SHOT") {
           if (oneShotCounted.has(qs.id)) continue;
           oneShotCounted.add(qs.id);
+          a.contratto += vendita(qs);
+        } else {
+          a.contratto += importoMeseSede(
+            chiusure,
+            vendita(qs),
+            qs,
+            q,
+            accessoBySite.get(qs.siteId) ?? false,
+            anno,
+            mese
+          );
         }
-        a.contratto += importoMeseSede(
-          chiusure,
-          vendita(qs),
-          qs,
-          q,
-          accessoBySite.get(qs.siteId) ?? false,
-          anno,
-          mese
-        );
       }
-      const meanTariffa =
-        accepted.reduce((s, x) => s + x.qs.tariffaConsuntivo, 0) / accepted.length;
-      a.consuntivo += ore * meanTariffa;
       agg.set(clientId, a);
     }
   }
@@ -279,12 +296,25 @@ export function computeCommessePerOfferta({
     for (const [siteId, t] of totals) {
       const accepted = acceptedBySite.get(siteId);
       if (!accepted) continue;
-      const n = accepted.length;
+      const mk = meseKey(anno, mese);
+      const quote = ripartisciOre(
+        accepted.map(({ qs, q }): LineaOre => ({
+          id: qs.id,
+          serviceType: qs.serviceType,
+          ore: qs.ore,
+          oneShotCount: qs.oneShotCount,
+          competenza: qs.serviceType === "ONE_SHOT" ? competenzaUnaTantum(qs, q) : null,
+        })),
+        t,
+        mk
+      );
       for (const { quoteId, qs, q } of accepted) {
+        const share = quote.get(qs.id);
+        if (!share) continue;
         const a = agg.get(quoteId) ?? { ore: 0, spost: 0, contratto: 0, consuntivo: 0 };
-        const ore = t.workMinutes / 60 / n;
+        const ore = share.workMinutes / 60;
         a.ore += ore;
-        a.spost += t.travelMinutes / 60 / n;
+        a.spost += share.travelMinutes / 60;
         a.consuntivo += ore * qs.tariffaConsuntivo;
         if (qs.serviceType === "ONE_SHOT") {
           if (!oneShotCounted.has(qs.id)) {
@@ -293,14 +323,14 @@ export function computeCommessePerOfferta({
           }
         } else {
           a.contratto += importoMeseSede(
-          chiusure,
-          vendita(qs),
-          qs,
-          q,
-          accessoBySite.get(qs.siteId) ?? false,
-          anno,
-          mese
-        );
+            chiusure,
+            vendita(qs),
+            qs,
+            q,
+            accessoBySite.get(qs.siteId) ?? false,
+            anno,
+            mese
+          );
         }
         agg.set(quoteId, a);
       }

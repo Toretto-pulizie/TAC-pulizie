@@ -2,6 +2,7 @@ import { requireModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { computeListPrice, computeDiscountPct } from "@/lib/quotes";
 import { importoMeseSede, loadChiusureContext } from "@/lib/chiusureData";
+import { meseKey, oreRipartitePerRiga } from "@/lib/oreSede";
 import { computeSiteTotals, computeTotals } from "@/lib/timeCalc";
 import { monthRange, MONTH_LABELS } from "@/lib/dates";
 import { clientDisplayName } from "@/lib/clients";
@@ -112,9 +113,10 @@ export default async function StatistichePage() {
   // --- Marginalità cantieri (mese corrente) ---
   const siteTotals = computeSiteTotals(currentMonthEntries);
   const chiusure = await loadChiusureContext();
+  const oreRiga = oreRipartitePerRiga(acceptedQuoteSites, siteTotals, meseKey(currentYear, currentMonth));
   const margini = acceptedQuoteSites
     .map((qs) => {
-      const totals = siteTotals.get(qs.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
+      const totals = oreRiga.get(qs.id) ?? { travelMinutes: 0, workMinutes: 0 };
       const oreLavorate = totals.workMinutes / 60;
       const contrattoMensile = importoMeseSede(
         chiusure,

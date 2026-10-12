@@ -25,6 +25,8 @@ type SiteOption = {
   chiusuraScelta: ChiusuraScelta;
   accessoSenzaCliente: boolean;
   weekdays: number[] | null;
+  // Fatture già collegate a questa riga d'offerta (numero e mese "AAAA-MM").
+  fatturazioni: { numero: string; mese: string }[];
 };
 
 // sourceId collega una riga al cantiere che l'ha generata (per poterla
@@ -254,41 +256,57 @@ export function InvoiceForm({
           {sitesForClient.length === 0 && (
             <p className="text-sm text-zinc-400">Nessun cantiere con offerta accettata per questo cliente.</p>
           )}
-          {sitesForClient.map((s) => (
-            <label key={s.siteId} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={checkedSiteIds.has(s.siteId)}
-                onChange={(e) => toggleSite(s, e.target.checked)}
-                className="h-4 w-4"
-              />
-              <span className="flex-1">
-                <Trunc text={s.siteName} />{" "}
-                <span className="text-xs text-zinc-400">
-                  (Offerta N. {s.numeroOfferta}
-                  )
+          {sitesForClient.map((s) => {
+            const mk = `${annoFattura}-${String(meseFattura).padStart(2, "0")}`;
+            const giaOneShot = s.serviceType === "ONE_SHOT" && s.fatturazioni.length > 0 && !checkedSiteIds.has(s.siteId);
+            const giaMese = s.serviceType !== "ONE_SHOT" ? s.fatturazioni.find((f) => f.mese === mk) : undefined;
+            return (
+              <label key={s.siteId} className={`flex items-center gap-2 text-sm ${giaOneShot ? "opacity-50" : ""}`}>
+                <input
+                  type="checkbox"
+                  checked={checkedSiteIds.has(s.siteId)}
+                  disabled={giaOneShot}
+                  onChange={(e) => toggleSite(s, e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <span className="flex-1">
+                  <Trunc text={s.siteName} />{" "}
+                  <span className="text-xs text-zinc-400">
+                    (Offerta N. {s.numeroOfferta}
+                    {s.serviceType === "ONE_SHOT" ? ", una tantum" : ""})
+                  </span>
+                  {giaOneShot && (
+                    <span className="block text-[11px] text-zinc-500">
+                      già fatturata con la fattura {s.fatturazioni[0].numero}
+                    </span>
+                  )}
+                  {giaMese && (
+                    <span className="block text-[11px] text-amber-700">
+                      attenzione: questo canone risulta già fatturato per {giaMese.mese.slice(5)}/{giaMese.mese.slice(0, 4)} con la fattura {giaMese.numero}
+                    </span>
+                  )}
                 </span>
-              </span>
-              <span className="text-right text-zinc-500">
-                {formatEuro(propostaChiusura(s)?.importo ?? s.importo)}
-                {propostaChiusura(s) && propostaChiusura(s)!.fattore < 1 && (
-                  <span
-                    className="block text-[11px] text-amber-700"
-                    title="Chiusura aziendale: canone ridotto per i passaggi non eseguiti"
-                  >
-                    chiusura: −{propostaChiusura(s)!.riduzionePct}% (
-                    {propostaChiusura(s)!.saltati}/{propostaChiusura(s)!.programmati} passaggi
-                    {propostaChiusura(s)!.metodo === "giorni" ? ", stima" : ""})
-                  </span>
-                )}
-                {propostaChiusura(s) && propostaChiusura(s)!.fattore === 1 && (
-                  <span className="block text-[11px] text-zinc-400">
-                    chiusura: canone invariato (pulizie di chiusura e riapertura)
-                  </span>
-                )}
-              </span>
-            </label>
-          ))}
+                <span className="text-right text-zinc-500">
+                  {formatEuro(propostaChiusura(s)?.importo ?? s.importo)}
+                  {propostaChiusura(s) && propostaChiusura(s)!.fattore < 1 && (
+                    <span
+                      className="block text-[11px] text-amber-700"
+                      title="Chiusura aziendale: canone ridotto per i passaggi non eseguiti"
+                    >
+                      chiusura: −{propostaChiusura(s)!.riduzionePct}% ({propostaChiusura(s)!.saltati}/
+                      {propostaChiusura(s)!.programmati} passaggi
+                      {propostaChiusura(s)!.metodo === "giorni" ? ", stima" : ""})
+                    </span>
+                  )}
+                  {propostaChiusura(s) && propostaChiusura(s)!.fattore === 1 && (
+                    <span className="block text-[11px] text-zinc-400">
+                      chiusura: canone invariato (pulizie di chiusura e riapertura)
+                    </span>
+                  )}
+                </span>
+              </label>
+            );
+          })}
         </div>
       )}
 
@@ -296,6 +314,7 @@ export function InvoiceForm({
         <p className="text-sm font-medium text-zinc-700">Righe</p>
         {righe.map((r, i) => (
           <div key={i} className="flex items-end gap-2">
+            {r.sourceId && <input type="hidden" name={`righe.${i}.quoteSiteId`} value={r.sourceId} />}
             <label className="flex flex-1 flex-col gap-1 text-xs">
               Descrizione
               <textarea

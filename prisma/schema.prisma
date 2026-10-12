@@ -282,6 +282,11 @@ model QuoteSite {
   // in Commesse, Consuntivi, Chiusure, fatture e statistiche. Ha senso solo
   // quando l'offerta è accettata.
   confermata        Boolean     @default(true)
+  // Solo per le righe una tantum: mese di esecuzione ("AAAA-MM"); se assente
+  // vale il mese di accettazione dell'offerta. Serve perché in un'offerta con
+  // una tantum + canone la riga una tantum conta come contratto in quel mese e
+  // poi solo il canone continua.
+  meseUnaTantum     String?
   shiftPlans        ShiftPlan[]
 
   @@index([siteId])
@@ -642,8 +647,12 @@ model InvoiceLine {
   // QuoteSite.prezzoVenduto) invece di ricalcolarlo ogni volta.
   importo        Float
   ordine         Int     @default(0)
+  // Riga d'offerta (sede) da cui nasce la riga: serve a sapere cosa è già stato
+  // fatturato (una tantum fatturata una sola volta, canone mese per mese).
+  quoteSiteId    String?
 
   @@index([invoiceId])
+  @@index([quoteSiteId])
 }
 
 // Storico stati/ricevute SDI (audit trail): una riga per ogni cambio di

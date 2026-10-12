@@ -33,6 +33,7 @@ export type SiteBlockInitial = {
   adeguamento: number | null;
   note: string | null;
   mostraInStampa: boolean;
+  meseUnaTantum: string | null;
 };
 
 export type Phrase = {
@@ -393,6 +394,20 @@ export function QuoteSiteFieldset({
               name={name("oneShotCount")}
               defaultValue={initial?.oneShotCount ?? 1}
               className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
+            />
+          </label>
+        )}
+
+        {serviceType === "ONE_SHOT" && (
+          <label className="flex flex-col gap-1 text-sm">
+            <span title="Mese in cui si esegue l'una tantum: conta come contratto solo in quel mese (se vuoto, il mese in cui accetti l'offerta). Utile quando l'offerta ha anche un canone continuativo.">
+              Mese di esecuzione
+            </span>
+            <input
+              type="month"
+              name={name("meseUnaTantum")}
+              defaultValue={initial?.meseUnaTantum ?? ""}
+              className="w-40 rounded-lg border border-zinc-300 px-3 py-2"
             />
           </label>
         )}

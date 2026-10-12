@@ -32,7 +32,25 @@ export default async function NuovaFatturaPage({
     .sort((a, b) => a.name.localeCompare(b.name, "it"));
 
   const chiusure = await loadChiusureContext();
-  const sites = buildSiteOptions(quotesRaw, serviceLabels, mostraCadenzaSettings, chiusure);
+  // Righe d'offerta già fatturate (fatture normali, non note di credito).
+  const righeFatturate = await prisma.invoiceLine.findMany({
+    where: {
+      quoteSiteId: { not: null },
+      invoice: { tipoDocumento: "TD01" },
+    },
+    select: { quoteSiteId: true, invoice: { select: { numero: true, anno: true, data: true } } },
+  });
+  const fatturate = new Map<string, { numero: string; mese: string }[]>();
+  for (const r of righeFatturate) {
+    if (!r.quoteSiteId) continue;
+    const list = fatturate.get(r.quoteSiteId) ?? [];
+    list.push({
+      numero: r.invoice.numero != null ? `${r.invoice.numero}/${r.invoice.anno}` : "in bozza",
+      mese: toDateInputValue(r.invoice.data).slice(0, 7),
+    });
+    fatturate.set(r.quoteSiteId, list);
+  }
+  const sites = buildSiteOptions(quotesRaw, serviceLabels, mostraCadenzaSettings, chiusure, fatturate);
   const closures = chiusure.closures.map((c) => ({
     dal: toDateInputValue(new Date(c.dal)),
     al: toDateInputValue(new Date(c.al)),

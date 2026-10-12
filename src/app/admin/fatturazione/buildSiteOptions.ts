@@ -14,7 +14,9 @@ export function buildSiteOptions(
   quotes: QuoteWithSites[],
   serviceLabels: Awaited<ReturnType<typeof getServiceTypeLabels>>,
   mostraCadenzaSettings: Awaited<ReturnType<typeof getServiceTypeMostraCadenza>>,
-  chiusure: ChiusureContext
+  chiusure: ChiusureContext,
+  // Righe fattura già emesse/in bozza collegate alle righe d'offerta.
+  fatturate: Map<string, { numero: string; mese: string }[]> = new Map()
 ) {
   return quotes.flatMap((q) =>
     q.sites.map((qs) => {
@@ -35,6 +37,7 @@ export function buildSiteOptions(
         importo,
         // Dati per proporre l'importo ridotto nel mese di chiusura aziendale.
         serviceType: qs.serviceType,
+        fatturazioni: fatturate.get(qs.id) ?? [],
         chiusuraScelta: q.chiusuraScelta,
         accessoSenzaCliente: qs.site.accessoSenzaCliente,
         weekdays: chiusure.weekdaysByQuoteSite.get(qs.id) ?? null,

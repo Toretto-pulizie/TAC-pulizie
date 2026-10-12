@@ -4,6 +4,7 @@ import { computeSiteTotals } from "@/lib/timeCalc";
 import { MONTH_LABELS, monthRange } from "@/lib/dates";
 import { clientDisplayName } from "@/lib/clients";
 import { importoMeseSede, loadChiusureContext } from "@/lib/chiusureData";
+import { meseKey, oreRipartitePerRiga } from "@/lib/oreSede";
 import { getOreDisponibili } from "@/lib/oreDisponibili";
 import { ConsuntiviList } from "./ConsuntiviList";
 
@@ -42,6 +43,9 @@ export default async function ConsuntiviPage({
     ]);
 
   const siteTotals = computeSiteTotals(entries);
+  // Le ore di una sede si ripartiscono tra le sue righe (una tantum solo nel
+  // mese di esecuzione): nessuna riga conta le stesse ore per intero.
+  const oreRiga = oreRipartitePerRiga(quoteSites, siteTotals, meseKey(year, month));
 
   // Ogni sede di un preventivo accettato è una riga indipendente: ognuna ha
   // il proprio contratto (Netto o Adeguamento, se presente) confrontato con
@@ -50,9 +54,9 @@ export default async function ConsuntiviPage({
   // altri contratti accettati, non lavorati in quel mese, non devono gonfiare
   // il Contrattualizzato né comparire come falsi scostamenti al 100%.
   const rows = quoteSites
-    .filter((qs) => siteTotals.has(qs.siteId))
+    .filter((qs) => oreRiga.has(qs.id))
     .map((qs) => {
-      const totals = siteTotals.get(qs.siteId) ?? { travelMinutes: 0, workMinutes: 0 };
+      const totals = oreRiga.get(qs.id) ?? { travelMinutes: 0, workMinutes: 0 };
       const contrattoMensile = importoMeseSede(
         chiusure,
         qs.adeguamento ?? qs.prezzoVenduto ?? 0,
