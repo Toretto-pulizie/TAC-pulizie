@@ -10,7 +10,7 @@ export function ServiceTypeLabelRow({
   abbreviazione,
   mostraCadenza,
 }: {
-  tipo: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
+  tipo: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE";
   etichetta: string;
   abbreviazione: string | null;
   mostraCadenza: boolean;

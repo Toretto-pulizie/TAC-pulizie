@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument } from "pdf-lib";
 import { requireAnyModule } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { buildLineItem } from "@/lib/quotePrint";
+import { buildLineItem, importoStampa } from "@/lib/quotePrint";
 import {
   getServiceTypeLabels,
   getServiceTypeMostraCadenza,
@@ -64,7 +64,9 @@ export async function GET(
   // Somma su tutte le sedi: ognuna ha il proprio Netto/Adeguamento indipendente.
   const prezzoNetto = quote.sites.reduce((sum, qs) => {
     const lineItem = buildLineItem(qs, serviceLabels[qs.serviceType]);
-    return sum + (qs.adeguamento ?? qs.prezzoVenduto ?? lineItem.listPrice);
+    // Passaggi annuali: importi a passaggio, come nella pagina di stampa.
+    const archiviato = qs.adeguamento ?? qs.prezzoVenduto;
+    return sum + (archiviato != null ? importoStampa(qs, archiviato) : lineItem.listPrice);
   }, 0);
   const totaleIva = isPersonaFisica ? prezzoNetto * ALIQUOTA_IVA : 0;
   const totaleConIva = prezzoNetto + totaleIva;

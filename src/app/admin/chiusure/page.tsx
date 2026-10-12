@@ -59,7 +59,11 @@ export default async function ChiusurePage({
 
   const rows = quotes
     .map((q) => {
-      const lines = q.sites.filter((qs) => qs.serviceType !== "ONE_SHOT");
+      // Una tantum e passaggi annuali (fatturati un passaggio per volta) non
+      // hanno un canone mensile da ridurre per la chiusura.
+      const lines = q.sites.filter(
+        (qs) => qs.serviceType !== "ONE_SHOT" && qs.serviceType !== "PASS_ANNUALE"
+      );
       if (lines.length === 0) return null;
       let pieno = 0;
       let ridotto = 0;

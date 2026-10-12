@@ -93,9 +93,11 @@ export function fattoreChiusura(args: {
 // il fattore di chiusura del mese.
 export function canoneDelMese(
   base: number,
-  serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE",
+  serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE",
   args: Parameters<typeof fattoreChiusura>[0]
 ): number {
-  if (serviceType === "ONE_SHOT") return base;
+  // I passaggi annuali si fatturano un passaggio per volta: la chiusura
+  // aziendale non riduce nessun canone.
+  if (serviceType === "ONE_SHOT" || serviceType === "PASS_ANNUALE") return base;
   return base * fattoreChiusura(args).fattore;
 }

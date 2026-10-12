@@ -38,7 +38,7 @@ export async function loadChiusureContext(): Promise<ChiusureContext> {
 export function importoMeseSede(
   ctx: ChiusureContext,
   base: number,
-  qs: { id: string; serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" },
+  qs: { id: string; serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE" },
   quote: { chiusuraScelta: ChiusuraScelta },
   accessoSenzaCliente: boolean,
   year: number,

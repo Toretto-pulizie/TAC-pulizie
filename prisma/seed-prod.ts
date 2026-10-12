@@ -26,10 +26,14 @@ async function main() {
     console.log(`Admin pronto: ${email}`);
   }
 
-  const defaultLabels: { tipo: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE"; etichetta: string }[] = [
+  const defaultLabels: {
+    tipo: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE";
+    etichetta: string;
+  }[] = [
     { tipo: "ONE_SHOT", etichetta: "Una tantum" },
     { tipo: "PASS_SETTIMANALE", etichetta: "Abbonamento settimanale" },
     { tipo: "PASS_MENSILE", etichetta: "Abbonamento mensile" },
+    { tipo: "PASS_ANNUALE", etichetta: "Passaggi annuali" },
   ];
   for (const { tipo, etichetta } of defaultLabels) {
     await prisma.serviceTypeLabel.upsert({

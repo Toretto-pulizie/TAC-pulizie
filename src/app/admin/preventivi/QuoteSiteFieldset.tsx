@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { computeListPrice } from "@/lib/quotes";
+import { computeListPrice, passaggioDaMensile } from "@/lib/quotes";
 import { SearchSelect } from "@/app/SearchSelect";
 import { truncateText } from "@/app/Trunc";
 
-export type ServiceType = "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
+export type ServiceType = "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE";
 
 export type ClientOption = {
   id: string;
@@ -23,12 +23,15 @@ export type SiteBlockInitial = {
   oneShotCount: number;
   passSettimanale: number | null;
   passMensile: number | null;
+  passAnnuali: number | null;
   oreVetri: number;
   passVetriAnno: number;
   tariffaOraria: number;
   tariffaVetri: number;
   tariffaConsuntivo: number;
   scontoPct: number | null;
+  // Per i Passaggi annuali prezzoVenduto e adeguamento arrivano già convertiti
+  // a passaggio (in archivio sono l'equivalente mensile).
   prezzoVenduto: number | null;
   adeguamento: number | null;
   note: string | null;
@@ -101,6 +104,8 @@ export function QuoteSiteFieldset({
   const [siteSelection, setSiteSelection] = useState(initial?.siteId ?? "");
   const [totale, setTotale] = useState(0);
   const [netto, setNetto] = useState(0);
+  // Passaggi/anno digitati (solo Passaggi annuali): servono a totale annuo e mese.
+  const [passAnn, setPassAnn] = useState(initial?.passAnnuali ?? 0);
   const [adeguamentoDisplay, setAdeguamentoDisplay] = useState(
     initial?.adeguamento != null ? formatEuro(initial.adeguamento) : ""
   );
@@ -136,23 +141,29 @@ export function QuoteSiteFieldset({
     // Arrotondato al centesimo subito dopo il calcolo: con tariffe con i
     // centesimi (es. 25,13) i prodotti intermedi possono avere residui di
     // virgola mobile (es. 62,824999999999996 invece di 62,83).
+    const passAnnuali = st === "PASS_ANNUALE" ? num("passAnnuali") : null;
+    setPassAnn(passAnnuali ?? 0);
+    const listino = computeListPrice({
+      serviceType: st,
+      ore: num("ore"),
+      spostamento: num("spostamento"),
+      oneShotCount: num("oneShotCount", 1),
+      passSettimanale: st === "PASS_SETTIMANALE" ? num("passSettimanale") : null,
+      passMensile: st === "PASS_MENSILE" ? num("passMensile") : null,
+      passAnnuali,
+      oreVetri: num("oreVetri"),
+      passVetriAnno: num("passVetriAnno"),
+      tariffaOraria: num("tariffaOraria"),
+      tariffaVetri: num("tariffaVetri"),
+    });
+    // Passaggi annuali: si ragiona e si mostra a PASSAGGIO (il server salva poi
+    // l'equivalente mensile).
     const t =
-      Math.round(
-        computeListPrice({
-          serviceType: st,
-          ore: num("ore"),
-          spostamento: num("spostamento"),
-          oneShotCount: num("oneShotCount", 1),
-          passSettimanale: st === "PASS_SETTIMANALE" ? num("passSettimanale") : null,
-          passMensile: st === "PASS_MENSILE" ? num("passMensile") : null,
-          oreVetri: num("oreVetri"),
-          passVetriAnno: num("passVetriAnno"),
-          tariffaOraria: num("tariffaOraria"),
-          tariffaVetri: num("tariffaVetri"),
-        }) * 100
-      ) / 100;
+      Math.round((st === "PASS_ANNUALE" ? passaggioDaMensile(listino, passAnnuali) : listino) * 100) / 100;
     setTotale(t);
-    onTotaleChange(index, t);
+    // Il totale dell'offerta somma importi mensili: per i Passaggi annuali si
+    // passa l'equivalente mensile, non il prezzo a passaggio.
+    onTotaleChange(index, st === "PASS_ANNUALE" ? Math.round(listino * 100) / 100 : t);
 
     // Il Netto segue sempre il Totale corrente (ricalcolato da ore/tariffe)
     // finché non si imposta uno Sconto %; a quel punto è Totale - Sconto.
@@ -359,6 +370,7 @@ export function QuoteSiteFieldset({
               {serviceLabels.PASS_SETTIMANALE}
             </option>
             <option value="PASS_MENSILE">{serviceLabels.PASS_MENSILE}</option>
+            <option value="PASS_ANNUALE">{serviceLabels.PASS_ANNUALE}</option>
           </select>
         </label>
 
@@ -441,6 +453,23 @@ export function QuoteSiteFieldset({
             />
           </label>
         )}
+
+        {serviceType === "PASS_ANNUALE" && (
+          <label className="flex flex-col gap-1 text-sm">
+            <span title="Quanti passaggi in un anno (es. 6). I prezzi di questa riga sono a passaggio.">
+              Passaggi/anno
+            </span>
+            <input
+              type="number"
+              step="1"
+              min="1"
+              name={name("passAnnuali")}
+              required
+              defaultValue={initial?.passAnnuali ?? undefined}
+              className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
+            />
+          </label>
+        )}
       </div>
 
       {serviceType !== "ONE_SHOT" && (
@@ -516,7 +545,7 @@ export function QuoteSiteFieldset({
         </label>
 
         <div className="flex flex-col gap-1 text-sm">
-          Totale
+          {serviceType === "PASS_ANNUALE" ? "Totale a passaggio" : "Totale"}
           <div className="w-28 rounded-lg border border-zinc-200 bg-white px-3 py-2 font-medium text-zinc-900">
             {formatEuro(totale)}
           </div>
@@ -537,7 +566,7 @@ export function QuoteSiteFieldset({
         </label>
 
         <div className="flex flex-col gap-1 text-sm">
-          Netto
+          {serviceType === "PASS_ANNUALE" ? "Netto a passaggio" : "Netto"}
           <input type="hidden" name={name("prezzoVenduto")} defaultValue={netto} />
           <div className="w-32 rounded-lg border border-zinc-200 bg-white px-3 py-2 font-medium text-zinc-900">
             {formatEuro(netto)}
@@ -545,7 +574,7 @@ export function QuoteSiteFieldset({
         </div>
 
         <label className="flex flex-col gap-1 text-sm">
-          Adeguamento (opzionale)
+          {serviceType === "PASS_ANNUALE" ? "Adeguamento a passaggio (opzionale)" : "Adeguamento (opzionale)"}
           <input
             type="hidden"
             name={name("adeguamento")}
@@ -568,12 +597,19 @@ export function QuoteSiteFieldset({
         </label>
 
         <div className="flex flex-col gap-1 text-sm">
-          <span title="Prezzo venduto × 11 mesi (nel mese di chiusura aziendale non si fattura per intero); l'una tantum conta una volta">
-            Totale annuo (11 mesi)
+          <span
+            title={
+              serviceType === "PASS_ANNUALE"
+                ? "Prezzo a passaggio × passaggi/anno"
+                : "Prezzo venduto × 11 mesi (nel mese di chiusura aziendale non si fattura per intero); l'una tantum conta una volta"
+            }
+          >
+            {serviceType === "PASS_ANNUALE" ? `Totale annuo (${passAnn || 0} passaggi)` : "Totale annuo (11 mesi)"}
           </span>
           <div className="w-36 rounded-lg border border-zinc-200 bg-white px-3 py-2 font-medium text-zinc-900">
             {formatEuro(
-              (parseEuroInput(adeguamentoDisplay) ?? netto) * (serviceType === "ONE_SHOT" ? 1 : 11)
+              (parseEuroInput(adeguamentoDisplay) ?? netto) *
+                (serviceType === "ONE_SHOT" ? 1 : serviceType === "PASS_ANNUALE" ? passAnn : 11)
             )}
           </div>
         </div>
@@ -585,7 +621,11 @@ export function QuoteSiteFieldset({
           <div className="w-32 rounded-lg border border-zinc-200 bg-white px-3 py-2 font-medium text-zinc-900">
             {serviceType === "ONE_SHOT"
               ? "—"
-              : formatEuro(((parseEuroInput(adeguamentoDisplay) ?? netto) * 11) / 12)}
+              : formatEuro(
+                  ((parseEuroInput(adeguamentoDisplay) ?? netto) *
+                    (serviceType === "PASS_ANNUALE" ? passAnn : 11)) /
+                    12
+                )}
           </div>
         </div>
       </div>

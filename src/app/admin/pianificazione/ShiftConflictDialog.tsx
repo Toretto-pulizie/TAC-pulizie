@@ -8,6 +8,7 @@ import type { ShiftConflicts } from "@/lib/shiftConflicts";
 const BUDGET_LABELS: Record<string, string> = {
   PASS_SETTIMANALE: "questa settimana",
   PASS_MENSILE: "questo mese",
+  PASS_ANNUALE: "quest'anno",
   ONE_SHOT: "in totale",
 };
 

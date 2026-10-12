@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/dal";
 import { geocodeAddress } from "@/lib/geocode";
-import { computeListPrice } from "@/lib/quotes";
+import { computeListPrice, mensileDaPassaggio, passaggioDaMensile } from "@/lib/quotes";
 import { notifyAdmins, notifyAmministrativiIfEnabled } from "@/lib/notifications";
 import { clientDisplayName } from "@/lib/clients";
 
@@ -23,12 +23,13 @@ const QuoteSiteSchema = z
     nuovoIndirizzo: z.string().trim().optional(),
     nuovoNomeSede: z.string().trim().optional(),
     tipoPrestazione: z.string().trim().min(1, "Seleziona il tipo di servizio"),
-    serviceType: z.enum(["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE"]),
+    serviceType: z.enum(["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE", "PASS_ANNUALE"]),
     ore: z.coerce.number().min(0, "Ore non valide"),
     spostamento: z.coerce.number().min(0).default(0),
     oneShotCount: z.coerce.number().min(0).default(1),
     passSettimanale: z.coerce.number().min(0).optional(),
     passMensile: z.coerce.number().min(0).optional(),
+    passAnnuali: z.coerce.number().min(0).optional(),
     oreVetri: z.coerce.number().min(0).default(0),
     passVetriAnno: z.coerce.number().min(0).default(0),
     tariffaOraria: z.coerce.number().min(0),
@@ -52,6 +53,12 @@ const QuoteSiteSchema = z
       data.serviceType !== "PASS_MENSILE" ||
       (data.passMensile != null && data.passMensile > 0),
     { message: "Indica gli interventi/mese" }
+  )
+  .refine(
+    (data) =>
+      data.serviceType !== "PASS_ANNUALE" ||
+      (data.passAnnuali != null && data.passAnnuali > 0),
+    { message: "Indica i passaggi/anno" }
   );
 
 // I campi di ogni sede arrivano indicizzati come "sites.<i>.<campo>": questa
@@ -78,6 +85,7 @@ function parseSiteBlockFormData(formData: FormData, i: number) {
     oneShotCount: get("oneShotCount") || 1,
     passSettimanale: get("passSettimanale") || undefined,
     passMensile: get("passMensile") || undefined,
+    passAnnuali: get("passAnnuali") || undefined,
     oreVetri: get("oreVetri") || 0,
     passVetriAnno: get("passVetriAnno") || 0,
     tariffaOraria: get("tariffaOraria"),
@@ -166,12 +174,13 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
   const siteBlocksData: {
     siteId: string;
     tipoPrestazione: string;
-    serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
+    serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE";
     ore: number;
     spostamento: number;
     oneShotCount: number;
     passSettimanale: number | null;
     passMensile: number | null;
+    passAnnuali: number | null;
     oreVetri: number;
     passVetriAnno: number;
     tariffaOraria: number;
@@ -199,7 +208,14 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
       return { error: e instanceof Error ? e.message : "Errore nella sede" };
     }
 
+    // Passaggi annuali: il modulo invia i prezzi (netto, adeguamento) a
+    // PASSAGGIO; in archivio si salva l'equivalente mensile, come per gli altri
+    // canoni, e passMensile = passaggi/anno ÷ 12.
+    const annuale = d.serviceType === "PASS_ANNUALE";
+    const passAnnuali = annuale ? (d.passAnnuali ?? 0) : null;
+
     let prezzoVenduto = d.prezzoVenduto ?? null;
+    let adeguamento = d.adeguamento ?? null;
     if (d.scontoPct != null) {
       const listPrice = computeListPrice({
         serviceType: d.serviceType,
@@ -208,12 +224,18 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
         oneShotCount: d.oneShotCount,
         passSettimanale: d.passSettimanale ?? null,
         passMensile: d.passMensile ?? null,
+        passAnnuali,
         oreVetri: d.oreVetri,
         passVetriAnno: d.passVetriAnno,
         tariffaOraria: d.tariffaOraria,
         tariffaVetri: d.tariffaVetri,
       });
-      prezzoVenduto = Math.round(listPrice * (1 - d.scontoPct / 100) * 100) / 100;
+      const base = annuale ? passaggioDaMensile(listPrice, passAnnuali) : listPrice;
+      prezzoVenduto = Math.round(base * (1 - d.scontoPct / 100) * 100) / 100;
+    }
+    if (annuale && passAnnuali) {
+      if (prezzoVenduto != null) prezzoVenduto = mensileDaPassaggio(prezzoVenduto, passAnnuali);
+      if (adeguamento != null) adeguamento = mensileDaPassaggio(adeguamento, passAnnuali);
     }
 
     siteBlocksData.push({
@@ -224,7 +246,8 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
       spostamento: d.spostamento,
       oneShotCount: d.oneShotCount,
       passSettimanale: d.passSettimanale ?? null,
-      passMensile: d.passMensile ?? null,
+      passMensile: annuale && passAnnuali ? passAnnuali / 12 : (d.passMensile ?? null),
+      passAnnuali,
       oreVetri: d.oreVetri,
       passVetriAnno: d.passVetriAnno,
       tariffaOraria: d.tariffaOraria,
@@ -232,7 +255,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
       tariffaConsuntivo: d.tariffaConsuntivo,
       scontoPct: d.scontoPct ?? null,
       prezzoVenduto,
-      adeguamento: d.adeguamento ?? null,
+      adeguamento,
       note: d.note ?? null,
       mostraInStampa: d.mostraInStampa,
       // Mese di esecuzione: solo per le righe una tantum.

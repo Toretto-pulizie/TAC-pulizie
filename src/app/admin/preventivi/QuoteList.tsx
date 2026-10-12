@@ -14,6 +14,8 @@ type PerSite = {
   discountPct: number | null;
   netto: number;
   vendita: number;
+  // Passaggi annuali: listino/netto/vendita sono a passaggio, non mensili.
+  aPassaggio?: boolean;
   annuo11: number;
   meseRiparam: number;
   id: string;
@@ -35,6 +37,8 @@ type QuoteRowData = {
   listPrice: number;
   netto: number;
   vendita: number;
+  // Tutte le sedi a Passaggi annuali: listino/netto/vendita sono a passaggio.
+  perPassaggio?: boolean;
   annuo11: number;
   meseRiparam: number;
   discountPct: number | null;
@@ -68,9 +72,9 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
     siteCountLabel: String(r.siteCount),
     tipoServizioLabel: r.tipoServizio ?? "Vario",
     cadenzaLabel: r.cadenza ?? "Vario",
-    listPriceLabel: formatEuro(r.listPrice),
-    nettoLabel: formatEuro(r.netto),
-    venditaLabel: formatEuro(r.vendita),
+    listPriceLabel: formatEuro(r.listPrice) + (r.perPassaggio ? " /pass." : ""),
+    nettoLabel: formatEuro(r.netto) + (r.perPassaggio ? " /pass." : ""),
+    venditaLabel: formatEuro(r.vendita) + (r.perPassaggio ? " /pass." : ""),
     annuo11Label: formatEuro(r.annuo11),
     meseRiparamLabel: r.meseRiparam > 0 ? formatEuro(r.meseRiparam) : "—",
     discountLabel: r.discountPct != null ? `${(r.discountPct * 100).toFixed(0)}%` : null,
@@ -133,6 +137,7 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
                 listPrice={r.listPrice}
                 netto={r.netto}
                 vendita={r.vendita}
+                perPassaggio={r.perPassaggio}
                 annuo11={r.annuo11}
                 meseRiparam={r.meseRiparam}
                 discountPct={r.discountPct}

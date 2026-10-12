@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/dal";
 
 const ServiceTypeLabelSchema = z.object({
-  tipo: z.enum(["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE"]),
+  tipo: z.enum(["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE", "PASS_ANNUALE"]),
   etichetta: z.string().trim().min(1, "Il nome non può essere vuoto"),
   abbreviazione: z.string().trim().optional(),
   mostraCadenza: z.boolean(),

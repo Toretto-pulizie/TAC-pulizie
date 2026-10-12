@@ -26,7 +26,7 @@ import { ImpostazioniTabs } from "./ImpostazioniTabs";
 import { PhraseForm } from "@/app/admin/preventivi/frasi/PhraseForm";
 import { PhraseRow } from "@/app/admin/preventivi/frasi/PhraseRow";
 
-const ORDER = ["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE"] as const;
+const ORDER = ["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE", "PASS_ANNUALE"] as const;
 
 export default async function ImpostazioniPage() {
   await requireAdmin();

@@ -49,6 +49,7 @@ enum ServiceType {
   ONE_SHOT
   PASS_SETTIMANALE
   PASS_MENSILE
+  PASS_ANNUALE
 }
 
 enum QuoteStatus {
@@ -266,7 +267,12 @@ model QuoteSite {
   oneShotCount      Float       @default(1)
   passSettimanale   Float?
   passMensile       Float?
-  oreVetri          Float       @default(0)
+  // Solo per PASS_ANNUALE: passaggi in un anno (es. 6). Il prezzo si inserisce a
+  // passaggio; prezzoVenduto/adeguamento restano salvati come equivalente
+  // mensile (prezzo × passaggi/anno ÷ 12) e passMensile = passAnnuali / 12, così
+  // Commesse, Chiusure e Statistiche continuano a ragionare in mesi.
+  passAnnuali       Float?
+  oreVetri         Float       @default(0)
   passVetriAnno     Float       @default(0)
   tariffaOraria     Float       @default(25)
   tariffaVetri      Float       @default(30)

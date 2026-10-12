@@ -1,5 +1,5 @@
 import type { Quote, QuoteSite, Site } from "@prisma/client";
-import { computeListPrice } from "@/lib/quotes";
+import { computeListPrice, passaggioDaMensile } from "@/lib/quotes";
 import type { ChiusureContext } from "@/lib/chiusureData";
 import { buildDescriptionBlocks, flattenDescriptionBlocks } from "@/lib/quotePrint";
 import type { getServiceTypeLabels, getServiceTypeMostraCadenza } from "@/lib/serviceTypeLabels";
@@ -21,7 +21,13 @@ export function buildSiteOptions(
   return quotes.flatMap((q) =>
     q.sites.map((qs) => {
       const listPrice = computeListPrice(qs);
-      const importo = qs.adeguamento ?? qs.prezzoVenduto ?? listPrice;
+      const mensile = qs.adeguamento ?? qs.prezzoVenduto ?? listPrice;
+      // Passaggi annuali: si fattura un passaggio per volta, quindi l'importo
+      // proposto è il costo a passaggio (in archivio c'è l'equivalente mensile).
+      const importo =
+        qs.serviceType === "PASS_ANNUALE"
+          ? Math.round(passaggioDaMensile(mensile, qs.passAnnuali) * 100) / 100
+          : mensile;
       const blocks = buildDescriptionBlocks(
         qs,
         serviceLabels[qs.serviceType],

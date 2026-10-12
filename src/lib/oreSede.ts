@@ -13,7 +13,7 @@
 
 export type LineaOre = {
   id: string;
-  serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
+  serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE";
   ore: number;
   oneShotCount: number;
   // "AAAA-MM": mese di competenza, solo per le una tantum.
@@ -84,7 +84,7 @@ export function oreRipartitePerRiga(
   quoteSites: {
     id: string;
     siteId: string;
-    serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
+    serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE";
     ore: number;
     oneShotCount: number;
     meseUnaTantum: string | null;

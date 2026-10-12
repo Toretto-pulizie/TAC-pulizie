@@ -9,7 +9,7 @@ type QuoteSiteOption = {
   id: string;
   siteId: string;
   label: string;
-  serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
+  serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE";
   ore: number;
 };
 type Site = {

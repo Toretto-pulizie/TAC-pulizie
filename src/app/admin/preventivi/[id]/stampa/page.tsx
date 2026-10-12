@@ -6,6 +6,7 @@ import { computeDiscountPct } from "@/lib/quotes";
 import {
   buildDescriptionBlocks,
   buildLineItem,
+  importoStampa,
   type DescriptionBlock,
 } from "@/lib/quotePrint";
 import {
@@ -102,13 +103,13 @@ export default async function StampaPreventivoPage({
     const lineItem = buildLineItem(qs, serviceLabels[qs.serviceType]);
     // Netto "puro": listino → sconto, senza l'Adeguamento — è il valore
     // coerente con la percentuale di Sconto mostrata accanto.
-    const netto = qs.prezzoVenduto ?? lineItem.listPrice;
+    // Per i Passaggi annuali listino, netto e adeguamento sono a PASSAGGIO
+    // (in archivio c'è l'equivalente mensile).
+    const netto = qs.prezzoVenduto != null ? importoStampa(qs, qs.prezzoVenduto) : lineItem.listPrice;
     // Prezzo finale: l'Adeguamento, se presente, sostituisce il Netto.
-    const prezzoFinale = qs.adeguamento ?? netto;
+    const prezzoFinale = qs.adeguamento != null ? importoStampa(qs, qs.adeguamento) : netto;
     const discountPct =
-      qs.prezzoVenduto != null
-        ? computeDiscountPct(lineItem.listPrice, qs.prezzoVenduto)
-        : null;
+      qs.prezzoVenduto != null ? computeDiscountPct(lineItem.listPrice, netto) : null;
     const blocks = buildDescriptionBlocks(
       { ...qs, site: qs.site },
       serviceLabels[qs.serviceType],
@@ -267,7 +268,8 @@ export default async function StampaPreventivoPage({
   const summaryRowsEl = siteRows.map((r, i) => (
     <tr key={i}>
       <td className="border-r border-t border-b border-zinc-300 px-2 py-2 font-semibold text-zinc-900">
-        {multiSede ? `Valore del servizio — ${quote.sites[i].site.name}` : "Valore del servizio"}
+        {(quote.sites[i].serviceType === "PASS_ANNUALE" ? "Costo a passaggio" : "Valore del servizio") +
+          (multiSede ? ` — ${quote.sites[i].site.name}` : "")}
       </td>
       <td className="border-r border-t border-b border-zinc-300 px-2 py-2 text-right">
         {formatEuro(r.lineItem.prezzoUnitario)}

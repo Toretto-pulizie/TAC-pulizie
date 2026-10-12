@@ -25,6 +25,8 @@ type PerSite = {
   discountPct: number | null;
   netto: number;
   vendita: number;
+  // Passaggi annuali: listino/netto/vendita sono a passaggio, non mensili.
+  aPassaggio?: boolean;
   annuo11: number;
   meseRiparam: number;
   id: string;
@@ -33,6 +35,11 @@ type PerSite = {
 
 function formatEuro(n: number) {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
+}
+
+// Importo a passaggio: si aggiunge "/pass." per distinguerlo dal canone mensile.
+function formatEuroP(n: number, aPassaggio?: boolean) {
+  return formatEuro(n) + (aPassaggio ? " /pass." : "");
 }
 
 export function QuoteRow({
@@ -47,6 +54,7 @@ export function QuoteRow({
   listPrice,
   netto,
   vendita,
+  perPassaggio,
   annuo11,
   meseRiparam,
   discountPct,
@@ -63,6 +71,8 @@ export function QuoteRow({
   listPrice: number;
   netto: number;
   vendita: number;
+  // Tutte le sedi a Passaggi annuali: listino/netto/vendita sono a passaggio.
+  perPassaggio?: boolean;
   annuo11: number;
   meseRiparam: number;
   discountPct: number | null;
@@ -103,12 +113,12 @@ export function QuoteRow({
         </td>
         <td className="px-4 py-3 text-zinc-500">{tipoServizio ?? "Vario"}</td>
         <td className="px-4 py-3 text-zinc-500">{cadenza ?? "Vario"}</td>
-        <td className="px-4 py-3 text-zinc-500">{formatEuro(listPrice)}</td>
+        <td className="px-4 py-3 text-zinc-500">{formatEuroP(listPrice, perPassaggio)}</td>
         <td className="px-4 py-3 text-zinc-500">
           {discountPct != null ? `${(discountPct * 100).toFixed(0)}%` : "—"}
         </td>
-        <td className="px-4 py-3 text-zinc-500">{formatEuro(netto)}</td>
-        <td className="px-4 py-3 text-zinc-500">{formatEuro(vendita)}</td>
+        <td className="px-4 py-3 text-zinc-500">{formatEuroP(netto, perPassaggio)}</td>
+        <td className="px-4 py-3 text-zinc-500">{formatEuroP(vendita, perPassaggio)}</td>
         <td className="px-4 py-3 text-zinc-500">{formatEuro(annuo11)}</td>
         <td className="px-4 py-3 text-zinc-500">{meseRiparam > 0 ? formatEuro(meseRiparam) : "—"}</td>
         <td className="px-4 py-3">
@@ -204,7 +214,7 @@ export function QuoteRow({
                     onChange={(e) => setScelte((c) => ({ ...c, [s.id]: e.target.checked }))}
                     className="h-4 w-4"
                   />
-                  {s.siteAddress.replace(" — non nel PDF", "")} — {s.tipoServizio} · {formatEuro(s.vendita)}
+                  {s.siteAddress.replace(" — non nel PDF", "")} — {s.tipoServizio} · {formatEuroP(s.vendita, s.aPassaggio)}
                 </label>
               ))}
             </div>
@@ -249,12 +259,12 @@ export function QuoteRow({
             <td className="px-4 py-3 text-zinc-500">{s.siteAddress}</td>
             <td className="px-4 py-3 text-zinc-500">{s.tipoServizio}</td>
             <td className="px-4 py-3 text-zinc-500">{s.cadenza}</td>
-            <td className="px-4 py-3 text-zinc-500">{formatEuro(s.listPrice)}</td>
+            <td className="px-4 py-3 text-zinc-500">{formatEuroP(s.listPrice, s.aPassaggio)}</td>
             <td className="px-4 py-3 text-zinc-500">
               {s.discountPct != null ? `${(s.discountPct * 100).toFixed(0)}%` : "—"}
             </td>
-            <td className="px-4 py-3 text-zinc-500">{formatEuro(s.netto)}</td>
-            <td className="px-4 py-3 text-zinc-500">{formatEuro(s.vendita)}</td>
+            <td className="px-4 py-3 text-zinc-500">{formatEuroP(s.netto, s.aPassaggio)}</td>
+            <td className="px-4 py-3 text-zinc-500">{formatEuroP(s.vendita, s.aPassaggio)}</td>
             <td className="px-4 py-3 text-zinc-500">{formatEuro(s.annuo11)}</td>
             <td className="px-4 py-3 text-zinc-500">{s.meseRiparam > 0 ? formatEuro(s.meseRiparam) : "—"}</td>
             <td className="px-4 py-3"></td>

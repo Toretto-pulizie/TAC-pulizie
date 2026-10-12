@@ -1,12 +1,34 @@
 import type { ServiceType } from "@prisma/client";
-import { computeListPrice, type QuotePricingInput } from "@/lib/quotes";
+import { computeListPrice, passaggioDaMensile, type QuotePricingInput } from "@/lib/quotes";
+
+// Passaggi in un anno di una riga "Passaggi annuali": il valore salvato, o in
+// mancanza quello ricavato da passMensile (= passaggi/anno ÷ 12).
+function passaggiAnno(passAnnuali: number | null | undefined, passMensile: number | null) {
+  return passAnnuali ?? Math.round((passMensile ?? 0) * 12 * 100) / 100;
+}
+
+// Importo mostrato in stampa: per i Passaggi annuali il costo a passaggio (in
+// archivio c'è l'equivalente mensile), per gli altri il valore invariato.
+export function importoStampa(
+  q: { serviceType: ServiceType; passAnnuali?: number | null },
+  importoArchivio: number
+) {
+  return q.serviceType === "PASS_ANNUALE"
+    ? Math.round(passaggioDaMensile(importoArchivio, q.passAnnuali) * 100) / 100
+    : importoArchivio;
+}
 
 export function labelWithFrequency(
   serviceType: ServiceType,
   label: string,
   passSettimanale: number | null,
-  passMensile: number | null
+  passMensile: number | null,
+  passAnnuali?: number | null
 ) {
+  if (serviceType === "PASS_ANNUALE") {
+    const n = passaggiAnno(passAnnuali, passMensile);
+    return `${label} (${n} passagg${n === 1 ? "io" : "i"}/anno)`;
+  }
   if (serviceType === "PASS_SETTIMANALE") {
     const n = passSettimanale ?? 0;
     return `${label} (${n} intervent${n === 1 ? "o" : "i"}/settimana)`;
@@ -24,8 +46,13 @@ export function cadenzaLabel(
   serviceType: ServiceType,
   oneShotCount: number,
   passSettimanale: number | null,
-  passMensile: number | null
+  passMensile: number | null,
+  passAnnuali?: number | null
 ) {
+  if (serviceType === "PASS_ANNUALE") {
+    const n = passaggiAnno(passAnnuali, passMensile);
+    return `${n} passagg${n === 1 ? "io" : "i"}/anno`;
+  }
   if (serviceType === "ONE_SHOT") {
     const n = oneShotCount;
     return `${n} intervent${n === 1 ? "o" : "i"}`;
@@ -110,6 +137,17 @@ function buildRiepilogoLine(
       label: "Cadenza:",
       boldValue: `n° ${n}`,
       rest: ` ${passaggio} ${settimanale} così ${distribuito}`,
+    };
+  }
+  if (q.serviceType === "PASS_ANNUALE") {
+    const n = passaggiAnno(q.passAnnuali, q.passMensile);
+    const passaggio = n === 1 ? "passaggio" : "passaggi";
+    const annuale = n === 1 ? "annuale" : "annuali";
+    const distribuito = n === 1 ? "distribuito" : "distribuiti";
+    return {
+      label: "Cadenza:",
+      boldValue: `n° ${n}`,
+      rest: ` ${passaggio} ${annuale} così ${distribuito}`,
     };
   }
   if (q.serviceType === "PASS_MENSILE") {
@@ -242,16 +280,19 @@ export function flattenDescriptionBlocks(blocks: DescriptionBlock[]): string {
 }
 
 export function buildLineItem(q: QuotePricingInput, serviceLabel: string) {
-  const listPrice = computeListPrice(q);
+  // Passaggi annuali: il listino è a PASSAGGIO (in archivio e in
+  // computeListPrice c'è l'equivalente mensile).
+  const listPrice = importoStampa(q, computeListPrice(q));
   const isOneShot = q.serviceType === "ONE_SHOT";
   const quantita = isOneShot ? q.oneShotCount : 1;
   const prezzoUnitario = isOneShot ? listPrice / q.oneShotCount : listPrice;
-  const um = isOneShot ? "NR" : "MESE";
+  const um = isOneShot ? "NR" : q.serviceType === "PASS_ANNUALE" ? "PASS" : "MESE";
   const descrizione = labelWithFrequency(
     q.serviceType,
     serviceLabel,
     q.passSettimanale ?? null,
-    q.passMensile ?? null
+    q.passMensile ?? null,
+    q.passAnnuali ?? null
   );
   return { descrizione, um, quantita, prezzoUnitario, listPrice };
 }

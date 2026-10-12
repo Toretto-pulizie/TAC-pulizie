@@ -6,7 +6,13 @@ import {
   computeSoldAnnual,
   computeDiscountPct,
   computeMeseRiparametrato,
+  passaggioDaMensile,
 } from "@/lib/quotes";
+
+// Importo a passaggio, arrotondato al centesimo (per i Passaggi annuali in
+// archivio c'è l'equivalente mensile).
+const aPassaggio = (mensile: number, passAnnuali: number | null) =>
+  Math.round(passaggioDaMensile(mensile, passAnnuali) * 100) / 100;
 import { getServiceTypeLabels, getServiceTypeAbbreviazioni } from "@/lib/serviceTypeLabels";
 import { formatSedeAddress } from "@/lib/quotePrint";
 import { clientDisplayName } from "@/lib/clients";
@@ -94,14 +100,22 @@ export default async function PreventiviPage({
           oneShotCount: s.oneShotCount,
           passSettimanale: s.passSettimanale,
           passMensile: s.passMensile,
+          passAnnuali: s.passAnnuali,
           oreVetri: s.oreVetri,
           passVetriAnno: s.passVetriAnno,
           tariffaOraria: s.tariffaOraria,
           tariffaVetri: s.tariffaVetri,
           tariffaConsuntivo: s.tariffaConsuntivo,
           scontoPct: s.scontoPct,
-          prezzoVenduto: s.prezzoVenduto,
-          adeguamento: s.adeguamento,
+          // Passaggi annuali: il modulo lavora a passaggio.
+          prezzoVenduto:
+            s.serviceType === "PASS_ANNUALE" && s.prezzoVenduto != null
+              ? aPassaggio(s.prezzoVenduto, s.passAnnuali)
+              : s.prezzoVenduto,
+          adeguamento:
+            s.serviceType === "PASS_ANNUALE" && s.adeguamento != null
+              ? aPassaggio(s.adeguamento, s.passAnnuali)
+              : s.adeguamento,
           mostraInStampa: s.mostraInStampa,
           meseUnaTantum: s.meseUnaTantum,
           note: s.note,
@@ -136,12 +150,38 @@ export default async function PreventiviPage({
       const venditaRicorrente = qs.serviceType === "ONE_SHOT" || !valida ? 0 : vendita;
       const annuo =
         q.status === "ACCETTATO" && valida ? computeSoldAnnual(qs.serviceType, vendita) : 0;
-      return { ...qs, listPrice, netto, vendita, venditaRicorrente, annuo, valida };
+      // Passaggi annuali: in elenco si vede il costo a PASSAGGIO, non
+      // l'equivalente mensile (che risulterebbe "dimezzato").
+      const inPass = qs.serviceType === "PASS_ANNUALE";
+      const vista = (n: number) => (inPass ? aPassaggio(n, qs.passAnnuali) : n);
+      return {
+        ...qs,
+        listPrice,
+        netto,
+        vendita,
+        venditaRicorrente,
+        annuo,
+        valida,
+        inPass,
+        listPriceVista: vista(listPrice),
+        nettoVista: vista(netto),
+        venditaVista: vista(vendita),
+      };
     });
 
-    const listPrice = siteRows.reduce((sum, s) => sum + s.listPrice, 0);
-    const netto = siteRows.reduce((sum, s) => sum + s.netto, 0);
-    const vendita = siteRows.reduce((sum, s) => sum + s.vendita, 0);
+    // Importi mensili (per i totali delle card) e importi "di vista" per la riga:
+    // se tutte le sedi sono a Passaggi annuali la riga mostra il costo a passaggio.
+    const listPriceMensile = siteRows.reduce((sum, s) => sum + s.listPrice, 0);
+    const perPassaggio = siteRows.length > 0 && siteRows.every((s) => s.inPass);
+    const listPrice = siteRows.reduce(
+      (sum, s) => sum + (perPassaggio ? s.listPriceVista : s.listPrice),
+      0
+    );
+    const netto = siteRows.reduce((sum, s) => sum + (perPassaggio ? s.nettoVista : s.netto), 0);
+    const vendita = siteRows.reduce(
+      (sum, s) => sum + (perPassaggio ? s.venditaVista : s.vendita),
+      0
+    );
     const venditaRicorrente = siteRows.reduce((sum, s) => sum + s.venditaRicorrente, 0);
     // Lo sconto riflette listino → netto complessivo (prima dell'adeguamento
     // manuale).
@@ -169,7 +209,9 @@ export default async function PreventiviPage({
           ? s.oneShotCount
           : s.serviceType === "PASS_SETTIMANALE"
             ? (s.passSettimanale ?? 0)
-            : (s.passMensile ?? 0);
+            : s.serviceType === "PASS_ANNUALE"
+              ? (s.passAnnuali ?? 0)
+              : (s.passMensile ?? 0);
       return {
         id: q.sites[i].id,
         confermata: q.sites[i].confermata,
@@ -179,10 +221,11 @@ export default async function PreventiviPage({
           (q.sites[i].mostraInStampa ? "" : " — non nel PDF"),
         tipoServizio: abbreviazioniPerEtichetta.get(s.tipoPrestazione) || s.tipoPrestazione,
         cadenza: `${freqLabel} ${n}`,
-        listPrice: s.listPrice,
+        listPrice: s.listPriceVista,
         discountPct: computeDiscountPct(s.listPrice, s.netto),
-        netto: s.netto,
-        vendita: s.vendita,
+        netto: s.nettoVista,
+        vendita: s.venditaVista,
+        aPassaggio: s.inPass,
         annuo11: computeSoldAnnual(s.serviceType, s.vendita),
         meseRiparam: computeMeseRiparametrato(s.serviceType, s.vendita),
       };
@@ -205,6 +248,8 @@ export default async function PreventiviPage({
       perSite,
       cadenza,
       listPrice,
+      listPriceMensile,
+      perPassaggio,
       netto,
       vendita,
       venditaRicorrente,
@@ -217,7 +262,7 @@ export default async function PreventiviPage({
 
   const inTrattativaValore = rows
     .filter((r) => r.status === "IN_TRATTATIVA")
-    .reduce((sum, r) => sum + r.listPrice, 0);
+    .reduce((sum, r) => sum + r.listPriceMensile, 0);
   const mensileAccettato = rows
     .filter((r) => r.status === "ACCETTATO")
     .reduce((sum, r) => sum + r.venditaRicorrente, 0);
@@ -284,6 +329,7 @@ export default async function PreventiviPage({
             listPrice: r.listPrice,
             netto: r.netto,
             vendita: r.vendita,
+            perPassaggio: r.perPassaggio,
             annuo11: r.annuo11,
             meseRiparam: r.meseRiparam,
             discountPct: r.discountPct,

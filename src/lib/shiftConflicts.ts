@@ -23,7 +23,7 @@ export type ShiftConflicts = {
   }[];
   capacityWarning: { current: number; capienza: number } | null;
   budgetWarning: {
-    tipo: "PASS_SETTIMANALE" | "PASS_MENSILE" | "ONE_SHOT";
+    tipo: "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE" | "ONE_SHOT";
     pianificate: number;
     contrattuali: number;
   } | null;
@@ -141,6 +141,20 @@ export async function detectShiftConflicts({
         tipo: "PASS_MENSILE",
         pianificate: existing.reduce((s, sh) => s + hoursBetween(sh.start, sh.end), newPersonHours),
         contrattuali: acceptedQuoteSite.ore * (acceptedQuoteSite.passMensile ?? 0),
+      };
+    } else if (acceptedQuoteSite.serviceType === "PASS_ANNUALE") {
+      // Pochi passaggi l'anno: il budget ore ha senso sull'anno solare, non sul
+      // mese (un solo passaggio in un mese supererebbe le ore "mensili").
+      const yearStart = new Date(start.getFullYear(), 0, 1);
+      const yearEnd = new Date(start.getFullYear(), 11, 31, 23, 59, 59, 999);
+      const existing = await prisma.shift.findMany({
+        where: { siteId, id: excludeFilter, start: { gte: yearStart, lte: yearEnd } },
+        select: { start: true, end: true },
+      });
+      budgetWarning = {
+        tipo: "PASS_ANNUALE",
+        pianificate: existing.reduce((s, sh) => s + hoursBetween(sh.start, sh.end), newPersonHours),
+        contrattuali: acceptedQuoteSite.ore * (acceptedQuoteSite.passAnnuali ?? 0),
       };
     } else if (acceptedQuoteSite.serviceType === "ONE_SHOT") {
       const existing = await prisma.shift.findMany({

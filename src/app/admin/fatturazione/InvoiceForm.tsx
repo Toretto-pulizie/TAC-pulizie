@@ -21,7 +21,7 @@ type SiteOption = {
   siteName: string;
   descrizione: string;
   importo: number;
-  serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
+  serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE";
   chiusuraScelta: ChiusuraScelta;
   accessoSenzaCliente: boolean;
   weekdays: number[] | null;
@@ -104,7 +104,8 @@ export function InvoiceForm({
   // Chiusura aziendale: nel mese interessato il canone si riduce per chi è
   // nella modalità b (nessun intervento); l'importo resta modificabile.
   function propostaChiusura(s: SiteOption) {
-    if (s.serviceType === "ONE_SHOT") return null;
+    // Una tantum e passaggi annuali (un passaggio per volta): nessuna riduzione.
+    if (s.serviceType === "ONE_SHOT" || s.serviceType === "PASS_ANNUALE") return null;
     const f = fattoreChiusura({
       year: annoFattura,
       month: meseFattura,
@@ -273,7 +274,8 @@ export function InvoiceForm({
                   <Trunc text={s.siteName} />{" "}
                   <span className="text-xs text-zinc-400">
                     (Offerta N. {s.numeroOfferta}
-                    {s.serviceType === "ONE_SHOT" ? ", una tantum" : ""})
+                    {s.serviceType === "ONE_SHOT" ? ", una tantum" : ""}
+                    {s.serviceType === "PASS_ANNUALE" ? ", costo a passaggio" : ""})
                   </span>
                   {giaOneShot && (
                     <span className="block text-[11px] text-zinc-500">

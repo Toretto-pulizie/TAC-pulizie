@@ -37,7 +37,7 @@ type ContinuativoOption = {
   id: string;
   siteId: string;
   label: string;
-  serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE";
+  serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE";
   ore: number;
 };
 type FrequenzaLabels = { settimanale: string; mensile: string };
@@ -400,7 +400,8 @@ export function TurnoForm({
         (activeQuoteSite ? (
           // La cadenza si deduce dal preventivo collegato: niente da
           // mostrare o far scegliere, si invia comunque il valore corretto.
-          activeQuoteSite.serviceType === "PASS_MENSILE" ? (
+          activeQuoteSite.serviceType === "PASS_MENSILE" ||
+          activeQuoteSite.serviceType === "PASS_ANNUALE" ? (
             <input type="hidden" name="intervalDays" value={30} />
           ) : (
             <input type="hidden" name="intervalWeeks" value={1} />

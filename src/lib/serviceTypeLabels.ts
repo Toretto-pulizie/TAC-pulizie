@@ -5,6 +5,7 @@ export const DEFAULT_SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
   ONE_SHOT: "Una tantum",
   PASS_SETTIMANALE: "Abbonamento settimanale",
   PASS_MENSILE: "Abbonamento mensile",
+  PASS_ANNUALE: "Passaggi annuali",
 };
 
 // Per sua natura "una tantum" non ha una cadenza da riepilogare; i passaggi
@@ -14,6 +15,7 @@ export const DEFAULT_MOSTRA_CADENZA: Record<ServiceType, boolean> = {
   ONE_SHOT: false,
   PASS_SETTIMANALE: true,
   PASS_MENSILE: true,
+  PASS_ANNUALE: true,
 };
 
 export async function getServiceTypeLabels(): Promise<Record<ServiceType, string>> {
@@ -35,6 +37,7 @@ export async function getServiceTypeAbbreviazioni(): Promise<
     ONE_SHOT: null,
     PASS_SETTIMANALE: null,
     PASS_MENSILE: null,
+    PASS_ANNUALE: null,
   };
   for (const row of rows) {
     abbreviazioni[row.tipo] = row.abbreviazione;
