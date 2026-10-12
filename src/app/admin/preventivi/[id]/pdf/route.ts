@@ -51,6 +51,9 @@ export async function GET(
     );
   }
 
+  // Solo le sedi con "Mostra nel PDF" entrano nel documento e nel totale.
+  quote.sites = quote.sites.filter((qs) => qs.mostraInStampa);
+
   const client = quote.client;
   const clientName =
     client.tipo === "PERSONA_FISICA"

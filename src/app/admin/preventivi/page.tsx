@@ -102,6 +102,7 @@ export default async function PreventiviPage({
           scontoPct: s.scontoPct,
           prezzoVenduto: s.prezzoVenduto,
           adeguamento: s.adeguamento,
+          mostraInStampa: s.mostraInStampa,
           note: s.note,
         })),
       }
@@ -168,7 +169,9 @@ export default async function PreventiviPage({
             ? (s.passSettimanale ?? 0)
             : (s.passMensile ?? 0);
       return {
-        siteAddress: formatSedeAddress(q.sites[i].site.address),
+        siteAddress:
+          formatSedeAddress(q.sites[i].site.address) +
+          (q.sites[i].mostraInStampa ? "" : " — non nel PDF"),
         tipoServizio: abbreviazioniPerEtichetta.get(s.tipoPrestazione) || s.tipoPrestazione,
         cadenza: `${freqLabel} ${n}`,
         listPrice: s.listPrice,

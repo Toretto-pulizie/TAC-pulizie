@@ -32,6 +32,7 @@ export type SiteBlockInitial = {
   prezzoVenduto: number | null;
   adeguamento: number | null;
   note: string | null;
+  mostraInStampa: boolean;
 };
 
 export type Phrase = {
@@ -235,9 +236,23 @@ export function QuoteSiteFieldset({
       className="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-zinc-50/60 p-3"
     >
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
-          Sede {index + 1}
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+            Sede {index + 1}
+          </p>
+          <label
+            className="flex items-center gap-1.5 text-xs text-zinc-600"
+            title="Se tolta, la sede resta nell'offerta ma non compare nel PDF di stampa"
+          >
+            <input
+              type="checkbox"
+              name={name("mostraInStampa")}
+              defaultChecked={initial?.mostraInStampa ?? true}
+              className="h-4 w-4"
+            />
+            Mostra nel PDF
+          </label>
+        </div>
         {canRemove && (
           <button
             type="button"

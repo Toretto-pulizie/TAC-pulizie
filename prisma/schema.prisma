@@ -275,6 +275,8 @@ model QuoteSite {
   prezzoVenduto     Float?
   adeguamento       Float?
   note              String?
+  // Se falso la sede resta nell'offerta ma non compare nel PDF di stampa.
+  mostraInStampa    Boolean     @default(true)
   shiftPlans        ShiftPlan[]
 
   @@index([siteId])

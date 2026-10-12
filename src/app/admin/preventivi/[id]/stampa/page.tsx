@@ -84,6 +84,8 @@ export default async function StampaPreventivoPage({
       getBankSettings(),
     ]);
   if (!quote) notFound();
+  // Solo le sedi con "Mostra nel PDF": le altre restano nell'offerta ma non si stampano.
+  quote.sites = quote.sites.filter((qs) => qs.mostraInStampa);
   const bancaAppoggio = formatBancaAppoggio(bankSettings);
 
   const client = quote.client;

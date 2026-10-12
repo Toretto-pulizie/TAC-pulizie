@@ -38,6 +38,7 @@ const QuoteSiteSchema = z
     scontoPct: z.coerce.number().min(0).max(100).optional(),
     adeguamento: z.coerce.number().optional(),
     note: z.string().trim().optional(),
+    mostraInStampa: z.boolean().default(true),
   })
   .refine(
     (data) =>
@@ -85,6 +86,8 @@ function parseSiteBlockFormData(formData: FormData, i: number) {
     scontoPct: get("scontoPct") || undefined,
     adeguamento: get("adeguamento") || undefined,
     note: get("note") || undefined,
+    // Casella "Mostra nel PDF": presente solo se spuntata.
+    mostraInStampa: get("mostraInStampa") === "on",
   };
 }
 
@@ -176,6 +179,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
     prezzoVenduto: number | null;
     adeguamento: number | null;
     note: string | null;
+    mostraInStampa: boolean;
   }[] = [];
 
   for (const i of indexes) {
@@ -227,7 +231,12 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
       prezzoVenduto,
       adeguamento: d.adeguamento ?? null,
       note: d.note ?? null,
+      mostraInStampa: d.mostraInStampa,
     });
+  }
+
+  if (!siteBlocksData.some((b) => b.mostraInStampa)) {
+    return { error: "Almeno una sede deve comparire nel PDF di stampa" };
   }
 
   // Data della scelta: si aggiorna solo quando la scelta cambia, così resta
