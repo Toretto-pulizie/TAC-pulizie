@@ -42,7 +42,7 @@ export default async function StatistichePage() {
       include: { sites: true },
     }),
     prisma.quoteSite.findMany({
-      where: { quote: { status: "ACCETTATO" } },
+      where: { confermata: true, quote: { status: "ACCETTATO" } },
       include: { site: { include: { client: true } }, quote: true },
     }),
     prisma.timeEntry.findMany({
@@ -83,12 +83,15 @@ export default async function StatistichePage() {
     // L'adeguamento, se presente, sostituisce il Netto come prezzo finale.
     const valoreVenduto = accettati.reduce(
       (s, q) =>
-        s + q.sites.reduce((s2, qs) => s2 + (qs.adeguamento ?? qs.prezzoVenduto ?? 0), 0),
+        s +
+        q.sites
+          .filter((qs) => qs.confermata)
+          .reduce((s2, qs) => s2 + (qs.adeguamento ?? qs.prezzoVenduto ?? 0), 0),
       0
     );
     const sconti = accettati
       .flatMap((q) => q.sites)
-      .filter((qs) => qs.prezzoVenduto != null)
+      .filter((qs) => qs.confermata && qs.prezzoVenduto != null)
       .map((qs) => computeDiscountPct(computeListPrice(qs), qs.prezzoVenduto!))
       .filter((d): d is number => d != null);
     const scontoMedio =

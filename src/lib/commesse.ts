@@ -46,6 +46,10 @@ export type CommessaRow = {
   daFatturare: number | null;
 };
 
+// Per un'offerta accettata contano solo le sedi confermate dal cliente.
+const sediValide = <T extends { sites: QuoteSite[] }>(q: T) =>
+  q.sites.filter((qs) => qs.confermata);
+
 const vendita = (qs: QuoteSite) => qs.adeguamento ?? qs.prezzoVenduto ?? computeListPrice(qs);
 
 const monthKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}`;
@@ -74,7 +78,7 @@ export function computeCommesse({
   const acceptedBySite = new Map<string, { clientId: string; qs: QuoteSite; q: QuoteIn }[]>();
   for (const q of quotes) {
     if (q.status !== "ACCETTATO") continue;
-    for (const qs of q.sites) {
+    for (const qs of sediValide(q)) {
       const list = acceptedBySite.get(qs.siteId) ?? [];
       list.push({ clientId: q.clientId, qs, q });
       acceptedBySite.set(qs.siteId, list);
@@ -159,7 +163,7 @@ export function computeCommesse({
             ? "RIFIUTATA"
             : null;
 
-    const baseSites = base.flatMap((q) => q.sites);
+    const baseSites = base.flatMap((q) => (q.status === "ACCETTATO" ? sediValide(q) : q.sites));
     const mensile = baseSites
       .filter((qs) => qs.serviceType !== "ONE_SHOT")
       .reduce((s, qs) => s + vendita(qs), 0);
@@ -248,7 +252,7 @@ export function computeCommessePerOfferta({
   const acceptedBySite = new Map<string, { quoteId: string; qs: QuoteSite; q: QuoteIn }[]>();
   for (const q of quotes) {
     if (q.status !== "ACCETTATO") continue;
-    for (const qs of q.sites) {
+    for (const qs of sediValide(q)) {
       const list = acceptedBySite.get(qs.siteId) ?? [];
       list.push({ quoteId: q.id, qs, q });
       acceptedBySite.set(qs.siteId, list);
@@ -338,10 +342,11 @@ export function computeCommessePerOfferta({
   for (const q of quotes) {
     const isAccepted = q.status === "ACCETTATO";
     const a = agg.get(q.id) ?? { ore: 0, spost: 0, contratto: 0, consuntivo: 0 };
-    const mensile = q.sites
+    const sitesQ = isAccepted ? sediValide(q) : q.sites;
+    const mensile = sitesQ
       .filter((qs) => qs.serviceType !== "ONE_SHOT")
       .reduce((s, qs) => s + vendita(qs), 0);
-    const annuo = q.sites.reduce((s, qs) => s + computeSoldAnnual(qs.serviceType, vendita(qs)), 0);
+    const annuo = sitesQ.reduce((s, qs) => s + computeSoldAnnual(qs.serviceType, vendita(qs)), 0);
     rows.push({
       key: q.id,
       quoteId: q.id,
@@ -353,7 +358,7 @@ export function computeCommessePerOfferta({
         : q.status === "IN_TRATTATIVA"
           ? "IN_TRATTATIVA"
           : "RIFIUTATA",
-      cantieri: new Set(q.sites.map((qs) => qs.siteId)).size,
+      cantieri: new Set(sitesQ.map((qs) => qs.siteId)).size,
       mensile,
       annuo,
       amountsFromPending: !isAccepted,

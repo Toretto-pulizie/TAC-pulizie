@@ -16,7 +16,7 @@ export default async function SediPage() {
       include: {
         client: true,
         quoteSites: {
-          where: { quote: { status: "ACCETTATO" } },
+          where: { confermata: true, quote: { status: "ACCETTATO" } },
           select: { quote: { select: { numeroOfferta: true } } },
         },
       },

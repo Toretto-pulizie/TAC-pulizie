@@ -29,7 +29,7 @@ export default async function ConsuntiviPage({
   const [quoteSites, entries, { ore: oreDisponibili, netto: oreDisponibiliNette }] =
     await Promise.all([
       prisma.quoteSite.findMany({
-        where: { quote: { status: "ACCETTATO" } },
+        where: { confermata: true, quote: { status: "ACCETTATO" } },
         include: { site: { include: { client: true } }, quote: true },
       }),
       prisma.timeEntry.findMany({

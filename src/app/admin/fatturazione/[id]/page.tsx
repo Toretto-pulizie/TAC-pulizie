@@ -44,7 +44,7 @@ export default async function FatturaDetailPage({
     prisma.client.findMany(),
     prisma.quote.findMany({
       where: { status: "ACCETTATO" },
-      include: { sites: { include: { site: true } } },
+      include: { sites: { where: { confermata: true }, include: { site: true } } },
       orderBy: { numeroOfferta: "desc" },
     }),
     getServiceTypeLabels(),

@@ -48,6 +48,7 @@ export default async function PianificazionePage({
       }),
       prisma.quoteSite.findMany({
         where: {
+          confermata: true,
           quote: { status: "ACCETTATO" },
           serviceType: { not: "ONE_SHOT" },
         },
@@ -60,7 +61,7 @@ export default async function PianificazionePage({
       // preciso e non indovinate — una sede può avere più contratti nel
       // tempo (es. prima settimanale poi mensile) o più righe.
       prisma.quoteSite.findMany({
-        where: { quote: { status: "ACCETTATO" } },
+        where: { confermata: true, quote: { status: "ACCETTATO" } },
         select: {
           id: true,
           siteId: true,

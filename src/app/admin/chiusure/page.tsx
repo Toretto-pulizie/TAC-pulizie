@@ -30,7 +30,7 @@ export default async function ChiusurePage({
     loadChiusureContext(),
     prisma.quote.findMany({
       where: { status: "ACCETTATO" },
-      include: { client: true, sites: { include: { site: true } } },
+      include: { client: true, sites: { where: { confermata: true }, include: { site: true } } },
       orderBy: { numeroOfferta: "desc" },
     }),
   ]);

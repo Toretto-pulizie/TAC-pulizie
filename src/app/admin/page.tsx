@@ -188,14 +188,14 @@ export default async function AdminHomePage() {
       : Promise.resolve([]),
     showTotalePreventivi
       ? prisma.quoteSite.findMany({
-          where: { quote: { status: "ACCETTATO" } },
+          where: { confermata: true, quote: { status: "ACCETTATO" } },
           select: { prezzoVenduto: true, adeguamento: true, serviceType: true },
         })
       : Promise.resolve([]),
     showTotaleConsuntivi
       ? Promise.all([
           prisma.quoteSite.findMany({
-            where: { quote: { status: "ACCETTATO" } },
+            where: { confermata: true, quote: { status: "ACCETTATO" } },
             select: {
               id: true,
               siteId: true,

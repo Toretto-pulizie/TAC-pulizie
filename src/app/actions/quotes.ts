@@ -304,9 +304,35 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
 
 export async function setQuoteStatus(
   id: string,
-  status: "IN_TRATTATIVA" | "ACCETTATO" | "RIFIUTATO"
+  status: "IN_TRATTATIVA" | "ACCETTATO" | "RIFIUTATO",
+  // Solo per ACCETTATO: id delle righe (sedi) confermate dal cliente; se
+  // assente si confermano tutte. Le altre restano nell'offerta ma non contano
+  // e, per comodità, escono dal PDF di stampa (si possono rimettere).
+  sediConfermate?: string[]
 ) {
   await requireModule("preventivi");
+
+  if (status === "ACCETTATO") {
+    const righe = await prisma.quoteSite.findMany({ where: { quoteId: id }, select: { id: true } });
+    const ok = sediConfermate ? new Set(sediConfermate) : new Set(righe.map((r) => r.id));
+    if (righe.length > 0 && !righe.some((r) => ok.has(r.id))) {
+      return { error: "Conferma almeno una sede" };
+    }
+    await prisma.$transaction(
+      righe.map((r) =>
+        prisma.quoteSite.update({
+          where: { id: r.id },
+          data: { confermata: ok.has(r.id), mostraInStampa: ok.has(r.id) },
+        })
+      )
+    );
+  } else if (status === "IN_TRATTATIVA") {
+    // Offerta riaperta: tornano valide e stampabili tutte le sedi.
+    await prisma.quoteSite.updateMany({
+      where: { quoteId: id },
+      data: { confermata: true, mostraInStampa: true },
+    });
+  }
 
   const quote = await prisma.quote.update({
     where: { id },
@@ -318,14 +344,51 @@ export async function setQuoteStatus(
   });
 
   if (status === "ACCETTATO" || status === "RIFIUTATO") {
-    const sedi = quote.sites.map((s) => s.site.name).join(", ");
-    const messaggio = `Offerta ${status === "ACCETTATO" ? "accettata" : "rifiutata"}: ${clientDisplayName(quote.client)} — ${sedi}`;
+    const sedi = quote.sites
+      .filter((s) => status === "RIFIUTATO" || s.confermata)
+      .map((s) => s.site.name)
+      .join(", ");
+    const parziale = status === "ACCETTATO" && quote.sites.some((s) => !s.confermata);
+    const messaggio = `Offerta ${status === "ACCETTATO" ? "accettata" : "rifiutata"}${parziale ? " (parzialmente)" : ""}: ${clientDisplayName(quote.client)} — ${sedi}`;
     await notifyAdmins(messaggio, "/admin/preventivi");
     await notifyAmministrativiIfEnabled("preventivi", messaggio, "/admin/preventivi");
   }
 
   revalidatePath("/admin/preventivi");
   revalidatePath("/admin/consuntivi");
+  revalidatePath("/admin/commesse");
+  revalidatePath("/admin/chiusure");
+  revalidatePath("/admin/fatturazione");
+  return { success: true as const };
+}
+
+// Conferma (o toglie la conferma a) una sola sede di un'offerta già
+// accettata, senza rifare l'offerta: es. il cliente conferma più avanti anche
+// la terza sede.
+export async function setQuoteSiteConfermata(quoteSiteId: string, confermata: boolean) {
+  await requireModule("preventivi");
+  const riga = await prisma.quoteSite.findUnique({
+    where: { id: quoteSiteId },
+    select: { quoteId: true, quote: { select: { status: true } } },
+  });
+  if (!riga) return { error: "Sede non trovata" };
+  if (riga.quote.status !== "ACCETTATO") return { error: "L'offerta non è accettata" };
+  if (!confermata) {
+    const altre = await prisma.quoteSite.count({
+      where: { quoteId: riga.quoteId, confermata: true, id: { not: quoteSiteId } },
+    });
+    if (altre === 0) return { error: "Resta almeno una sede confermata (altrimenti rifiuta l'offerta)" };
+  }
+  await prisma.quoteSite.update({
+    where: { id: quoteSiteId },
+    data: { confermata, mostraInStampa: confermata },
+  });
+  revalidatePath("/admin/preventivi");
+  revalidatePath("/admin/consuntivi");
+  revalidatePath("/admin/commesse");
+  revalidatePath("/admin/chiusure");
+  revalidatePath("/admin/fatturazione");
+  return { success: true as const };
 }
 
 export async function deleteQuote(id: string) {

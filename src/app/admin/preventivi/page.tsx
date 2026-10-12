@@ -130,10 +130,12 @@ export default async function PreventiviPage({
       // Una tantum non è un canone che si ripete ogni mese: va escluso dal
       // monitoraggio mensile ("Contratti accettati / mese"), pur restando
       // conteggiato nella Vendita complessiva del documento.
-      const venditaRicorrente = qs.serviceType === "ONE_SHOT" ? 0 : vendita;
+      // In un'offerta accettata contano solo le sedi confermate dal cliente.
+      const valida = q.status !== "ACCETTATO" || qs.confermata;
+      const venditaRicorrente = qs.serviceType === "ONE_SHOT" || !valida ? 0 : vendita;
       const annuo =
-        q.status === "ACCETTATO" ? computeSoldAnnual(qs.serviceType, vendita) : 0;
-      return { ...qs, listPrice, netto, vendita, venditaRicorrente, annuo };
+        q.status === "ACCETTATO" && valida ? computeSoldAnnual(qs.serviceType, vendita) : 0;
+      return { ...qs, listPrice, netto, vendita, venditaRicorrente, annuo, valida };
     });
 
     const listPrice = siteRows.reduce((sum, s) => sum + s.listPrice, 0);
@@ -144,15 +146,14 @@ export default async function PreventiviPage({
     // manuale).
     const discountPct = computeDiscountPct(listPrice, netto);
     const annuo = siteRows.reduce((sum, s) => sum + s.annuo, 0);
-    const meseRiparam = siteRows.reduce(
-      (sum, s) => sum + computeMeseRiparametrato(s.serviceType, s.vendita),
-      0
-    );
-    const annuo11 = siteRows.reduce(
-      (sum, s) => sum + computeSoldAnnual(s.serviceType, s.vendita),
-      0
-    );
+    const meseRiparam = siteRows
+      .filter((s) => s.valida)
+      .reduce((sum, s) => sum + computeMeseRiparametrato(s.serviceType, s.vendita), 0);
+    const annuo11 = siteRows
+      .filter((s) => s.valida)
+      .reduce((sum, s) => sum + computeSoldAnnual(s.serviceType, s.vendita), 0);
     const siteCount = q.sites.length;
+    const sediConfermate = q.sites.filter((qs) => qs.confermata).length;
     // Dettaglio per sede: usato dal pannello "a grappolo" per mostrare gli
     // importi (e ora anche il Tipo servizio) di ciascuna sede — possono
     // differire da un cantiere all'altro anche nello stesso preventivo.
@@ -169,8 +170,11 @@ export default async function PreventiviPage({
             ? (s.passSettimanale ?? 0)
             : (s.passMensile ?? 0);
       return {
+        id: q.sites[i].id,
+        confermata: q.sites[i].confermata,
         siteAddress:
           formatSedeAddress(q.sites[i].site.address) +
+          (q.status === "ACCETTATO" && !q.sites[i].confermata ? " — non confermata" : "") +
           (q.sites[i].mostraInStampa ? "" : " — non nel PDF"),
         tipoServizio: abbreviazioniPerEtichetta.get(s.tipoPrestazione) || s.tipoPrestazione,
         cadenza: `${freqLabel} ${n}`,
@@ -196,6 +200,7 @@ export default async function PreventiviPage({
       clientName: clientDisplayName(q.client),
       tipoServizio,
       siteCount,
+      sediConfermate,
       perSite,
       cadenza,
       listPrice,
@@ -271,6 +276,7 @@ export default async function PreventiviPage({
             numeroOfferta: r.numeroOfferta,
             clientName: r.clientName,
             siteCount: r.siteCount,
+            sediConfermate: r.sediConfermate,
             perSite: r.perSite,
             tipoServizio: r.tipoServizio,
             cadenza: r.cadenza,

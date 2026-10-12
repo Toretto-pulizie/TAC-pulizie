@@ -277,6 +277,11 @@ model QuoteSite {
   note              String?
   // Se falso la sede resta nell'offerta ma non compare nel PDF di stampa.
   mostraInStampa    Boolean     @default(true)
+  // Conferma per sede: in un'offerta accettata il cliente può confermare solo
+  // alcune sedi. Le sedi non confermate restano nell'offerta ma non contano
+  // in Commesse, Consuntivi, Chiusure, fatture e statistiche. Ha senso solo
+  // quando l'offerta è accettata.
+  confermata        Boolean     @default(true)
   shiftPlans        ShiftPlan[]
 
   @@index([siteId])

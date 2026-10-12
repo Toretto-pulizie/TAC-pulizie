@@ -87,7 +87,7 @@ export async function detectShiftConflicts({
         include: { site: { include: { client: true } }, user: true },
       }),
       prisma.quoteSite.findFirst({
-        where: { siteId, quote: { status: "ACCETTATO" } },
+        where: { siteId, confermata: true, quote: { status: "ACCETTATO" } },
       }),
     ]);
 

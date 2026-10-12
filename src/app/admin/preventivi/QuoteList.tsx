@@ -16,6 +16,8 @@ type PerSite = {
   vendita: number;
   annuo11: number;
   meseRiparam: number;
+  id: string;
+  confermata: boolean;
 };
 
 type QuoteRowData = {
@@ -23,6 +25,7 @@ type QuoteRowData = {
   numeroOfferta: number;
   clientName: string;
   siteCount: number;
+  sediConfermate: number;
   perSite: PerSite[];
   // null quando le sedi non condividono lo stesso Tipo servizio/Cadenza: in
   // quel caso la riga mostra "Vario" invece di ripetere e andare a capo con
@@ -57,7 +60,10 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
 
   const rowsForFilter = rows.map((r) => ({
     ...r,
-    statusLabel: statusLabels[r.status],
+    statusLabel:
+      r.status === "ACCETTATO" && r.sediConfermate < r.siteCount
+        ? `Accettata (${r.sediConfermate}/${r.siteCount} sedi)`
+        : statusLabels[r.status],
     numeroLabel: String(r.numeroOfferta),
     siteCountLabel: String(r.siteCount),
     tipoServizioLabel: r.tipoServizio ?? "Vario",
@@ -120,6 +126,7 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
                 numeroOfferta={r.numeroOfferta}
                 clientName={r.clientName}
                 siteCount={r.siteCount}
+                sediConfermate={r.sediConfermate}
                 perSite={r.perSite}
                 tipoServizio={r.tipoServizio}
                 cadenza={r.cadenza}

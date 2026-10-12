@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Trunc } from "@/app/Trunc";
 import { useState, useTransition } from "react";
-import { setQuoteStatus, deleteQuote } from "@/app/actions/quotes";
+import { setQuoteStatus, setQuoteSiteConfermata, deleteQuote } from "@/app/actions/quotes";
 
 const statusLabels: Record<string, string> = {
   IN_TRATTATIVA: "In trattativa",
@@ -27,6 +27,8 @@ type PerSite = {
   vendita: number;
   annuo11: number;
   meseRiparam: number;
+  id: string;
+  confermata: boolean;
 };
 
 function formatEuro(n: number) {
@@ -39,6 +41,7 @@ export function QuoteRow({
   clientName,
   tipoServizio,
   siteCount,
+  sediConfermate,
   perSite,
   cadenza,
   listPrice,
@@ -54,6 +57,7 @@ export function QuoteRow({
   clientName: string;
   tipoServizio: string | null;
   siteCount: number;
+  sediConfermate: number;
   perSite: PerSite[];
   cadenza: string | null;
   listPrice: number;
@@ -66,6 +70,10 @@ export function QuoteRow({
 }) {
   const [isPending, startTransition] = useTransition();
   const [expanded, setExpanded] = useState(false);
+  // Finestra "Accetta": con più sedi si sceglie quali conferma il cliente.
+  const [accettando, setAccettando] = useState(false);
+  const [scelte, setScelte] = useState<Record<string, boolean>>({});
+  const [errore, setErrore] = useState<string | null>(null);
   // Con più di una sede, gli importi (e spesso la cadenza) cambiano da
   // cantiere a cantiere anche quando il tipo servizio è lo stesso: la riga
   // mostra sempre i totali, il dettaglio per sede si apre a richiesta.
@@ -105,7 +113,9 @@ export function QuoteRow({
         <td className="px-4 py-3 text-zinc-500">{meseRiparam > 0 ? formatEuro(meseRiparam) : "—"}</td>
         <td className="px-4 py-3">
           <span className={`rounded-full px-2 py-1 text-xs ${statusClasses[status]}`}>
-            {statusLabels[status]}
+            {status === "ACCETTATO" && sediConfermate < siteCount
+              ? `Accettata (${sediConfermate}/${siteCount} sedi)`
+              : statusLabels[status]}
           </span>
         </td>
         <td className="px-4 py-3 text-right">
@@ -126,7 +136,18 @@ export function QuoteRow({
             {status !== "ACCETTATO" && (
               <button
                 disabled={isPending}
-                onClick={() => startTransition(() => setQuoteStatus(id, "ACCETTATO"))}
+                onClick={() => {
+                  if (siteCount > 1) {
+                    setScelte(Object.fromEntries(perSite.map((s) => [s.id, true])));
+                    setErrore(null);
+                    setAccettando(true);
+                    setExpanded(true);
+                  } else {
+                    startTransition(async () => {
+                      await setQuoteStatus(id, "ACCETTATO");
+                    });
+                  }
+                }}
                 className="text-green-700 underline disabled:opacity-50"
               >
                 Accetta
@@ -135,7 +156,9 @@ export function QuoteRow({
             {status !== "RIFIUTATO" && (
               <button
                 disabled={isPending}
-                onClick={() => startTransition(() => setQuoteStatus(id, "RIFIUTATO"))}
+                onClick={() => startTransition(async () => {
+                    await setQuoteStatus(id, "RIFIUTATO");
+                  })}
                 className="text-zinc-500 underline disabled:opacity-50"
               >
                 Rifiuta
@@ -144,7 +167,9 @@ export function QuoteRow({
             {status !== "IN_TRATTATIVA" && (
               <button
                 disabled={isPending}
-                onClick={() => startTransition(() => setQuoteStatus(id, "IN_TRATTATIVA"))}
+                onClick={() => startTransition(async () => {
+                    await setQuoteStatus(id, "IN_TRATTATIVA");
+                  })}
                 className="text-amber-700 underline disabled:opacity-50"
               >
                 Riapri
@@ -164,6 +189,57 @@ export function QuoteRow({
           </div>
         </td>
       </tr>
+      {accettando && (
+        <tr className="border-b border-zinc-100 bg-green-50/60">
+          <td colSpan={13} className="px-4 py-3">
+            <p className="text-sm font-medium text-zinc-900">
+              Offerta {numeroOfferta}: quali sedi conferma il cliente?
+            </p>
+            <div className="mt-2 flex flex-col gap-1">
+              {perSite.map((s) => (
+                <label key={s.id} className="flex items-center gap-2 text-sm text-zinc-700">
+                  <input
+                    type="checkbox"
+                    checked={!!scelte[s.id]}
+                    onChange={(e) => setScelte((c) => ({ ...c, [s.id]: e.target.checked }))}
+                    className="h-4 w-4"
+                  />
+                  {s.siteAddress.replace(" — non nel PDF", "")} — {s.tipoServizio} · {formatEuro(s.vendita)}
+                </label>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-zinc-500">
+              Le sedi non confermate restano nell&apos;offerta ma non contano nei calcoli e non compaiono nel PDF; si
+              possono confermare più avanti.
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() =>
+                  startTransition(async () => {
+                    const ids = perSite.filter((s) => scelte[s.id]).map((s) => s.id);
+                    const res = await setQuoteStatus(id, "ACCETTATO", ids);
+                    if (res && "error" in res) setErrore(res.error ?? null);
+                    else setAccettando(false);
+                  })
+                }
+                className="rounded-lg bg-green-700 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+              >
+                Conferma accettazione
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccettando(false)}
+                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700"
+              >
+                Annulla
+              </button>
+              {errore && <span className="text-sm text-red-600">{errore}</span>}
+            </div>
+          </td>
+        </tr>
+      )}
       {expanded &&
         canExpand &&
         perSite.map((s, i) => (
@@ -182,7 +258,23 @@ export function QuoteRow({
             <td className="px-4 py-3 text-zinc-500">{formatEuro(s.annuo11)}</td>
             <td className="px-4 py-3 text-zinc-500">{s.meseRiparam > 0 ? formatEuro(s.meseRiparam) : "—"}</td>
             <td className="px-4 py-3"></td>
-            <td className="px-4 py-3"></td>
+            <td className="px-4 py-3 text-right">
+              {status === "ACCETTATO" && (
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() =>
+                    startTransition(async () => {
+                      const res = await setQuoteSiteConfermata(s.id, !s.confermata);
+                      if (res && "error" in res) alert(res.error);
+                    })
+                  }
+                  className="text-xs text-zinc-600 underline disabled:opacity-50"
+                >
+                  {s.confermata ? "Togli conferma" : "Conferma sede"}
+                </button>
+              )}
+            </td>
           </tr>
         ))}
     </>
