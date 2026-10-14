@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { passaggioDaMensile } from "@/lib/quotes";
 import {
   canoneDelMese,
   type ChiusuraScelta,
@@ -38,12 +39,22 @@ export async function loadChiusureContext(): Promise<ChiusureContext> {
 export function importoMeseSede(
   ctx: ChiusureContext,
   base: number,
-  qs: { id: string; serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE" },
+  qs: {
+    id: string;
+    serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE";
+    passAnnuali?: number | null;
+  },
   quote: { chiusuraScelta: ChiusuraScelta },
   accessoSenzaCliente: boolean,
   year: number,
   month: number
 ): number {
+  // Passaggi annuali: il mese in cui c'è lavoro si fattura il passaggio, quindi
+  // il contratto del mese è il costo di UN passaggio (base è l'equivalente
+  // mensile: prezzo a passaggio × passaggi/anno ÷ 12), non la media mensile.
+  if (qs.serviceType === "PASS_ANNUALE") {
+    return Math.round(passaggioDaMensile(base, qs.passAnnuali) * 100) / 100;
+  }
   return canoneDelMese(base, qs.serviceType, {
     year,
     month,

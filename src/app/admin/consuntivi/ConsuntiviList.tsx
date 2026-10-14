@@ -9,6 +9,8 @@ type ConsuntivoRow = {
   id: string;
   siteLabel: string;
   contrattoMensile: number;
+  // Passaggi annuali: l'importo è il costo di un passaggio, non un mensile.
+  perPassaggio?: boolean;
   oreLavorate: number;
   oreSpostamento: number;
   euroConsuntivo: number;
@@ -29,7 +31,7 @@ export function ConsuntiviList({ rows }: { rows: ConsuntivoRow[] }) {
 
   const rowsForFilter = rows.map((r) => ({
     ...r,
-    contrattoMensileLabel: formatEuro(r.contrattoMensile),
+    contrattoMensileLabel: formatEuro(r.contrattoMensile) + (r.perPassaggio ? " /pass." : ""),
     oreLavorateLabel: `${r.oreLavorate.toFixed(1)}h`,
     oreSpostamentoLabel: `${r.oreSpostamento.toFixed(1)}h`,
     euroConsuntivoLabel: formatEuro(r.euroConsuntivo),
@@ -41,8 +43,8 @@ export function ConsuntiviList({ rows }: { rows: ConsuntivoRow[] }) {
   const sorted = sortKey
     ? [...filtered].sort((a, b) =>
         compareValues(
-          (a as Record<string, string | number | null>)[sortKey] ?? "",
-          (b as Record<string, string | number | null>)[sortKey] ?? "",
+          (a as unknown as Record<string, string | number | null>)[sortKey] ?? "",
+          (b as unknown as Record<string, string | number | null>)[sortKey] ?? "",
           sortDir
         )
       )
@@ -75,7 +77,10 @@ export function ConsuntiviList({ rows }: { rows: ConsuntivoRow[] }) {
             {sorted.map((r) => (
               <tr key={r.id} className="border-b border-zinc-100 last:border-0">
                 <td className="px-4 py-3 font-medium text-zinc-900">{r.siteLabel}</td>
-                <td className="px-4 py-3 text-zinc-500">{formatEuro(r.contrattoMensile)}</td>
+                <td className="px-4 py-3 text-zinc-500">
+                  {formatEuro(r.contrattoMensile)}
+                  {r.perPassaggio ? " /pass." : ""}
+                </td>
                 <td className="px-4 py-3 text-zinc-500">{r.oreLavorate.toFixed(1)}h</td>
                 <td className="px-4 py-3 text-zinc-500">{r.oreSpostamento.toFixed(1)}h</td>
                 <td className="px-4 py-3 text-zinc-500">{formatEuro(r.euroConsuntivo)}</td>

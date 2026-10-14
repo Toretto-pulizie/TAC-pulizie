@@ -134,6 +134,8 @@ export default async function StatistichePage() {
         id: qs.id,
         siteLabel: `${clientDisplayName(qs.site.client)} — ${qs.site.name}`,
         contrattoMensile,
+        // Passaggi annuali: l'importo è il costo di un passaggio, non un mensile.
+        perPassaggio: qs.serviceType === "PASS_ANNUALE",
         oreLavorate,
         euroConsuntivo,
         scostamento,
@@ -254,6 +256,7 @@ export default async function StatistichePage() {
                     </td>
                     <td className="px-4 py-3 text-zinc-500">
                       {formatEuro(m.contrattoMensile)}
+                      {m.perPassaggio ? " /pass." : ""}
                     </td>
                     <td className="px-4 py-3 text-zinc-500">
                       {m.oreLavorate.toFixed(1)}h

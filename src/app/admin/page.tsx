@@ -204,6 +204,7 @@ export default async function AdminHomePage() {
               prezzoVenduto: true,
               adeguamento: true,
               serviceType: true,
+              passAnnuali: true,
               ore: true,
               oneShotCount: true,
               meseUnaTantum: true,
@@ -224,6 +225,7 @@ export default async function AdminHomePage() {
             prezzoVenduto: number | null;
             adeguamento: number | null;
             serviceType: ServiceType;
+            passAnnuali: number | null;
             ore: number;
             oneShotCount: number;
             meseUnaTantum: string | null;

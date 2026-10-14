@@ -74,7 +74,7 @@ export function CommesseList({ rows }: { rows: OffertaRow[] }) {
     numeroLabel: r.numero != null ? String(r.numero) : "—",
     numeroSort: r.numero ?? 0,
     cantieriLabel: String(r.cantieri),
-    mensileLabel: r.mensile ? formatEuro(r.mensile) : "—",
+    mensileLabel: r.mensile ? formatEuro(r.mensile) + (r.perPassaggio ? " /pass." : "") : "—",
     annuoLabel: r.annuo ? formatEuro(r.annuo) : "—",
     oreLabel: formatOre(r.oreLavorate),
     spostLabel: formatOre(r.oreSpostamento),

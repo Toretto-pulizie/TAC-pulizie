@@ -1,5 +1,5 @@
 import type { EntryType, Quote, QuoteSite } from "@prisma/client";
-import { computeListPrice, computeSoldAnnual } from "@/lib/quotes";
+import { computeListPrice, computeSoldAnnual, passaggioDaMensile } from "@/lib/quotes";
 import { importoMeseSede, type ChiusureContext } from "@/lib/chiusureData";
 import { competenzaUnaTantum, meseKey, ripartisciOre, type LineaOre } from "@/lib/oreSede";
 import { computeSiteTotals } from "@/lib/timeCalc";
@@ -240,6 +240,8 @@ export type OffertaRow = {
   ftStato: "FATTURATA" | "BOZZA" | null;
   cantieri: number;
   mensile: number;
+  // Tutte le sedi sono a Passaggi annuali: "mensile" è il costo a passaggio.
+  perPassaggio: boolean;
   annuo: number;
   amountsFromPending: boolean;
   oreLavorate: number;
@@ -373,9 +375,18 @@ export function computeCommessePerOfferta({
     const isAccepted = q.status === "ACCETTATO";
     const a = agg.get(q.id) ?? { ore: 0, spost: 0, contratto: 0, consuntivo: 0 };
     const sitesQ = isAccepted ? sediValide(q) : q.sites;
-    const mensile = sitesQ
-      .filter((qs) => qs.serviceType !== "ONE_SHOT")
-      .reduce((s, qs) => s + vendita(qs), 0);
+    const ricorrenti = sitesQ.filter((qs) => qs.serviceType !== "ONE_SHOT");
+    // Passaggi annuali: invece della media mensile si mostra il costo a passaggio.
+    const perPassaggio =
+      ricorrenti.length > 0 && ricorrenti.every((qs) => qs.serviceType === "PASS_ANNUALE");
+    const mensile = ricorrenti.reduce(
+      (s, qs) =>
+        s +
+        (perPassaggio
+          ? Math.round(passaggioDaMensile(vendita(qs), qs.passAnnuali) * 100) / 100
+          : vendita(qs)),
+      0
+    );
     const annuo = sitesQ.reduce((s, qs) => s + computeSoldAnnual(qs.serviceType, vendita(qs)), 0);
     rows.push({
       key: q.id,
@@ -390,6 +401,7 @@ export function computeCommessePerOfferta({
           : "RIFIUTATA",
       cantieri: new Set(sitesQ.map((qs) => qs.siteId)).size,
       mensile,
+      perPassaggio,
       annuo,
       amountsFromPending: !isAccepted,
       oreLavorate: a.ore,
@@ -410,6 +422,7 @@ export function computeCommessePerOfferta({
       offerStato: null,
       cantieri: 0,
       mensile: 0,
+      perPassaggio: false,
       annuo: 0,
       amountsFromPending: false,
       oreLavorate: 0,

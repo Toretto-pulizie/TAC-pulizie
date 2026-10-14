@@ -78,6 +78,8 @@ export default async function ConsuntiviPage({
         id: qs.id,
         siteLabel: `${clientDisplayName(qs.site.client)} — ${qs.site.name}`,
         contrattoMensile,
+        // Passaggi annuali: l'importo è il costo di un passaggio, non un mensile.
+        perPassaggio: qs.serviceType === "PASS_ANNUALE",
         oreLavorate,
         oreSpostamento,
         tariffaConsuntivo: qs.tariffaConsuntivo,
