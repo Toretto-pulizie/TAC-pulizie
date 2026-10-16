@@ -4,8 +4,9 @@ export type QuotePricingInput = {
   serviceType: ServiceType;
   ore: number;
   spostamento: number;
-  // Solo Passaggi mensili: se vero lo spostamento entra nel prezzo; se assente o
-  // falso (righe create prima) il calcolo resta quello di sempre, senza.
+  // Se vero lo spostamento entra nel prezzo di listino, per tutte le frequenze.
+  // Se il dato manca (chiamanti che non lo leggono) vale la regola storica:
+  // incluso per tutti tranne i Passaggi mensili.
   spostamentoInPrezzo?: boolean | null;
   oneShotCount: number;
   passSettimanale: number | null;
@@ -33,27 +34,19 @@ export function passaggioDaMensile(mensile: number, passAnnuali: number | null |
 // altri canoni); il listino a passaggio si ricava con passaggioDaMensile.
 export function computeListPrice(q: QuotePricingInput): number {
   const vetriQuota = (q.oreVetri * q.passVetriAnno * q.tariffaVetri) / 12;
+  // Ore per passaggio: ore di lavoro + (se incluso) ore di spostamento.
+  const inclSpostamento = q.spostamentoInPrezzo ?? q.serviceType !== "PASS_MENSILE";
+  const oreTot = q.ore + (inclSpostamento ? q.spostamento : 0);
 
   switch (q.serviceType) {
     case "ONE_SHOT":
-      return (q.ore + q.spostamento) * q.oneShotCount * q.tariffaOraria;
+      return oreTot * q.oneShotCount * q.tariffaOraria;
     case "PASS_SETTIMANALE":
-      return (
-        (q.ore + q.spostamento) * (q.passSettimanale ?? 0) * 4.3 * q.tariffaOraria +
-        vetriQuota
-      );
+      return oreTot * (q.passSettimanale ?? 0) * 4.3 * q.tariffaOraria + vetriQuota;
     case "PASS_MENSILE":
-      return (
-        (q.passMensile ?? 0) *
-          (q.ore + (q.spostamentoInPrezzo ? q.spostamento : 0)) *
-          q.tariffaOraria +
-        vetriQuota
-      );
+      return (q.passMensile ?? 0) * oreTot * q.tariffaOraria + vetriQuota;
     case "PASS_ANNUALE":
-      return (
-        (((q.ore + q.spostamento) * q.tariffaOraria) * (q.passAnnuali ?? 0)) / 12 +
-        vetriQuota
-      );
+      return (oreTot * q.tariffaOraria * (q.passAnnuali ?? 0)) / 12 + vetriQuota;
   }
 }
 

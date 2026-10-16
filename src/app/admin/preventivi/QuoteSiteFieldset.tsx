@@ -404,13 +404,12 @@ export function QuoteSiteFieldset({
           />
         </label>
 
-        {/* Passaggi mensili: lo spostamento entra nel prezzo solo se spuntato.
-            Righe nuove: spuntata; righe create prima: non spuntata (valori
-            invariati). Sempre nel modulo (anche nascosta) per salvare il valore. */}
+        {/* Vale per tutte le frequenze: lo spostamento entra nel prezzo solo se
+            spuntato. Righe nuove: spuntata; righe esistenti: come erano (le
+            mensili create prima non lo includevano), così i valori non cambiano. */}
         <label
-          hidden={serviceType !== "PASS_MENSILE"}
           className="flex items-center gap-1.5 self-end pb-2 text-sm text-zinc-700"
-          title="Se spuntata il prezzo di listino è (ore + spostamento) × passaggi × tariffa. Le offerte fatte prima non la includevano."
+          title="Se spuntata il prezzo di listino include le ore di spostamento: (ore + spostamento) × passaggi × tariffa. I Passaggi mensili fatti prima non la includevano."
         >
           <input
             type="checkbox"
