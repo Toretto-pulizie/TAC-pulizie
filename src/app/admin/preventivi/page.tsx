@@ -97,6 +97,7 @@ export default async function PreventiviPage({
           serviceType: s.serviceType,
           ore: s.ore,
           spostamento: s.spostamento,
+          spostamentoInPrezzo: s.spostamentoInPrezzo,
           oneShotCount: s.oneShotCount,
           passSettimanale: s.passSettimanale,
           passMensile: s.passMensile,

@@ -4,6 +4,9 @@ export type QuotePricingInput = {
   serviceType: ServiceType;
   ore: number;
   spostamento: number;
+  // Solo Passaggi mensili: se vero lo spostamento entra nel prezzo; se assente o
+  // falso (righe create prima) il calcolo resta quello di sempre, senza.
+  spostamentoInPrezzo?: boolean | null;
   oneShotCount: number;
   passSettimanale: number | null;
   passMensile: number | null;
@@ -40,7 +43,12 @@ export function computeListPrice(q: QuotePricingInput): number {
         vetriQuota
       );
     case "PASS_MENSILE":
-      return (q.passMensile ?? 0) * q.ore * q.tariffaOraria + vetriQuota;
+      return (
+        (q.passMensile ?? 0) *
+          (q.ore + (q.spostamentoInPrezzo ? q.spostamento : 0)) *
+          q.tariffaOraria +
+        vetriQuota
+      );
     case "PASS_ANNUALE":
       return (
         (((q.ore + q.spostamento) * q.tariffaOraria) * (q.passAnnuali ?? 0)) / 12 +

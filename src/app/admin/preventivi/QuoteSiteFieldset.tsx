@@ -20,6 +20,8 @@ export type SiteBlockInitial = {
   serviceType: ServiceType;
   ore: number;
   spostamento: number;
+  // Solo Passaggi mensili: le righe create prima partono senza (valori invariati).
+  spostamentoInPrezzo: boolean;
   oneShotCount: number;
   passSettimanale: number | null;
   passMensile: number | null;
@@ -143,10 +145,15 @@ export function QuoteSiteFieldset({
     // virgola mobile (es. 62,824999999999996 invece di 62,83).
     const passAnnuali = st === "PASS_ANNUALE" ? num("passAnnuali") : null;
     setPassAnn(passAnnuali ?? 0);
+    const spostamentoInPrezzo =
+      blockRef.current!.querySelector<HTMLInputElement>(
+        `[name="${name("spostamentoInPrezzo")}"]`
+      )?.checked ?? false;
     const listino = computeListPrice({
       serviceType: st,
       ore: num("ore"),
       spostamento: num("spostamento"),
+      spostamentoInPrezzo,
       oneShotCount: num("oneShotCount", 1),
       passSettimanale: st === "PASS_SETTIMANALE" ? num("passSettimanale") : null,
       passMensile: st === "PASS_MENSILE" ? num("passMensile") : null,
@@ -395,6 +402,23 @@ export function QuoteSiteFieldset({
             defaultValue={initial?.spostamento ?? 0.5}
             className="w-28 rounded-lg border border-zinc-300 px-3 py-2"
           />
+        </label>
+
+        {/* Passaggi mensili: lo spostamento entra nel prezzo solo se spuntato.
+            Righe nuove: spuntata; righe create prima: non spuntata (valori
+            invariati). Sempre nel modulo (anche nascosta) per salvare il valore. */}
+        <label
+          hidden={serviceType !== "PASS_MENSILE"}
+          className="flex items-center gap-1.5 self-end pb-2 text-sm text-zinc-700"
+          title="Se spuntata il prezzo di listino è (ore + spostamento) × passaggi × tariffa. Le offerte fatte prima non la includevano."
+        >
+          <input
+            type="checkbox"
+            name={name("spostamentoInPrezzo")}
+            defaultChecked={initial?.spostamentoInPrezzo ?? true}
+            className="h-4 w-4"
+          />
+          Includi spostamento nel prezzo
         </label>
 
         {serviceType === "ONE_SHOT" && (

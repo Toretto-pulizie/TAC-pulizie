@@ -26,6 +26,7 @@ const QuoteSiteSchema = z
     serviceType: z.enum(["ONE_SHOT", "PASS_SETTIMANALE", "PASS_MENSILE", "PASS_ANNUALE"]),
     ore: z.coerce.number().min(0, "Ore non valide"),
     spostamento: z.coerce.number().min(0).default(0),
+    spostamentoInPrezzo: z.boolean().default(false),
     oneShotCount: z.coerce.number().min(0).default(1),
     passSettimanale: z.coerce.number().min(0).optional(),
     passMensile: z.coerce.number().min(0).optional(),
@@ -82,6 +83,8 @@ function parseSiteBlockFormData(formData: FormData, i: number) {
     serviceType: get("serviceType"),
     ore: get("ore"),
     spostamento: get("spostamento") || 0,
+    // Casella "Includi spostamento nel prezzo" (Passaggi mensili): presente solo se spuntata.
+    spostamentoInPrezzo: get("spostamentoInPrezzo") === "on",
     oneShotCount: get("oneShotCount") || 1,
     passSettimanale: get("passSettimanale") || undefined,
     passMensile: get("passMensile") || undefined,
@@ -177,6 +180,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
     serviceType: "ONE_SHOT" | "PASS_SETTIMANALE" | "PASS_MENSILE" | "PASS_ANNUALE";
     ore: number;
     spostamento: number;
+    spostamentoInPrezzo: boolean;
     oneShotCount: number;
     passSettimanale: number | null;
     passMensile: number | null;
@@ -221,6 +225,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
         serviceType: d.serviceType,
         ore: d.ore,
         spostamento: d.spostamento,
+        spostamentoInPrezzo: d.spostamentoInPrezzo,
         oneShotCount: d.oneShotCount,
         passSettimanale: d.passSettimanale ?? null,
         passMensile: d.passMensile ?? null,
@@ -244,6 +249,7 @@ export async function saveQuote(_prevState: unknown, formData: FormData) {
       serviceType: d.serviceType,
       ore: d.ore,
       spostamento: d.spostamento,
+      spostamentoInPrezzo: d.spostamentoInPrezzo,
       oneShotCount: d.oneShotCount,
       passSettimanale: d.passSettimanale ?? null,
       passMensile: annuale && passAnnuali ? passAnnuali / 12 : (d.passMensile ?? null),

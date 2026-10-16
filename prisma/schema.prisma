@@ -264,6 +264,11 @@ model QuoteSite {
   serviceType       ServiceType
   ore               Float
   spostamento       Float       @default(0)
+  // Solo per i Passaggi mensili: se vero lo spostamento entra nel prezzo di
+  // listino ((ore + spostamento) × passaggi × tariffa). Le righe create prima
+  // (falso) restano calcolate come allora, senza spostamento, così le vecchie
+  // offerte non cambiano valori; le righe nuove partono con vero.
+  spostamentoInPrezzo Boolean     @default(false)
   oneShotCount      Float       @default(1)
   passSettimanale   Float?
   passMensile       Float?
