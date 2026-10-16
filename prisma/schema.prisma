@@ -241,6 +241,7 @@ model Quote {
   clientId            String
   sites               QuoteSite[]
   attachments         QuoteAttachment[]
+  emailLogs           QuoteEmailLog[]
   condizioniPagamento String?
   status              QuoteStatus       @default(IN_TRATTATIVA)
   chiusuraScelta      ChiusuraScelta    @default(DA_DEFINIRE)
@@ -407,6 +408,32 @@ model BankSettings {
   iban         String @default("")
   intestatario String @default("")
   swiftBic     String @default("")
+}
+
+// Testo predefinito delle email con cui si inviano le offerte (modificabile in
+// Impostazioni → Email) e, se compilata, la casella che riceve sempre una copia
+// nascosta. Segnaposto nel testo: {cliente}, {numero}, {data}.
+model EmailSettings {
+  id           String @id @default("singleton")
+  oggetto      String @default("")
+  corpo        String @default("")
+  ccnIndirizzo String @default("")
+}
+
+// Cronologia degli invii delle offerte via email (anche reinvii ed errori).
+model QuoteEmailLog {
+  id           String   @id @default(cuid())
+  quote        Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId      String
+  destinatari  String
+  cc           String   @default("")
+  oggetto      String
+  esito        String   // "INVIATA" | "ERRORE"
+  errore       String?
+  inviatoDa    String?  // nome dell'utente che ha inviato
+  createdAt    DateTime @default(now())
+
+  @@index([quoteId, createdAt])
 }
 
 model Attachment {

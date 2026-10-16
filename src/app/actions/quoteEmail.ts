@@ -1,0 +1,145 @@
+"use server";
+
+import * as z from "zod";
+import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser, requireAdmin, requireModule } from "@/lib/dal";
+import { sendMail, getMailConfig } from "@/lib/mail";
+import { clientDisplayName } from "@/lib/clients";
+
+const EMAIL_RE = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
+
+// Accetta più indirizzi separati da virgola, punto e virgola o spazio.
+function parseEmails(raw: FormDataEntryValue | null): string[] {
+  return String(raw ?? "")
+    .split(/[;,\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+const SendSchema = z.object({
+  quoteId: z.string().min(1),
+  to: z.array(z.string().regex(EMAIL_RE, "Indirizzo non valido")).min(1, "Indica almeno un destinatario"),
+  cc: z.array(z.string().regex(EMAIL_RE, "Indirizzo in copia non valido")),
+  subject: z.string().trim().min(1, "L'oggetto non può essere vuoto"),
+  body: z.string().trim().min(1, "Il messaggio non può essere vuoto"),
+});
+
+// Genera il PDF dell'offerta (con gli allegati) chiamando la stessa route che usa
+// il pulsante Stampa, con la sessione di chi invia: un unico punto di verità per
+// il contenuto del documento.
+async function fetchQuotePdf(quoteId: string): Promise<Buffer> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  if (!host) throw new Error("Indirizzo del programma non riconosciuto");
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  const res = await fetch(`${proto}://${host}/admin/preventivi/${quoteId}/pdf`, {
+    headers: { cookie: h.get("cookie") ?? "" },
+    cache: "no-store",
+  });
+  if (!res.ok || !res.headers.get("content-type")?.includes("application/pdf")) {
+    throw new Error(`Impossibile generare il PDF dell'offerta (errore ${res.status})`);
+  }
+  return Buffer.from(await res.arrayBuffer());
+}
+
+export async function sendQuoteEmail(_prevState: unknown, formData: FormData) {
+  await requireModule("preventivi");
+
+  const parsed = SendSchema.safeParse({
+    quoteId: formData.get("quoteId"),
+    to: parseEmails(formData.get("to")),
+    cc: parseEmails(formData.get("cc")),
+    subject: formData.get("subject"),
+    body: formData.get("body"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
+  }
+  const { quoteId, to, cc, subject, body } = parsed.data;
+
+  if (!getMailConfig()) {
+    return {
+      error:
+        "La posta non è ancora configurata: mancano le variabili SMTP_HOST, SMTP_USER e SMTP_PASS su Vercel (vedi Impostazioni → Email).",
+    };
+  }
+
+  const quote = await prisma.quote.findUnique({
+    where: { id: quoteId },
+    select: { numeroOfferta: true, client: true },
+  });
+  if (!quote) return { error: "Offerta non trovata" };
+
+  const settings = await prisma.emailSettings.findUnique({ where: { id: "singleton" } });
+  const ccn = settings?.ccnIndirizzo.trim();
+  const bcc = ccn && EMAIL_RE.test(ccn) ? [ccn] : [];
+  const user = await getCurrentUser();
+
+  const log = (esito: "INVIATA" | "ERRORE", errore?: string) =>
+    prisma.quoteEmailLog.create({
+      data: {
+        quoteId,
+        destinatari: to.join(", "),
+        cc: cc.join(", "),
+        oggetto: subject,
+        esito,
+        errore: errore ?? null,
+        inviatoDa: user?.name ?? null,
+      },
+    });
+
+  try {
+    const pdf = await fetchQuotePdf(quoteId);
+    const nomeFile = `Offerta n. ${quote.numeroOfferta} - ${clientDisplayName(quote.client)}`
+      .replace(/[\\/:*?"<>|]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    await sendMail({
+      to,
+      cc,
+      bcc,
+      subject,
+      text: body,
+      attachments: [{ filename: `${nomeFile}.pdf`, content: pdf, contentType: "application/pdf" }],
+    });
+    await log("INVIATA");
+    revalidatePath("/admin/preventivi");
+    return { success: true, message: `Offerta inviata a ${to.join(", ")}.` };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Errore sconosciuto";
+    await log("ERRORE", msg);
+    revalidatePath("/admin/preventivi");
+    return { error: `Invio non riuscito: ${msg}` };
+  }
+}
+
+const EmailSettingsSchema = z.object({
+  oggetto: z.string().trim(),
+  corpo: z.string().trim(),
+  ccnIndirizzo: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || EMAIL_RE.test(v), "Indirizzo per la copia nascosta non valido"),
+});
+
+export async function updateEmailSettings(_prevState: unknown, formData: FormData) {
+  await requireAdmin();
+  const parsed = EmailSettingsSchema.safeParse({
+    oggetto: formData.get("oggetto"),
+    corpo: formData.get("corpo"),
+    ccnIndirizzo: formData.get("ccnIndirizzo") ?? "",
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
+  }
+  await prisma.emailSettings.upsert({
+    where: { id: "singleton" },
+    update: parsed.data,
+    create: { id: "singleton", ...parsed.data },
+  });
+  revalidatePath("/admin/impostazioni");
+  revalidatePath("/admin/preventivi");
+  return { success: true };
+}

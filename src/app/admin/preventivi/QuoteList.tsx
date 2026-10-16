@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { QuoteRow } from "./QuoteRow";
+import type { InvioInfo } from "./SendQuoteButton";
 import { ExcelHeader } from "@/app/ExcelHeader";
 import { passesColumnFilters } from "@/lib/excelFilter";
 import { compareValues } from "@/lib/sort";
@@ -43,6 +44,7 @@ type QuoteRowData = {
   meseRiparam: number;
   discountPct: number | null;
   status: "IN_TRATTATIVA" | "ACCETTATO" | "RIFIUTATO";
+  invio: InvioInfo;
 };
 
 const statusLabels: Record<QuoteRowData["status"], string> = {
@@ -142,6 +144,7 @@ export function QuoteList({ rows }: { rows: QuoteRowData[] }) {
                 meseRiparam={r.meseRiparam}
                 discountPct={r.discountPct}
                 status={r.status}
+                invio={r.invio}
               />
             ))}
             {sorted.length === 0 && (

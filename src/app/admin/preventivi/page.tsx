@@ -16,6 +16,8 @@ const aPassaggio = (mensile: number, passAnnuali: number | null) =>
 import { getServiceTypeLabels, getServiceTypeAbbreviazioni } from "@/lib/serviceTypeLabels";
 import { formatSedeAddress } from "@/lib/quotePrint";
 import { clientDisplayName } from "@/lib/clients";
+import { applyEmailTemplate, getEmailSettings } from "@/lib/emailSettings";
+import { isMailConfigured } from "@/lib/mail";
 import { PreventiviPageActions } from "./PreventiviPageActions";
 import { QuoteList } from "./QuoteList";
 
@@ -46,7 +48,12 @@ export default async function PreventiviPage({
         include: { sites: true },
       }),
       prisma.quote.findMany({
-        include: { client: true, sites: { include: { site: true } } },
+        include: {
+          client: true,
+          sites: { include: { site: true } },
+          // Ultimi invii via email (per il pulsante Invia e il "✉ inviata il").
+          emailLogs: { orderBy: { createdAt: "desc" }, take: 5 },
+        },
         orderBy: { createdAt: "desc" },
       }),
       prisma.quotePhrase.findMany({
@@ -135,6 +142,19 @@ export default async function PreventiviPage({
   const abbreviazioniPerEtichetta = new Map(
     tipiPrestazioneRows.map((t) => [t.etichetta, t.abbreviazione])
   );
+
+  // Invio via email: testo predefinito (Impostazioni → Email) e stato della posta.
+  const emailSettings = await getEmailSettings();
+  const mailConfigured = isMailConfigured();
+  const fmtInvio = (d: Date) =>
+    d.toLocaleString("it-IT", {
+      timeZone: "Europe/Rome",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   const rows = quotes.map((q) => {
     const siteRows = q.sites.map((qs) => {
@@ -237,6 +257,11 @@ export default async function PreventiviPage({
     const cadenza = perSite.every((s) => s.cadenza === perSite[0].cadenza)
       ? perSite[0].cadenza
       : null;
+    const templateValues = {
+      cliente: clientDisplayName(q.client),
+      numero: q.numeroOfferta,
+      data: new Date().toLocaleDateString("it-IT", { timeZone: "Europe/Rome" }),
+    };
 
     return {
       id: q.id,
@@ -258,6 +283,20 @@ export default async function PreventiviPage({
       annuo,
       annuo11,
       meseRiparam,
+      invio: {
+        configurata: mailConfigured,
+        to: q.client.email?.trim() || q.client.emailRiferimento?.trim() || "",
+        oggetto: applyEmailTemplate(emailSettings.oggetto, templateValues),
+        corpo: applyEmailTemplate(emailSettings.corpo, templateValues),
+        invii: q.emailLogs.map((l) => ({
+          id: l.id,
+          data: fmtInvio(l.createdAt),
+          destinatari: l.destinatari,
+          esito: l.esito,
+          errore: l.errore,
+          da: l.inviatoDa,
+        })),
+      },
     };
   });
 
@@ -335,6 +374,7 @@ export default async function PreventiviPage({
             meseRiparam: r.meseRiparam,
             discountPct: r.discountPct,
             status: r.status,
+            invio: r.invio,
           }))}
         />
     </div>

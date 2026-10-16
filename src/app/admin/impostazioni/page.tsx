@@ -20,6 +20,9 @@ import { StatisticheSettingsForm } from "./StatisticheSettingsForm";
 import { NotificationSettingsForm } from "./NotificationSettingsForm";
 import { BankSettingsForm } from "./BankSettingsForm";
 import { CompanySettingsForm } from "./CompanySettingsForm";
+import { EmailSettingsForm } from "./EmailSettingsForm";
+import { getEmailSettings } from "@/lib/emailSettings";
+import { getMailConfig } from "@/lib/mail";
 import { AttachmentForm } from "./AttachmentForm";
 import { AttachmentRow } from "./AttachmentRow";
 import { ImpostazioniTabs } from "./ImpostazioniTabs";
@@ -61,6 +64,10 @@ export default async function ImpostazioniPage() {
     prisma.quotePhrase.findMany({ orderBy: [{ ordine: "asc" }, { titolo: "asc" }] }),
     prisma.condizionePagamento.findMany({ orderBy: [{ ordine: "asc" }, { etichetta: "asc" }] }),
   ]);
+
+  // Invio email: testo predefinito e stato della posta (mai la password).
+  const emailSettings = await getEmailSettings();
+  const mailCfg = getMailConfig();
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
@@ -245,6 +252,19 @@ export default async function ImpostazioniPage() {
                     email: companySettings.email,
                     pec: companySettings.pec,
                   }}
+                />
+              </section>
+            ),
+          },
+          {
+            id: "email",
+            label: "Email",
+            content: (
+              <section className="flex flex-col gap-3">
+                <EmailSettingsForm
+                  initial={emailSettings}
+                  configurata={mailCfg !== null}
+                  mittente={mailCfg ? mailCfg.from : null}
                 />
               </section>
             ),

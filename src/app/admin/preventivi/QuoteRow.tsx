@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Trunc } from "@/app/Trunc";
 import { useState, useTransition } from "react";
 import { setQuoteStatus, setQuoteSiteConfermata, deleteQuote } from "@/app/actions/quotes";
+import { SendQuoteButton, type InvioInfo } from "./SendQuoteButton";
 
 const statusLabels: Record<string, string> = {
   IN_TRATTATIVA: "In trattativa",
@@ -59,6 +60,7 @@ export function QuoteRow({
   meseRiparam,
   discountPct,
   status,
+  invio,
 }: {
   id: string;
   numeroOfferta: number;
@@ -77,6 +79,7 @@ export function QuoteRow({
   meseRiparam: number;
   discountPct: number | null;
   status: "IN_TRATTATIVA" | "ACCETTATO" | "RIFIUTATO";
+  invio: InvioInfo;
 }) {
   const [isPending, startTransition] = useTransition();
   const [expanded, setExpanded] = useState(false);
@@ -127,6 +130,14 @@ export function QuoteRow({
               ? `Accettata (${sediConfermate}/${siteCount} sedi)`
               : statusLabels[status]}
           </span>
+          {invio.invii.find((i) => i.esito === "INVIATA") && (
+            <span
+              className="mt-1 block text-[11px] text-zinc-500"
+              title={`A ${invio.invii.find((i) => i.esito === "INVIATA")!.destinatari}`}
+            >
+              ✉ inviata il {invio.invii.find((i) => i.esito === "INVIATA")!.data.slice(0, 5)}
+            </span>
+          )}
         </td>
         <td className="px-4 py-3 text-right">
           <div className="flex justify-end gap-2 text-sm">
@@ -137,6 +148,7 @@ export function QuoteRow({
             >
               Stampa
             </Link>
+            <SendQuoteButton quoteId={id} numero={numeroOfferta} invio={invio} />
             <Link prefetch={false}
               href={`/admin/preventivi?edit=${id}#quote-form`}
               className="text-zinc-600 underline"
