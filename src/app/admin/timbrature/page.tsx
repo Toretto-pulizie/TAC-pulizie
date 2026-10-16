@@ -118,6 +118,7 @@ export default async function TimbraturePage({
     endEstimated: s.endEstimated,
     workMinutes: s.end ? Math.round((s.end.getTime() - s.start.getTime()) / 60000) : null,
     travelMinutes: s.travelMinutes,
+    travelMissing: s.travelMissing,
     gps: s.lat != null && s.lng != null,
     note: s.note ?? "",
     luogo: s.luogo,
@@ -169,6 +170,19 @@ export default async function TimbraturePage({
       </form>
 
       {giornate.length > 0 && <GiornateGrid rows={giornate} />}
+
+      {sessionRows.some((r) => r.travelMissing) && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+          <strong>{sessionRows.filter((r) => r.travelMissing).length}</strong> lavori del periodo
+          sono <strong>senza spostamento</strong>{" "}
+          perché manca l&apos;Inizio giornata (o la voce
+          precedente non è dello stesso giorno): nella colonna Spostamento sono segnati{" "}
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+            manca
+          </span>
+          . Clicca sulla cella per inserire lo spostamento a mano.
+        </p>
+      )}
 
       <TimbratureGrid
         sessions={sessionRows}

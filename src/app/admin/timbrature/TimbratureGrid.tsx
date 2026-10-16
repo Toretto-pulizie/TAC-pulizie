@@ -26,6 +26,9 @@ export type SessionRow = {
   endEstimated: boolean;
   workMinutes: number | null;
   travelMinutes: number;
+  // Lavoro senza spostamento perché manca "Inizio giornata" (o la voce
+  // precedente non è dello stesso giorno): da correggere a mano.
+  travelMissing: boolean;
   gps: boolean;
   note: string;
   luogo: string | null;
@@ -796,7 +799,24 @@ function GroupBlock({
               )}
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5 text-zinc-500">
-              {editableCell(s, "travel", s.travelMinutes ? formatDecimalHours(s.travelMinutes) : "—", "text", "w-[56px]")}
+              {editableCell(
+                s,
+                "travel",
+                s.travelMinutes ? (
+                  formatDecimalHours(s.travelMinutes)
+                ) : s.travelMissing ? (
+                  <span
+                    className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700"
+                    title="Spostamento non calcolato: manca l'Inizio giornata (o la voce precedente non è dello stesso giorno). Clicca per inserirlo a mano."
+                  >
+                    manca
+                  </span>
+                ) : (
+                  "—"
+                ),
+                "text",
+                "w-[56px]"
+              )}
             </td>
             <td className="border-r border-zinc-100 px-2.5 py-1.5">
               {s.gps ? (

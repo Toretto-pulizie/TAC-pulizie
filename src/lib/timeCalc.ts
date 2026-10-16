@@ -50,15 +50,37 @@ const BOUNDARY_TYPES = new Set<EntryType>([
 // spostamento resta 0, per sicurezza. I dati storici (con un TRAVEL_START
 // esplicito nella stessa sessione) non passano mai di qui: quel calcolo
 // resta quello di sempre.
+// Giorno di calendario in Italia ("AAAA-MM-GG"): il confronto tra due voci non
+// deve dipendere dal fuso del server (UTC su Vercel, locale sul PC).
+const dayKeyFormatter = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" });
+const dayKey = (d: Date) => dayKeyFormatter.format(d);
+
+// Lo spostamento si conta solo se la voce precedente è un confine valido E
+// dello STESSO GIORNO. Senza questo vincolo, se un collaboratore dimentica
+// "Inizio giornata", il lavoro prenderebbe come partenza una Fine lavoro di
+// giorni prima (anche decine di giorni di "spostamento"). Quando non c'è un
+// riferimento valido lo spostamento resta 0 e viene segnalato (mancante) in
+// Timbrature, così si può correggere a mano.
+export function autoTravelInfo<T extends { type: EntryType; timestamp: Date }>(
+  sortedList: T[],
+  target: T
+): { minutes: number; mancante: boolean } {
+  const idx = sortedList.indexOf(target);
+  if (idx <= 0) return { minutes: 0, mancante: true };
+  const prev = sortedList[idx - 1];
+  if (!BOUNDARY_TYPES.has(prev.type)) return { minutes: 0, mancante: true };
+  if (dayKey(prev.timestamp) !== dayKey(target.timestamp)) return { minutes: 0, mancante: true };
+  return {
+    minutes: (target.timestamp.getTime() - prev.timestamp.getTime()) / 60000,
+    mancante: false,
+  };
+}
+
 function autoTravelMinutes<T extends { type: EntryType; timestamp: Date }>(
   sortedList: T[],
   target: T
 ): number {
-  const idx = sortedList.indexOf(target);
-  if (idx <= 0) return 0;
-  const prev = sortedList[idx - 1];
-  if (!BOUNDARY_TYPES.has(prev.type)) return 0;
-  return (target.timestamp.getTime() - prev.timestamp.getTime()) / 60000;
+  return autoTravelInfo(sortedList, target).minutes;
 }
 
 export type UserTotals = { travelMinutes: number; workMinutes: number };
@@ -237,6 +259,9 @@ export type WorkSession<TSite, TUser> = {
   note: string | null;
   luogo: string | null;
   travelMinutes: number;
+  // Lavoro senza spostamento perché manca un riferimento valido (nessun Inizio
+  // giornata o voce precedente dello stesso giorno): da correggere a mano.
+  travelMissing: boolean;
   activityType: ActivityType;
 };
 
@@ -268,9 +293,12 @@ export function pairSessions<TSite, TUser>(
       // Inizio o abbinati a uno già esistente).
       if (!start) continue;
       const activityType: ActivityType = start.type === "SOPRALLUOGO_START" ? "SOPRALLUOGO" : "LAVORO";
+      const autoInfo = travelStart ? null : autoTravelInfo(list, start);
       const travelMinutes = travelStart
         ? Math.round((start.timestamp.getTime() - travelStart.timestamp.getTime()) / 60000)
-        : Math.round(autoTravelMinutes(list, start));
+        : Math.round(autoInfo!.minutes);
+      // I Sopralluoghi non hanno spostamento per scelta: non si segnalano.
+      const travelMissing = activityType === "LAVORO" && !!autoInfo?.mancante;
       sessions.push({
         startId: start.id,
         endId: end ? end.id : null,
@@ -286,6 +314,7 @@ export function pairSessions<TSite, TUser>(
         note: start.note,
         luogo: start.luogo,
         travelMinutes,
+        travelMissing,
         activityType,
       });
     }
@@ -316,6 +345,7 @@ export function pairSessions<TSite, TUser>(
         note: pendingWork.note,
         luogo: pendingWork.luogo,
         travelMinutes: pendingTravelMinutes,
+        travelMissing: false,
         activityType: "LAVORO",
       });
       pendingWork = null;
@@ -351,6 +381,7 @@ export function pairSessions<TSite, TUser>(
             note: pendingWork.note,
             luogo: pendingWork.luogo,
             travelMinutes: pendingTravelMinutes,
+            travelMissing: false,
             activityType: "LAVORO",
           });
           pendingWork = null;
