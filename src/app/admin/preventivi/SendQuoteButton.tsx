@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { sendQuoteEmail } from "@/app/actions/quoteEmail";
 
 export type InvioInfo = {
-  // false finché su Vercel mancano le variabili SMTP.
+  // false finché in Impostazioni → Email non sono inseriti i dati della casella.
   configurata: boolean;
   // Indirizzo proposto (email del cliente, o quella di riferimento).
   to: string;
@@ -79,9 +79,8 @@ export function SendQuoteButton({
 
             {!invio.configurata && (
               <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                La posta non è ancora configurata: servono le variabili SMTP_HOST, SMTP_USER e
-                SMTP_PASS su Vercel (istruzioni in Impostazioni → Email). Finché mancano non si può
-                inviare.
+                La posta non è ancora configurata: inserisci server, utente e password della casella
+                in Impostazioni → Email (solo il titolare). Finché mancano non si può inviare.
               </p>
             )}
 

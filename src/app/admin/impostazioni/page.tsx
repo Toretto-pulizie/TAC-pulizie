@@ -67,7 +67,7 @@ export default async function ImpostazioniPage() {
 
   // Invio email: testo predefinito e stato della posta (mai la password).
   const emailSettings = await getEmailSettings();
-  const mailCfg = getMailConfig();
+  const mailCfg = await getMailConfig();
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 sm:px-8 sm:py-8">
@@ -265,6 +265,7 @@ export default async function ImpostazioniPage() {
                   initial={emailSettings}
                   configurata={mailCfg !== null}
                   mittente={mailCfg ? mailCfg.from : null}
+                  daAmbiente={mailCfg?.origine === "ambiente"}
                 />
               </section>
             ),

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, requireAdmin, requireModule } from "@/lib/dal";
 import { sendMail, getMailConfig } from "@/lib/mail";
+import { encryptSecret } from "@/lib/secretBox";
 import { clientDisplayName } from "@/lib/clients";
 
 const EMAIL_RE = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
@@ -59,10 +60,10 @@ export async function sendQuoteEmail(_prevState: unknown, formData: FormData) {
   }
   const { quoteId, to, cc, subject, body } = parsed.data;
 
-  if (!getMailConfig()) {
+  if (!(await getMailConfig())) {
     return {
       error:
-        "La posta non è ancora configurata: mancano le variabili SMTP_HOST, SMTP_USER e SMTP_PASS su Vercel (vedi Impostazioni → Email).",
+        "La posta non è ancora configurata: inserisci server, utente e password in Impostazioni → Email.",
     };
   }
 
@@ -122,6 +123,10 @@ const EmailSettingsSchema = z.object({
     .string()
     .trim()
     .refine((v) => v === "" || EMAIL_RE.test(v), "Indirizzo per la copia nascosta non valido"),
+  smtpHost: z.string().trim(),
+  smtpPort: z.coerce.number().int().min(1, "Porta non valida").max(65535, "Porta non valida"),
+  smtpUser: z.string().trim(),
+  smtpFrom: z.string().trim(),
 });
 
 export async function updateEmailSettings(_prevState: unknown, formData: FormData) {
@@ -130,16 +135,52 @@ export async function updateEmailSettings(_prevState: unknown, formData: FormDat
     oggetto: formData.get("oggetto"),
     corpo: formData.get("corpo"),
     ccnIndirizzo: formData.get("ccnIndirizzo") ?? "",
+    smtpHost: formData.get("smtpHost") ?? "",
+    smtpPort: formData.get("smtpPort") || 465,
+    smtpUser: formData.get("smtpUser") ?? "",
+    smtpFrom: formData.get("smtpFrom") ?? "",
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dati non validi" };
   }
+  // Password: solo in scrittura. Se il campo è vuoto resta quella già salvata;
+  // se compilato viene cifrata. Non viene mai restituita al browser.
+  const nuovaPassword = String(formData.get("smtpPass") ?? "");
+  let smtpPassCifrata: string | undefined;
+  if (nuovaPassword) {
+    try {
+      smtpPassCifrata = encryptSecret(nuovaPassword);
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "Impossibile salvare la password" };
+    }
+  }
   await prisma.emailSettings.upsert({
     where: { id: "singleton" },
-    update: parsed.data,
-    create: { id: "singleton", ...parsed.data },
+    update: { ...parsed.data, ...(smtpPassCifrata ? { smtpPassCifrata } : {}) },
+    create: { id: "singleton", ...parsed.data, smtpPassCifrata: smtpPassCifrata ?? "" },
   });
   revalidatePath("/admin/impostazioni");
   revalidatePath("/admin/preventivi");
   return { success: true };
+}
+
+// Invia un messaggio di prova per controllare subito che i dati SMTP siano giusti.
+export async function sendTestEmail(_prevState: unknown, formData: FormData) {
+  await requireAdmin();
+  const to = String(formData.get("testTo") ?? "").trim();
+  if (!EMAIL_RE.test(to)) return { error: "Indica un indirizzo email valido per la prova" };
+  try {
+    const cfg = await getMailConfig();
+    if (!cfg) {
+      return { error: "Prima salva server, utente e password, poi invia la prova." };
+    }
+    await sendMail({
+      to: [to],
+      subject: "Prova invio email — Toretto",
+      text: `Questo è un messaggio di prova inviato dal programma Toretto.\n\nSe lo ricevi, l'invio delle offerte via email funziona.\nMittente configurato: ${cfg.from}`,
+    });
+    return { success: true, message: `Email di prova inviata a ${to}. Controlla la posta (anche lo spam).` };
+  } catch (e) {
+    return { error: `Invio non riuscito: ${e instanceof Error ? e.message : "errore sconosciuto"}` };
+  }
 }

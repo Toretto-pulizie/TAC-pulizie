@@ -418,6 +418,15 @@ model EmailSettings {
   oggetto      String @default("")
   corpo        String @default("")
   ccnIndirizzo String @default("")
+  // Server di posta in uscita (SMTP) inseriti dal titolare in Impostazioni → Email.
+  // La password è salvata CIFRATA (AES-256-GCM, chiave derivata da SESSION_SECRET) e
+  // non viene mai mostrata né rimandata al browser. Se esistono le variabili
+  // d'ambiente SMTP_*, hanno la precedenza.
+  smtpHost        String @default("")
+  smtpPort        Int    @default(465)
+  smtpUser        String @default("")
+  smtpPassCifrata String @default("")
+  smtpFrom        String @default("")
 }
 
 // Cronologia degli invii delle offerte via email (anche reinvii ed errori).

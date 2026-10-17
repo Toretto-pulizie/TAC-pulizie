@@ -1,14 +1,11 @@
 import nodemailer from "nodemailer";
+import { prisma } from "@/lib/prisma";
+import { decryptSecret } from "@/lib/secretBox";
 
-// Invio email tramite SMTP. Le credenziali NON stanno nel codice né nel database:
-// si impostano come variabili d'ambiente (su Vercel: Settings → Environment
-// Variables; in locale: file .env).
-//   SMTP_HOST   server di posta in uscita (es. smtps.aruba.it)
-//   SMTP_PORT   porta (587 STARTTLS, 465 SSL); predefinita 587
-//   SMTP_USER   utente (di solito l'indirizzo email completo)
-//   SMTP_PASS   password della casella
-//   SMTP_FROM   mittente mostrato (es. "Toretto <info@toret-to.it>"); se assente SMTP_USER
-//   SMTP_SECURE "true" per forzare SSL (impostato da solo con la porta 465)
+// Invio email tramite SMTP. I dati si inseriscono in Impostazioni → Email
+// (password salvata cifrata nel database). In alternativa, se esistono le
+// variabili d'ambiente SMTP_HOST, SMTP_USER e SMTP_PASS (più SMTP_PORT,
+// SMTP_FROM, SMTP_SECURE), quelle hanno la precedenza.
 export type MailConfig = {
   host: string;
   port: number;
@@ -16,26 +13,45 @@ export type MailConfig = {
   pass: string;
   from: string;
   secure: boolean;
+  origine: "ambiente" | "impostazioni";
 };
 
-export function getMailConfig(): MailConfig | null {
-  const host = process.env.SMTP_HOST?.trim();
-  const user = process.env.SMTP_USER?.trim();
-  const pass = process.env.SMTP_PASS;
-  if (!host || !user || !pass) return null;
-  const port = Number(process.env.SMTP_PORT) || 587;
+export async function getMailConfig(): Promise<MailConfig | null> {
+  const eHost = process.env.SMTP_HOST?.trim();
+  const eUser = process.env.SMTP_USER?.trim();
+  const ePass = process.env.SMTP_PASS;
+  if (eHost && eUser && ePass) {
+    const port = Number(process.env.SMTP_PORT) || 587;
+    return {
+      host: eHost,
+      port,
+      user: eUser,
+      pass: ePass,
+      from: process.env.SMTP_FROM?.trim() || eUser,
+      secure: port === 465 || process.env.SMTP_SECURE === "true",
+      origine: "ambiente",
+    };
+  }
+
+  const s = await prisma.emailSettings.findUnique({ where: { id: "singleton" } });
+  if (!s || !s.smtpHost.trim() || !s.smtpUser.trim()) return null;
+  const pass = decryptSecret(s.smtpPassCifrata);
+  if (!pass) return null;
+  const port = s.smtpPort || 465;
   return {
-    host,
+    host: s.smtpHost.trim(),
     port,
-    user,
+    user: s.smtpUser.trim(),
     pass,
-    from: process.env.SMTP_FROM?.trim() || user,
-    secure: port === 465 || process.env.SMTP_SECURE === "true",
+    from: s.smtpFrom.trim() || s.smtpUser.trim(),
+    // 465 = SSL diretto; 587 e le altre usano STARTTLS.
+    secure: port === 465,
+    origine: "impostazioni",
   };
 }
 
-export function isMailConfigured() {
-  return getMailConfig() !== null;
+export async function isMailConfigured() {
+  return (await getMailConfig()) !== null;
 }
 
 export async function sendMail(opts: {
@@ -46,10 +62,10 @@ export async function sendMail(opts: {
   text: string;
   attachments?: { filename: string; content: Buffer; contentType?: string }[];
 }) {
-  const cfg = getMailConfig();
+  const cfg = await getMailConfig();
   if (!cfg) {
     throw new Error(
-      "La posta non è configurata: mancano le variabili SMTP_HOST, SMTP_USER e SMTP_PASS su Vercel."
+      "La posta non è configurata: inserisci server, utente e password in Impostazioni → Email."
     );
   }
   const transporter = nodemailer.createTransport({

@@ -20,6 +20,13 @@ export async function getEmailSettings() {
     oggetto: s?.oggetto.trim() ? s.oggetto : DEFAULT_EMAIL_OGGETTO,
     corpo: s?.corpo.trim() ? s.corpo : DEFAULT_EMAIL_CORPO,
     ccnIndirizzo: s?.ccnIndirizzo ?? "",
+    // Dati SMTP (predefiniti per Aruba). La password non esce mai dal server:
+    // al modulo arriva solo se è già impostata.
+    smtpHost: s?.smtpHost.trim() ? s.smtpHost : "smtps.aruba.it",
+    smtpPort: s?.smtpPort ?? 465,
+    smtpUser: s?.smtpUser ?? "",
+    smtpFrom: s?.smtpFrom ?? "",
+    passwordImpostata: !!s?.smtpPassCifrata,
   };
 }
 

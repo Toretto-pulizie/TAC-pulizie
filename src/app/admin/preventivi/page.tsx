@@ -145,7 +145,7 @@ export default async function PreventiviPage({
 
   // Invio via email: testo predefinito (Impostazioni → Email) e stato della posta.
   const emailSettings = await getEmailSettings();
-  const mailConfigured = isMailConfigured();
+  const mailConfigured = await isMailConfigured();
   const fmtInvio = (d: Date) =>
     d.toLocaleString("it-IT", {
       timeZone: "Europe/Rome",
