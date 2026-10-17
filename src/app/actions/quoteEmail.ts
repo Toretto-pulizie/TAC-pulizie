@@ -27,6 +27,32 @@ const SendSchema = z.object({
   body: z.string().trim().min(1, "Il messaggio non può essere vuoto"),
 });
 
+// Allegati esterni: Vercel accetta circa 4,5 MB per richiesta, quindi il totale
+// dei file è limitato a 4 MB. Si bloccano i tipi eseguibili, che i provider di
+// posta comunque rifiuterebbero.
+const MAX_EXTERNAL_TOTAL = 4 * 1024 * 1024;
+const MAX_EXTERNAL_FILES = 8;
+const BLOCKED_EXTENSIONS = /\.(exe|bat|cmd|com|scr|msi|js|jse|vbs|vbe|wsf|ps1|jar|dll|lnk|reg)$/i;
+
+function formatFileSize(bytes: number) {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / 1024 / 1024).toFixed(1).replace(".", ",")} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+function validateExternalFiles(files: File[]): string | null {
+  if (files.length > MAX_EXTERNAL_FILES) {
+    return `Puoi aggiungere al massimo ${MAX_EXTERNAL_FILES} file.`;
+  }
+  const blocked = files.find((f) => BLOCKED_EXTENSIONS.test(f.name));
+  if (blocked) return `Il file "${blocked.name}" non può essere allegato (tipo non consentito).`;
+  const totale = files.reduce((s, f) => s + f.size, 0);
+  if (totale > MAX_EXTERNAL_TOTAL) {
+    return `I file aggiunti pesano ${formatFileSize(totale)}: il massimo è 4 MB in totale. Riduci o comprimi i file.`;
+  }
+  return null;
+}
+
 // Genera il PDF dell'offerta (con gli allegati) chiamando la stessa route che usa
 // il pulsante Stampa, con la sessione di chi invia: un unico punto di verità per
 // il contenuto del documento.
@@ -60,6 +86,13 @@ export async function sendQuoteEmail(_prevState: unknown, formData: FormData) {
   }
   const { quoteId, to, cc, subject, body } = parsed.data;
 
+  // Allegati esterni: file scelti dal PC per quest'unico invio (non archiviati).
+  const files = formData
+    .getAll("files")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+  const fileError = validateExternalFiles(files);
+  if (fileError) return { error: fileError };
+
   if (!(await getMailConfig())) {
     return {
       error:
@@ -88,11 +121,19 @@ export async function sendQuoteEmail(_prevState: unknown, formData: FormData) {
         esito,
         errore: errore ?? null,
         inviatoDa: user?.name ?? null,
+        allegatiEsterni: files.map((f) => `${f.name} (${formatFileSize(f.size)})`).join("; "),
       },
     });
 
   try {
     const pdf = await fetchQuotePdf(quoteId);
+    const esterni = await Promise.all(
+      files.map(async (f) => ({
+        filename: f.name.replace(/[\\/:*?"<>|]+/g, "_"),
+        content: Buffer.from(await f.arrayBuffer()),
+        contentType: f.type || undefined,
+      }))
+    );
     const nomeFile = `Offerta n. ${quote.numeroOfferta} - ${clientDisplayName(quote.client)}`
       .replace(/[\\/:*?"<>|]+/g, " ")
       .replace(/\s+/g, " ")
@@ -103,11 +144,19 @@ export async function sendQuoteEmail(_prevState: unknown, formData: FormData) {
       bcc,
       subject,
       text: body,
-      attachments: [{ filename: `${nomeFile}.pdf`, content: pdf, contentType: "application/pdf" }],
+      attachments: [
+        { filename: `${nomeFile}.pdf`, content: pdf, contentType: "application/pdf" },
+        ...esterni,
+      ],
     });
     await log("INVIATA");
     revalidatePath("/admin/preventivi");
-    return { success: true, message: `Offerta inviata a ${to.join(", ")}.` };
+    return {
+      success: true,
+      message: `Offerta inviata a ${to.join(", ")}${
+        esterni.length > 0 ? ` con ${esterni.length} allegat${esterni.length === 1 ? "o" : "i"} in più` : ""
+      }.`,
+    };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Errore sconosciuto";
     await log("ERRORE", msg);

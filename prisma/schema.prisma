@@ -440,6 +440,9 @@ model QuoteEmailLog {
   esito        String   // "INVIATA" | "ERRORE"
   errore       String?
   inviatoDa    String?  // nome dell'utente che ha inviato
+  // Allegati esterni (file del PC aggiunti per quell'invio, non archiviati): solo
+  // nomi e dimensioni, es. "scheda.pdf (1,2 MB); foto.jpg (800 KB)".
+  allegatiEsterni String @default("")
   createdAt    DateTime @default(now())
 
   @@index([quoteId, createdAt])

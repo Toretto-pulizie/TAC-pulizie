@@ -295,6 +295,7 @@ export default async function PreventiviPage({
           esito: l.esito,
           errore: l.errore,
           da: l.inviatoDa,
+          allegati: l.allegatiEsterni,
         })),
       },
     };
