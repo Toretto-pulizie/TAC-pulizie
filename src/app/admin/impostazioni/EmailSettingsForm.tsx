@@ -116,12 +116,13 @@ export function EmailSettingsForm({
             <input
               name="smtpFrom"
               defaultValue={initial.smtpFrom}
-              placeholder="Toretto <info@toret-to.it>"
+              placeholder="Toretto - Impresa di pulizie"
               className="rounded-lg border border-zinc-300 px-3 py-2"
             />
             <span className="text-xs text-zinc-500">
-              Se vuoto si usa l&apos;indirizzo dell&apos;utente. Le risposte dei clienti arrivano a
-              questo indirizzo.
+              Basta il <strong>nome</strong> che il cliente vede (es. Toretto - Impresa di pulizie):
+              l&apos;indirizzo è sempre quello dell&apos;utente SMTP. Se vuoto compare solo
+              l&apos;indirizzo. Le risposte dei clienti arrivano all&apos;indirizzo dell&apos;utente.
             </span>
           </label>
         </div>

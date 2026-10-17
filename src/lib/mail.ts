@@ -16,6 +16,19 @@ export type MailConfig = {
   origine: "ambiente" | "impostazioni";
 };
 
+// Mittente completo da usare nell'intestazione "Da". Il campo può contenere:
+//  - niente  → solo l'indirizzo dell'utente SMTP;
+//  - un indirizzo o "Nome <indirizzo>" → usato così com'è;
+//  - solo un nome (es. "Toretto - Impresa di pulizie") → "Nome" <indirizzo dell'utente>.
+// Senza un indirizzo valido nell'intestazione i messaggi vengono scartati o finiscono
+// nello spam, anche se il server di posta li ha accettati.
+export function buildFrom(from: string | null | undefined, user: string): string {
+  const f = (from ?? "").trim();
+  if (!f) return user;
+  if (f.includes("@")) return f;
+  return `"${f.replace(/["\\<>]/g, "")}" <${user}>`;
+}
+
 export async function getMailConfig(): Promise<MailConfig | null> {
   const eHost = process.env.SMTP_HOST?.trim();
   const eUser = process.env.SMTP_USER?.trim();
@@ -27,7 +40,7 @@ export async function getMailConfig(): Promise<MailConfig | null> {
       port,
       user: eUser,
       pass: ePass,
-      from: process.env.SMTP_FROM?.trim() || eUser,
+      from: buildFrom(process.env.SMTP_FROM, eUser),
       secure: port === 465 || process.env.SMTP_SECURE === "true",
       origine: "ambiente",
     };
@@ -43,7 +56,7 @@ export async function getMailConfig(): Promise<MailConfig | null> {
     port,
     user: s.smtpUser.trim(),
     pass,
-    from: s.smtpFrom.trim() || s.smtpUser.trim(),
+    from: buildFrom(s.smtpFrom, s.smtpUser.trim()),
     // 465 = SSL diretto; 587 e le altre usano STARTTLS.
     secure: port === 465,
     origine: "impostazioni",
